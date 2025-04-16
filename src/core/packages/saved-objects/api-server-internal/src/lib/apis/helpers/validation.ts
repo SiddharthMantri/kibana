@@ -19,6 +19,7 @@ import {
   type SavedObjectSanitizedDoc,
 } from '@kbn/core-saved-objects-server';
 import { ALL_NAMESPACES_STRING } from '@kbn/core-saved-objects-utils-server';
+import { OWNABLE_TYPES } from '@kbn/core-saved-objects-base-server-internal/src/saved_objects_type_registry';
 
 export type IValidationHelper = PublicMethodsOf<ValidationHelper>;
 
@@ -40,6 +41,10 @@ export class ValidationHelper {
     this.registry = registry;
     this.logger = logger;
     this.kibanaVersion = kibanaVersion;
+  }
+
+  public isOwnableType(type: string) {
+    return OWNABLE_TYPES.includes(type);
   }
 
   /** The `initialNamespaces` field (create, bulkCreate) is used to create an object in an initial set of spaces. */

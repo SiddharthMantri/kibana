@@ -59,6 +59,11 @@ export interface SavedObjectReference {
   id: string;
 }
 
+export interface SavedObjectOwnership {
+  owner?: string;
+  isReadOnly: boolean | undefined;
+}
+
 /**
  * Definition of the Saved Object interface
  *
@@ -114,4 +119,6 @@ export interface SavedObject<T = unknown> {
    * make their edits to the copy.
    */
   managed?: boolean;
+  ownership?: SavedObjectOwnership;
+  isOwnable?: boolean;
 }

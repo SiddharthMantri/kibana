@@ -15,7 +15,7 @@ import {
   createPromiseFromStreams,
 } from '@kbn/utils';
 import type { SavedObjectsImportFailure } from '@kbn/core-saved-objects-common';
-import type { SavedObject } from '@kbn/core-saved-objects-server';
+import type { ISavedObjectTypeRegistry, SavedObject } from '@kbn/core-saved-objects-server';
 import { SavedObjectsImportError } from '../errors';
 import { getNonUniqueEntries } from './get_non_unique_entries';
 import { createLimitStream } from './create_limit_stream';
@@ -27,6 +27,8 @@ interface CollectSavedObjectsOptions {
   filter?: (obj: SavedObject) => boolean;
   supportedTypes: string[];
   managed?: boolean;
+  ownableTypes?: string[];
+  typeRegistry?: ISavedObjectTypeRegistry;
 }
 
 export async function collectSavedObjects({
@@ -35,6 +37,8 @@ export async function collectSavedObjects({
   filter,
   supportedTypes,
   managed,
+  ownableTypes,
+  typeRegistry,
 }: CollectSavedObjectsOptions) {
   const errors: SavedObjectsImportFailure[] = [];
   const entries: Array<{ type: string; id: string }> = [];
@@ -58,6 +62,21 @@ export async function collectSavedObjects({
       });
       return false;
     }),
+    createFilterStream<SavedObject<{ title: string }>>((obj) => {
+      if (obj.ownership && typeRegistry?.isOwnableType(obj.type)) {
+        return true;
+      }
+      const { title } = obj.attributes;
+      errors.push({
+        id: obj.id,
+        type: obj.type,
+        meta: { title },
+        error: {
+          type: 'unsupported_ownable_type',
+        },
+      });
+      return false;
+    }),
     createFilterStream<SavedObject>((obj) => (filter ? filter(obj) : true)),
     createMapStream((obj: SavedObject) => {
       importStateMap.set(`${obj.type}:${obj.id}`, {});
@@ -74,6 +93,9 @@ export async function collectSavedObjects({
         // override any managed flag on an object with that given as an option otherwise set the default to avoid having to do that with a core migration transform
         // this is a bulk operation, applied to all objects being imported
         ...{ managed: managed ?? obj.managed ?? false },
+        ...(ownableTypes?.includes(obj.type) && obj?.ownership?.isReadOnly
+          ? { ownership: { isReadOnly: true } }
+          : {}),
       };
     }),
     createConcatStream([]),

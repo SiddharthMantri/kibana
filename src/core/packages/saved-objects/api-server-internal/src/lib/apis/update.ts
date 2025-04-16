@@ -155,6 +155,7 @@ export const executeUpdate = async <T>(
 
   const time = getCurrentTime();
   const updatedBy = userHelper.getCurrentUserProfileUid();
+
   let updatedOrCreatedSavedObject: SavedObject<T>;
   // `upsert` option set and document was not found -> we need to perform an upsert operation
   const shouldPerformUpsert = upsert && docNotFound;

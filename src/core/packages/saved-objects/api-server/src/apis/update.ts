@@ -42,6 +42,8 @@ export interface SavedObjectsUpdateOptions<Attributes = unknown> extends SavedOb
    * Defaults to `true`.
    */
   mergeAttributes?: boolean;
+  readOnly?: boolean;
+  owner?: string;
 }
 
 /**

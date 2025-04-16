@@ -1423,12 +1423,25 @@ export class SavedObjectsSecurityExtension implements ISavedObjectsSecurityExten
     });
   }
 
+  auditObjectOwnershipChange<T>(obj: SavedObject<T>) {
+    const { namespaces = [], id, type } = obj;
+    this.addAuditEvent({
+      action: AuditAction.UPDATE,
+      outcome: 'unknown',
+      savedObject: { id, type },
+    });
+  }
+
   getCurrentUser() {
     return this.getCurrentUserFunc();
   }
 
   includeSavedObjectNames() {
     return this.auditLogger.includeSavedObjectNames;
+  }
+
+  isCurrentUserAdmin() {
+    return true;
   }
 }
 

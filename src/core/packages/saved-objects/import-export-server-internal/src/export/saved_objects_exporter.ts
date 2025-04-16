@@ -121,10 +121,19 @@ export class SavedObjectsExporter implements ISavedObjectsExporter {
     // sort with the provided sort function then with the default export sorting
     const exportedObjects = sortObjects(collectedObjects.sort(sortFunction));
 
+    const redactOwnership = exportedObjects.map<SavedObject<unknown>>(
+      ({ ownership, ...object }) => ({
+        ...object,
+        ownership: {
+          isReadOnly: ownership?.isReadOnly,
+        },
+      })
+    );
+
     // redact attributes that should not be exported
     const redactedObjects = includeNamespaces
-      ? exportedObjects
-      : exportedObjects.map<SavedObject<unknown>>(({ namespaces, ...object }) => object);
+      ? redactOwnership
+      : redactOwnership.map<SavedObject<unknown>>(({ namespaces, ...object }) => object);
 
     const exportDetails: SavedObjectsExportResultDetails = {
       exportedCount: exportedObjects.length,

@@ -25,6 +25,7 @@ import {
   SerializerHelper,
   MigrationHelper,
   UserHelper,
+  OwnershipHelper,
 } from '../apis/helpers';
 import type { RepositoryEsClient } from '../repository_es_client';
 import { CreatePointInTimeFinderFn } from '../point_in_time_finder';
@@ -85,6 +86,10 @@ export const createRepositoryHelpers = ({
   const userHelper = new UserHelper({
     securityExtension: extensions?.securityExtension,
   });
+  const ownershipHelper = new OwnershipHelper({
+    securityExtension: extensions?.securityExtension,
+    typeRegistry,
+  });
 
   const helpers: RepositoryHelpers = {
     common: commonHelper,
@@ -93,6 +98,7 @@ export const createRepositoryHelpers = ({
     encryption: encryptionHelper,
     serializer: serializerHelper,
     migration: migrationHelper,
+    owership: ownershipHelper,
     user: userHelper,
   };
 

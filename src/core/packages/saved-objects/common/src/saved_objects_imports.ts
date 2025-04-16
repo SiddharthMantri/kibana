@@ -61,6 +61,10 @@ export interface SavedObjectsImportUnsupportedTypeError {
   type: 'unsupported_type';
 }
 
+export interface SavedObjectsUnsupportedOwnableTypeError {
+  type: 'unsupported_ownable_type';
+}
+
 /**
  * Represents a failure to import due to an unknown reason.
  * @public
@@ -98,7 +102,8 @@ export interface SavedObjectsImportFailure {
     | SavedObjectsImportAmbiguousConflictError
     | SavedObjectsImportUnsupportedTypeError
     | SavedObjectsImportMissingReferencesError
-    | SavedObjectsImportUnknownError;
+    | SavedObjectsImportUnknownError
+    | SavedObjectsUnsupportedOwnableTypeError;
 }
 
 /**

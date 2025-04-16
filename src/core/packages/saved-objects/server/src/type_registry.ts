@@ -49,6 +49,9 @@ export interface ISavedObjectTypeRegistry {
    */
   isNamespaceAgnostic(type: string): boolean;
 
+  supportsOwnership(type: string): boolean;
+  supportsReadOnlyMode(type: string): boolean;
+
   /**
    * Returns whether the type is single-namespace (isolated);
    * resolves to `true` if the type is not registered

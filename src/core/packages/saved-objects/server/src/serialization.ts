@@ -117,6 +117,8 @@ export interface SavedObjectDoc<T = unknown> {
   created_by?: string;
   originId?: string;
   managed?: boolean;
+  owner?: string;
+  isReadOnly?: boolean;
 }
 
 /**

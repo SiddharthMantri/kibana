@@ -67,6 +67,11 @@ export const performCreate = async <T>(
   if (!allowedTypes.includes(type)) {
     throw SavedObjectsErrorHelpers.createUnsupportedTypeError(type);
   }
+  if (options.readOnly && !registry.supportsReadOnlyMode(type)) {
+    throw SavedObjectsErrorHelpers.createBadRequestError(
+      `Cannot create a read-only saved object of type "${type}".`
+    );
+  }
   const id = commonHelper.getValidId(type, options.id, options.version, options.overwrite);
   validationHelper.validateInitialNamespaces(type, initialNamespaces);
   validationHelper.validateOriginId(type, options);
@@ -141,6 +146,9 @@ export const performCreate = async <T>(
     ...(createdBy && { created_by: createdBy }),
     ...(updatedBy && { updated_by: updatedBy }),
     ...(Array.isArray(references) && { references }),
+    ...(registry.supportsOwnership(type) && { owner: createdBy }),
+    ...(registry.supportsReadOnlyMode(type) &&
+      options.readOnly && { isReadOnly: options.readOnly }),
   });
 
   /**

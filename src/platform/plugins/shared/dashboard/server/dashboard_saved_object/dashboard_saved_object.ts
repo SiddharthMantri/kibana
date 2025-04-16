@@ -107,4 +107,6 @@ export const createDashboardSavedObjectType = ({
     '8.9.0': dashboardAttributesSchemaV1,
   },
   migrations: () => createDashboardSavedObjectTypeMigrations(migrationDeps),
+  supportsOwnership: true,
+  supportsReadOnly: true,
 });

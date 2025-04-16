@@ -127,6 +127,8 @@ export class SavedObjectsSerializer implements ISavedObjectsSerializer {
       ...(_source.created_at && { created_at: _source.created_at }),
       ...(_source.created_by && { created_by: _source.created_by }),
       ...(version && { version }),
+      ...(_source.owner && { owner: _source.owner }),
+      ...(_source.isReadOnly && { isReadOnly: _source.isReadOnly }),
     };
   }
 
@@ -154,6 +156,8 @@ export class SavedObjectsSerializer implements ISavedObjectsSerializer {
       coreMigrationVersion,
       typeMigrationVersion,
       managed,
+      owner,
+      isReadOnly,
     } = savedObj;
     const source = {
       [type]: attributes,

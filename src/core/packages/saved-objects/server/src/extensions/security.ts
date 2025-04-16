@@ -529,4 +529,6 @@ export interface ISavedObjectsSecurityExtension {
    * Retrieves whether we need to include save objects names in the audit out
    */
   includeSavedObjectNames: () => boolean;
+
+  isCurrentUserAdmin: () => boolean;
 }

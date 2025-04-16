@@ -25,6 +25,7 @@ import type {
  *
  * @public
  */
+
 export interface SavedObjectsType<Attributes = any> {
   /**
    * The name of the type, which is also used as the internal id.
@@ -249,6 +250,9 @@ export interface SavedObjectsType<Attributes = any> {
    * If not defined, will use the object's type and id to generate a label.
    */
   getTitle?: (savedObject: Attributes) => string;
+
+  supportsOwnership?: boolean;
+  supportsReadOnly?: boolean;
 }
 
 /**

@@ -62,6 +62,14 @@ export class SavedObjectTypeRegistry implements ISavedObjectTypeRegistry {
     return this.types.get(type)?.namespaceType === 'agnostic';
   }
 
+  public supportsOwnership(type: string) {
+    return this.types.get(type)?.supportsOwnership ?? false;
+  }
+
+  public supportsReadOnlyMode(type: string) {
+    return this.types.get(type)?.supportsReadOnly ?? false;
+  }
+
   /** {@inheritDoc ISavedObjectTypeRegistry.isSingleNamespace} */
   public isSingleNamespace(type: string) {
     // in the case we somehow registered a type with an invalid `namespaceType`, treat it as single-namespace
@@ -104,7 +112,17 @@ export class SavedObjectTypeRegistry implements ISavedObjectTypeRegistry {
   }
 }
 
-const validateType = ({ name, management, hidden, hiddenFromHttpApis }: SavedObjectsType) => {
+export const DASHBOARD_SAVED_OBJECT_TYPE = 'dashboard';
+export const OWNABLE_TYPES = [DASHBOARD_SAVED_OBJECT_TYPE];
+
+const validateType = ({
+  name,
+  management,
+  hidden,
+  hiddenFromHttpApis,
+  supportsReadOnly,
+  supportsOwnership,
+}: SavedObjectsType) => {
   if (management) {
     if (management.onExport && !management.importableAndExportable) {
       throw new Error(
@@ -121,6 +139,12 @@ const validateType = ({ name, management, hidden, hiddenFromHttpApis }: SavedObj
   if (hidden === true && hiddenFromHttpApis === false) {
     throw new Error(
       `Type ${name}: 'hiddenFromHttpApis' cannot be 'false' when specifying 'hidden' as 'true'`
+    );
+  }
+
+  if ((supportsReadOnly || supportsOwnership) && !OWNABLE_TYPES.includes(name)) {
+    throw new Error(
+      `Type ${name}: 'isOwnable' cannot be 'true' when specifying 'name' as '${name}'`
     );
   }
 };

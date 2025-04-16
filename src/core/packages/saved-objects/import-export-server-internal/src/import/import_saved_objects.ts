@@ -95,6 +95,7 @@ export async function importSavedObjectsFromStream({
     objectLimit,
     supportedTypes,
     managed,
+    typeRegistry,
   });
   log.debug(
     `Importing types: ${[
