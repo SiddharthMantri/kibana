@@ -124,9 +124,7 @@ export class SavedObjectsExporter implements ISavedObjectsExporter {
     const redactOwnership = exportedObjects.map<SavedObject<unknown>>(
       ({ ownership, ...object }) => ({
         ...object,
-        ownership: {
-          isReadOnly: ownership?.isReadOnly,
-        },
+        ...(ownership ? { ownership: { isReadOnly: ownership?.isReadOnly } } : {}),
       })
     );
 
