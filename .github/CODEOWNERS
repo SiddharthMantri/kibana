@@ -1975,7 +1975,7 @@ x-pack/platform/plugins/private/cloud_integrations/cloud_full_story/server/confi
 /src/platform/test/server_integration/http/ssl_with_p12 @elastic/kibana-security # Assigned per https://github.com/elastic/kibana/pull/199795#discussion_r1846522206
 /src/platform/test/server_integration/http/ssl_with_p12_intermediate @elastic/kibana-security # Assigned per https://github.com/elastic/kibana/pull/199795#discussion_r1846522206
 
-/src/platform/test/server_integration/config.base.js @elastic/kibana-security @elastic/kibana-core # Assigned per https://github.com/elastic/kibana/pull/199795#discussion_r1846510782
+/src/platform/test/server_integration/config.base.ts @elastic/kibana-security @elastic/kibana-core # Assigned per https://github.com/elastic/kibana/pull/199795#discussion_r1846510782
 /src/platform/test/server_integration/__fixtures__ @elastic/kibana-security # Assigned per https://github.com/elastic/kibana/pull/53810
 /.github/codeql @elastic/kibana-security
 /.github/workflows/codeql.yml @elastic/kibana-security

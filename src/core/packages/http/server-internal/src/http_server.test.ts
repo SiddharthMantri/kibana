@@ -1821,6 +1821,42 @@ describe('setup contract', () => {
         createCookieSessionStorageFactory(cookieOptions);
       }).not.toThrow();
     });
+
+    test.only('parses multiple cookie values', async () => {
+      const {
+        createCookieSessionStorageFactory,
+        registerRouter,
+        registerAuth,
+        server: innerServer,
+      } = await server.setup({ config$ });
+      await createCookieSessionStorageFactory(cookieOptions);
+
+      const router = new Router('', logger, enhanceWithContext, routerOptions);
+      router.get(
+        {
+          path: '/internal/test_cookie',
+          validate: false,
+          security: {
+            authc: { enabled: false, reason: 'test' },
+            authz: { enabled: false, reason: 'test' },
+          },
+        },
+        (context, req, res) => {
+          console.log('cookie', req.headers.cookie);
+          return res.ok({ body: req.route });
+        }
+      );
+
+      // mocking to have `authRegistered` filed set to true
+      registerAuth((req, res) => res.unauthorized());
+      registerRouter(router);
+
+      await server.start();
+      await supertest(innerServer.listener)
+        .get('/internal/test_cookie')
+        .set('Cookie', 'sid=bar; sid=qux')
+        .expect(200);
+    });
   });
 
   describe('#getServerInfo', () => {

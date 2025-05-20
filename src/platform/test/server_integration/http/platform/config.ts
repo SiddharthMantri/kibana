@@ -11,7 +11,7 @@ import { ScoutTestRunConfigCategory } from '@kbn/scout-info';
 import { FtrConfigProviderContext } from '@kbn/test';
 
 export default async function ({ readConfigFile }: FtrConfigProviderContext) {
-  const httpConfig = await readConfigFile(require.resolve('../../config.base.js'));
+  const httpConfig = await readConfigFile(require.resolve('../../config.base.ts'));
 
   return {
     testConfigCategory: ScoutTestRunConfigCategory.UI_TEST,

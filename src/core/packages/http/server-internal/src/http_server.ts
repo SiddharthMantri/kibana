@@ -626,9 +626,12 @@ export class HttpServer {
     if (this.stopping || this.stopped) {
       this.log.warn(`createCookieSessionStorageFactory called after stop`);
     }
+
     if (this.cookieSessionStorageCreated) {
+      console.trace();
       throw new Error('A cookieSessionStorageFactory was already created');
     }
+    console.trace();
     this.cookieSessionStorageCreated = true;
     const sessionStorageFactory = await createCookieSessionStorageFactory<T>(
       this.logger.get('http', 'server', this.name, 'cookie-session-storage'),
