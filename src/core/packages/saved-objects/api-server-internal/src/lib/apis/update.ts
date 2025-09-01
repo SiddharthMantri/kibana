@@ -196,6 +196,7 @@ export const executeUpdate = async <T>(
     validationHelper.validateObjectForCreate(type, migratedUpsert);
     const rawUpsert = serializer.savedObjectToRaw(migratedUpsert);
 
+    console.log("Test")
     const createRequestParams: CreateRequest = {
       id: rawUpsert._id,
       index: commonHelper.getIndexForType(type),
