@@ -65,8 +65,8 @@ describe('computeContextBudget', () => {
     const budget = computeContextBudget(connector);
 
     expect(budget.totalBudget).toBe(128000);
-    expect(budget.historyBudget).toBe(96000); // 128000 * 0.75
-    expect(budget.triggerThreshold).toBe(72000); // 96000 * 0.75
+    expect(budget.historyBudget).toBe(89600); // 128000 * 0.7 (1 - RESERVED_FRACTION)
+    expect(budget.triggerThreshold).toBe(71680); // 89600 * 0.8 (TRIGGER_FRACTION)
   });
 
   it('should use default context window when connector has no size', () => {
@@ -76,8 +76,8 @@ describe('computeContextBudget', () => {
     const budget = computeContextBudget(connector);
 
     expect(budget.totalBudget).toBe(128000); // default
-    expect(budget.historyBudget).toBe(96000);
-    expect(budget.triggerThreshold).toBe(72000);
+    expect(budget.historyBudget).toBe(89600); // 128000 * 0.7
+    expect(budget.triggerThreshold).toBe(71680); // 89600 * 0.8
   });
 
   it('should scale with large context windows', () => {
@@ -85,8 +85,8 @@ describe('computeContextBudget', () => {
     const budget = computeContextBudget(connector);
 
     expect(budget.totalBudget).toBe(1000000);
-    expect(budget.historyBudget).toBe(750000);
-    expect(budget.triggerThreshold).toBe(562500);
+    expect(budget.historyBudget).toBe(700000); // 1000000 * 0.7
+    expect(budget.triggerThreshold).toBe(560000); // 700000 * 0.8
   });
 });
 
