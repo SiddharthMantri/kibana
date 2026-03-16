@@ -18,7 +18,7 @@ import { isToolCallStep } from '@kbn/agent-builder-common';
 import { estimateTokens } from '@kbn/agent-builder-genai-utils/tools/utils/token_count';
 import type { ProcessedConversation, ProcessedConversationRound } from './prepare_conversation';
 import type { ContextBudget } from './context_budget';
-import { estimateConversationTokens } from './context_budget';
+import { estimateConversationTokens, shouldTriggerCompaction } from './context_budget';
 import { convertPreviousRounds } from './to_langchain_messages';
 import { llmCompactionSchema, COMPACTION_SYSTEM_PROMPT } from './compaction_schema';
 import type { LlmCompactionOutput } from './compaction_schema';
@@ -38,6 +38,7 @@ export interface CompactConversationOptions {
   contextBudget: ContextBudget;
   existingSummary?: CompactionSummary;
   logger: Logger;
+  abortSignal?: AbortSignal;
 }
 
 export interface CompactedConversation {
@@ -223,20 +224,13 @@ export const compactConversation = async ({
   contextBudget,
   existingSummary,
   logger,
+  abortSignal,
 }: CompactConversationOptions): Promise<CompactedConversation> => {
   const { previousRounds } = processedConversation;
 
-  // Compute the effective token count: what the LLM would actually see.
-  // When an existing summary covers older rounds, only count the summary
-  // plus the non-summarized rounds (not the raw total of all stored rounds).
-  const effectiveTokens = existingSummary
-    ? existingSummary.token_count +
-      estimateConversationTokens(previousRounds.slice(existingSummary.summarized_round_count))
-    : estimateConversationTokens(previousRounds);
-
   // Under threshold: apply existing summary if present (so the LLM sees
   // the compacted view) but don't report a new compaction event.
-  if (effectiveTokens <= contextBudget.triggerThreshold) {
+  if (!shouldTriggerCompaction(previousRounds, contextBudget, existingSummary)) {
     if (existingSummary) {
       const compacted = applyExistingSummary(processedConversation, existingSummary);
       return {
@@ -249,6 +243,10 @@ export const compactConversation = async ({
   }
 
   const rawTokens = estimateConversationTokens(previousRounds);
+  const effectiveTokens = existingSummary
+    ? existingSummary.token_count +
+      estimateConversationTokens(previousRounds.slice(existingSummary.summarized_round_count))
+    : rawTokens;
   logger.info(
     `Compaction triggered: ${effectiveTokens} effective tokens (${rawTokens} raw) exceeds threshold of ${contextBudget.triggerThreshold}`
   );
@@ -258,7 +256,9 @@ export const compactConversation = async ({
     processedConversation,
     chatModel,
     contextBudget,
-    logger
+    logger,
+    existingSummary,
+    abortSignal
   );
 
   if (summarizationResult.summary) {
@@ -305,18 +305,26 @@ const applyExistingSummary = (
     ...conversation,
     previousRounds: conversation.previousRounds.slice(summary.summarized_round_count),
     compactionSummary: summary,
-  } as ProcessedConversation & { compactionSummary: CompactionSummary };
+  };
 };
 
 /**
  * Hybrid summarization: extracts deterministic fields programmatically,
  * calls the LLM for semantic fields, then merges both.
+ *
+ * When an existing summary is provided, programmatic extraction still covers
+ * all rounds being summarized (deterministic and cheap), but the LLM call only
+ * processes rounds beyond the existing summary's coverage, injecting the prior
+ * summary as context. This prevents re-processing already-summarized rounds and
+ * avoids overflowing the summarizer's own context window.
  */
 const summarizeOlderRounds = async (
   conversation: ProcessedConversation,
   chatModel: InferenceChatModel,
   budget: ContextBudget,
-  logger: Logger
+  logger: Logger,
+  existingSummary?: CompactionSummary,
+  abortSignal?: AbortSignal
 ): Promise<{ processedConversation: ProcessedConversation; summary?: CompactionSummary }> => {
   const { previousRounds } = conversation;
   const preserveCount = Math.min(PRESERVED_RECENT_ROUNDS, previousRounds.length);
@@ -328,16 +336,20 @@ const summarizeOlderRounds = async (
   const roundsToSummarize = previousRounds.slice(0, previousRounds.length - preserveCount);
   const recentRounds = previousRounds.slice(previousRounds.length - preserveCount);
 
-  // Phase 1: programmatic extraction from older rounds
+  // Phase 1: programmatic extraction from all older rounds (deterministic, not expensive)
   const programmatic = extractProgrammaticSummary(roundsToSummarize);
 
   try {
-    // Phase 2: LLM call for semantic fields
+    // Phase 2: LLM call for semantic fields.
+    // Pass the existing summary so the LLM builds on it rather than re-processing
+    // rounds it has already seen, and to avoid overflowing the summarizer's context.
     const llmOutput = await generateLlmSummary(
       conversation,
       roundsToSummarize,
       programmatic,
-      chatModel
+      chatModel,
+      existingSummary,
+      abortSignal
     );
 
     // Phase 3: merge into CompactionStructuredData
@@ -356,15 +368,12 @@ const summarizeOlderRounds = async (
       structured_data: structuredData,
     };
 
-    const compactedConversation: ProcessedConversation & { compactionSummary: CompactionSummary } =
-      {
+    return {
+      processedConversation: {
         ...conversation,
         previousRounds: recentRounds,
         compactionSummary: summary,
-      };
-
-    return {
-      processedConversation: compactedConversation as ProcessedConversation,
+      },
       summary,
     };
   } catch (error) {
@@ -377,6 +386,11 @@ const summarizeOlderRounds = async (
  * Calls the LLM with a focused schema containing only semantic fields.
  * The programmatic tool call list is injected into the prompt as context
  * so the LLM can reference it without needing to reproduce it.
+ *
+ * When an existing summary is provided, only the rounds beyond its coverage
+ * are sent as raw history. The existing summary is injected as a prior context
+ * block via convertPreviousRounds so the LLM can build on it without
+ * re-processing already-summarized rounds.
  */
 const generateLlmSummary = async (
   conversation: ProcessedConversation,
@@ -386,16 +400,24 @@ const generateLlmSummary = async (
     entities: CompactionEntity[];
     agent_actions: string[];
   },
-  chatModel: InferenceChatModel
+  chatModel: InferenceChatModel,
+  existingSummary?: CompactionSummary,
+  abortSignal?: AbortSignal
 ): Promise<LlmCompactionOutput> => {
+  // Only send rounds not already covered by the existing summary as raw history.
+  // This avoids re-processing stale rounds and prevents the summarizer call
+  // from overflowing the context window on second+ compactions.
+  const alreadySummarizedCount = existingSummary?.summarized_round_count ?? 0;
+  const newRounds = roundsToSummarize.slice(alreadySummarizedCount);
+
   const tempConversation: ProcessedConversation = {
     ...conversation,
-    previousRounds: roundsToSummarize.slice(0, -1),
-    nextInput: roundsToSummarize[roundsToSummarize.length - 1]?.input ?? conversation.nextInput,
+    previousRounds: newRounds,
   };
 
   const historyMessages = await convertPreviousRounds({
     conversation: tempConversation,
+    compactionSummary: existingSummary,
   });
 
   // Build a context block with the programmatically extracted tool calls
@@ -417,7 +439,7 @@ const generateLlmSummary = async (
     name: 'compact_conversation',
   });
 
-  return await structuredModel.invoke(messages);
+  return await structuredModel.invoke(messages, { signal: abortSignal });
 };
 
 /**

@@ -185,6 +185,7 @@ export const runDefaultAgentMode: RunChatAgentFn = async (
     contextBudget,
     existingSummary: conversation?.compaction_summary,
     logger,
+    abortSignal,
   });
 
   // Use the (possibly compacted) conversation for prompt construction
@@ -193,13 +194,13 @@ export const runDefaultAgentMode: RunChatAgentFn = async (
   // Build compaction events as a cold observable so they emit upon subscription.
   // Cannot use the eventEmitter (Subject) here because nobody is subscribed yet.
   const compactionEvents$ = compactionResult.compactionTriggered
-    ? of<ChatAgentEvent>(
+    ? of(
         {
-          type: ChatEventType.compactionStarted,
+          type: ChatEventType.compactionStarted as const,
           data: { token_count_before: compactionResult.tokensBefore ?? 0 },
         },
         {
-          type: ChatEventType.compactionCompleted,
+          type: ChatEventType.compactionCompleted as const,
           data: {
             token_count_after: compactionResult.tokensAfter ?? 0,
             summarized_round_count: compactionResult.summarizedRoundCount ?? 0,
@@ -284,7 +285,9 @@ export const runDefaultAgentMode: RunChatAgentFn = async (
       stateManager,
       attachmentStateManager: context.attachmentStateManager,
       configurationOverrides: effectiveOverrides,
-      compactionSummary: compactionResult.summary,
+      compactionSummary: compactionResult.compactionTriggered
+        ? compactionResult.summary
+        : undefined,
       compactionTokensBefore: compactionResult.tokensBefore,
       compactionTokensAfter: compactionResult.tokensAfter,
     }),

@@ -61,7 +61,12 @@ const createMockRound = (
     started_at: new Date().toISOString(),
     time_to_first_token: 100,
     time_to_last_token: 200,
-    model_usage: { llm_calls: 1, input_tokens: 100, output_tokens: 50 },
+    model_usage: {
+      llm_calls: 1,
+      input_tokens: 100,
+      output_tokens: 50,
+      connector_id: 'test-connector',
+    },
   };
 };
 

@@ -8,6 +8,7 @@
 import type { InferenceConnector } from '@kbn/inference-common';
 import { getContextWindowSize } from '@kbn/inference-common';
 import { estimateTokens } from '@kbn/agent-builder-genai-utils/tools/utils/token_count';
+import type { CompactionSummary } from '@kbn/agent-builder-common';
 import type { ProcessedConversationRound } from './prepare_conversation';
 
 /**
@@ -85,13 +86,21 @@ export const estimateConversationTokens = (rounds: ProcessedConversationRound[])
 };
 
 /**
- * Determines whether compaction should be triggered given
- * the current conversation rounds and context budget.
+ * Determines whether compaction should be triggered given the current
+ * conversation rounds, context budget, and any existing compaction summary.
+ *
+ * When an existing summary is provided, the effective token count is the
+ * summary's token cost plus only the rounds not yet covered by the summary,
+ * rather than the raw total of all stored rounds.
  */
 export const shouldTriggerCompaction = (
   rounds: ProcessedConversationRound[],
-  budget: ContextBudget
+  budget: ContextBudget,
+  existingSummary?: CompactionSummary
 ): boolean => {
-  const totalTokens = estimateConversationTokens(rounds);
-  return totalTokens > budget.triggerThreshold;
+  const effectiveTokens = existingSummary
+    ? existingSummary.token_count +
+      estimateConversationTokens(rounds.slice(existingSummary.summarized_round_count))
+    : estimateConversationTokens(rounds);
+  return effectiveTokens > budget.triggerThreshold;
 };

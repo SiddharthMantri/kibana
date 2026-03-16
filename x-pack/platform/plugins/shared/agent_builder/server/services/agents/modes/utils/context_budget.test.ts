@@ -18,6 +18,7 @@ import {
 
 const createMockConnector = (contextWindowSize?: number): InferenceConnector => ({
   type: InferenceConnectorType.OpenAI,
+  isInferenceEndpoint: false,
   name: 'test-connector',
   connectorId: 'test-id',
   config: {
@@ -55,7 +56,12 @@ const createMockRound = (
     started_at: new Date().toISOString(),
     time_to_first_token: 100,
     time_to_last_token: 200,
-    model_usage: { llm_calls: 1, input_tokens: 100, output_tokens: 50 },
+    model_usage: {
+      connector_id: 'test-connector',
+      llm_calls: 1,
+      input_tokens: 100,
+      output_tokens: 50,
+    },
   };
 };
 
