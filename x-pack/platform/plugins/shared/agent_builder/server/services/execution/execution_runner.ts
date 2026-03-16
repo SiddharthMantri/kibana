@@ -38,6 +38,7 @@ import {
 import { createConversationIdSetEvent } from './utils/events';
 import type { AnalyticsService, TrackingService } from '../../telemetry';
 import { withConverseSpan } from '../../tracing';
+import { getCurrentSpaceId } from '../../utils/spaces';
 import type { MeteringService } from '../metering';
 import type { AgentExecution, SerializedExecutionError } from './types';
 import type { AgentExecutionClient } from './persistence';
@@ -160,7 +161,9 @@ export const handleAgentExecution = async ({
     conversation.operation === 'CREATE' ? conversation.id : conversationId;
   const modelProvider = getConnectorProvider(chatModel.getConnector());
 
-  return withConverseSpan({ agentId, conversationId: effectiveConversationId }, () =>
+  const spaceId = getCurrentSpaceId({ request, spaces: deps.spaces });
+
+  return withConverseSpan({ agentId, conversationId: effectiveConversationId, spaceId }, () =>
     merge(conversationIdEvent$, agentEvents$, persistenceEvents$).pipe(
       handleCancellation(abortSignal),
       tap((event) => {

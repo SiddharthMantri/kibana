@@ -11,6 +11,12 @@ import { schema, type TypeOf } from '@kbn/config-schema';
 export const configSchema = schema.object({
   enabled: schema.boolean({ defaultValue: true }),
   githubBaseUrl: schema.string({ defaultValue: 'https://github.com' }),
+  traceCollection: schema.object({
+    enabled: schema.boolean({ defaultValue: true }),
+    flushIntervalMs: schema.number({ defaultValue: 5000 }),
+    maxBatchSize: schema.number({ defaultValue: 100 }),
+    maxQueueSize: schema.number({ defaultValue: 1000 }),
+  }),
 });
 
 export type AgentBuilderConfig = TypeOf<typeof configSchema>;

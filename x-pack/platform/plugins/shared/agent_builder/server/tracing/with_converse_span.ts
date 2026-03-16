@@ -20,10 +20,11 @@ import { isRoundCompleteEvent } from '@kbn/agent-builder-common';
 interface WithConverseSpanOptions {
   agentId: string;
   conversationId: string | undefined;
+  spaceId?: string;
 }
 
 export function withConverseSpan(
-  { agentId, conversationId }: WithConverseSpanOptions,
+  { agentId, conversationId, spaceId }: WithConverseSpanOptions,
   cb: (span?: Span) => Observable<ChatEvent>
 ): Observable<ChatEvent> {
   return withActiveInferenceSpan(
@@ -34,6 +35,8 @@ export function withConverseSpan(
         [ElasticGenAIAttributes.AgentId]: agentId,
         [ElasticGenAIAttributes.AgentConversationId]: conversationId,
         [GenAISemanticConventions.GenAIConversationId]: conversationId,
+        // Propagated to all child spans for trace-to-space association
+        ...(spaceId ? { 'elastic.agent.space_id': spaceId } : {}),
       },
     },
     (span) => {

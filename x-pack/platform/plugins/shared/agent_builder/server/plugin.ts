@@ -5,10 +5,17 @@
  * 2.0.
  */
 
-import type { CoreSetup, CoreStart, Plugin, PluginInitializerContext } from '@kbn/core/server';
+import type {
+  CoreSetup,
+  CoreStart,
+  ElasticsearchClient,
+  Plugin,
+  PluginInitializerContext,
+} from '@kbn/core/server';
 import type { Logger } from '@kbn/logging';
 import type { UsageCounter } from '@kbn/usage-collection-plugin/server';
 import type { HomeServerPluginSetup } from '@kbn/home-plugin/server';
+import { LateBindingSpanProcessor } from '@kbn/tracing';
 import type { AgentBuilderConfig } from './config';
 import { ServiceManager } from './services';
 import type {
@@ -33,6 +40,8 @@ import { registerSkillToolsLoaderHook } from './hooks/skills/register_skill_tool
 import { registerTaskDefinitions } from './services/execution';
 import { createModelProviderFactory } from './services/runner/model_provider';
 import { createAdminPrivilegeSwitcher } from './capabilities/admin_privilege_switcher';
+import { AgentBuilderESSpanProcessor } from './tracing/es_span_processor';
+import { TraceIndexManager } from './tracing/trace_index_manager';
 
 export class AgentBuilderPlugin
   implements
@@ -50,6 +59,7 @@ export class AgentBuilderPlugin
   private trackingService?: TrackingService;
   private analyticsService?: AnalyticsService;
   private home: HomeServerPluginSetup | null = null;
+  private unregisterSpanProcessor?: () => Promise<void>;
   constructor(context: PluginInitializerContext<AgentBuilderConfig>) {
     this.logger = context.logger.get();
     this.config = context.config.get();
@@ -196,6 +206,13 @@ export class AgentBuilderPlugin
       registerSampleData(this.home, this.logger);
     }
 
+    // Initialize trace collection: install index template and register span processor
+    if (this.config.traceCollection.enabled) {
+      this.initTraceCollection(elasticsearch.client.asInternalUser).catch((err) => {
+        this.logger.error(`Failed to initialize trace collection: ${err.message}`);
+      });
+    }
+
     const modelProviderFactory = createModelProviderFactory({
       inference,
       uiSettings,
@@ -228,5 +245,35 @@ export class AgentBuilderPlugin
     };
   }
 
-  stop() {}
+  async stop() {
+    if (this.unregisterSpanProcessor) {
+      await this.unregisterSpanProcessor();
+    }
+  }
+
+  /**
+   * Sets up the trace data stream and registers the ES span processor
+   * with the global LateBindingSpanProcessor so inference spans are
+   * captured and indexed into .chat-traces.
+   */
+  private async initTraceCollection(esClient: ElasticsearchClient) {
+    const tracingLogger = this.logger.get('tracing');
+
+    const indexManager = new TraceIndexManager(esClient, tracingLogger);
+    await indexManager.install();
+
+    const processor = new AgentBuilderESSpanProcessor(
+      {
+        flushIntervalMs: this.config.traceCollection.flushIntervalMs,
+        maxBatchSize: this.config.traceCollection.maxBatchSize,
+        maxQueueSize: this.config.traceCollection.maxQueueSize,
+      },
+      tracingLogger
+    );
+
+    processor.setClient(esClient);
+    this.unregisterSpanProcessor = LateBindingSpanProcessor.register(processor);
+
+    tracingLogger.info('Trace collection initialized');
+  }
 }

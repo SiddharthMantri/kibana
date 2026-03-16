@@ -8,3 +8,6 @@
 export { withAgentSpan } from './with_agent_span';
 export { withConverseSpan } from './with_converse_span';
 export { getCurrentTraceId } from './get_current_trace_id';
+export { AgentBuilderESSpanProcessor } from './es_span_processor';
+export type { TraceDocument } from './es_span_processor';
+export { TraceIndexManager, TRACE_DATA_STREAM_NAME } from './trace_index_manager';
