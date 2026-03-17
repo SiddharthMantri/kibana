@@ -41,7 +41,7 @@ import { registerTaskDefinitions } from './services/execution';
 import { createModelProviderFactory } from './services/runner/model_provider';
 import { createAdminPrivilegeSwitcher } from './capabilities/admin_privilege_switcher';
 import { AgentBuilderESSpanProcessor } from './tracing/es_span_processor';
-import { TraceIndexManager } from './tracing/trace_index_manager';
+import { createTraceStorage } from './tracing/trace_index_manager';
 
 export class AgentBuilderPlugin
   implements
@@ -252,15 +252,14 @@ export class AgentBuilderPlugin
   }
 
   /**
-   * Sets up the trace data stream and registers the ES span processor
-   * with the global LateBindingSpanProcessor so inference spans are
-   * captured and indexed into .chat-traces.
+   * Creates the .chat-traces system index (via StorageIndexAdapter) and
+   * registers the ES span processor with the global LateBindingSpanProcessor
+   * so inference spans are captured and indexed into .chat-traces.
    */
   private async initTraceCollection(esClient: ElasticsearchClient) {
     const tracingLogger = this.logger.get('tracing');
 
-    const indexManager = new TraceIndexManager(esClient, tracingLogger);
-    await indexManager.install();
+    const traceStorage = createTraceStorage({ esClient, logger: tracingLogger });
 
     const processor = new AgentBuilderESSpanProcessor(
       {
@@ -271,7 +270,7 @@ export class AgentBuilderPlugin
       tracingLogger
     );
 
-    processor.setClient(esClient);
+    processor.setStorage(traceStorage);
     this.unregisterSpanProcessor = LateBindingSpanProcessor.register(processor);
 
     tracingLogger.info('Trace collection initialized');

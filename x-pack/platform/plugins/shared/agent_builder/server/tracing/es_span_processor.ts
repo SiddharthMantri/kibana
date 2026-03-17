@@ -7,9 +7,11 @@
 
 import type { api, tracing } from '@elastic/opentelemetry-node/sdk';
 import { propagation } from '@opentelemetry/api';
-import type { ElasticsearchClient, Logger } from '@kbn/core/server';
+import type { Logger } from '@kbn/core/server';
 import { ElasticGenAIAttributes, GenAISemanticConventions } from '@kbn/inference-tracing';
-import { TRACE_DATA_STREAM_NAME } from './trace_index_manager';
+import type { TraceStorage, TraceDocumentProperties, SpanProperties } from './trace_index_manager';
+
+type TraceStorageClient = ReturnType<TraceStorage['getClient']>;
 
 /**
  * Baggage key used by @kbn/inference-tracing to mark spans as part of
@@ -20,43 +22,19 @@ const INFERENCE_BAGGAGE_KEY = 'kibana.inference.tracing';
 const INFERENCE_BAGGAGE_VALUE = '1';
 
 /**
- * Custom attribute that the processor sets in {@link onStart} so it can later
- * recognise the span in {@link onEnd} without re-checking baggage.
+ * Custom attribute set in {@link onStart} so {@link onEnd} can recognise
+ * the span without re-checking baggage.
  */
 const SHOULD_TRACK_ATTR = '_ab_should_track';
 
 /**
- * Shape of a single trace document indexed into the .chat-traces data stream.
+ * Maximum time (ms) to keep an incomplete trace in the buffer before
+ * discarding it. Protects against orphaned spans when a root span never
+ * arrives (e.g. process crash mid-execution).
  */
-export interface TraceDocument {
-  '@timestamp': string;
-  trace_id: string;
-  span_id: string;
-  parent_span_id?: string;
-  name: string;
-  kind: string;
-  duration_ms: number;
-  status: string;
-  space_id?: string;
-  agent_id?: string;
-  conversation_id?: string;
-  gen_ai: {
-    operation_name?: string;
-    system?: string;
-    request_model?: string;
-    response_model?: string;
-    usage_input_tokens?: number;
-    usage_output_tokens?: number;
-  };
-  tool?: {
-    name?: string;
-  };
-  error?: {
-    message?: string;
-    type?: string;
-  };
-  attributes: Record<string, unknown>;
-}
+const ORPHAN_TIMEOUT_MS = 60_000;
+
+export type { TraceDocumentProperties as TraceDocument };
 
 interface ESSpanProcessorConfig {
   flushIntervalMs: number;
@@ -65,33 +43,49 @@ interface ESSpanProcessorConfig {
 }
 
 /**
- * OTel SpanProcessor that captures inference-scoped spans and bulk-indexes
- * them into the .chat-traces data stream in Elasticsearch.
+ * Buffered entry for an in-progress trace. Spans accumulate here until
+ * the root span (no parent) arrives, at which point the trace is
+ * assembled into a {@link TraceDocumentProperties} and queued for indexing.
+ */
+interface PendingTrace {
+  spans: tracing.ReadableSpan[];
+  firstSeenMs: number;
+}
+
+/**
+ * OTel SpanProcessor that captures inference-scoped spans, assembles them
+ * into complete trace documents (one per conversation round), and indexes
+ * them into the .chat-traces system index.
  *
- * Follows the same inference context filtering pattern as
- * {@link BaseInferenceSpanProcessor} (baggage check + instrumentation scope)
- * but writes to a local ES data stream instead of an OTLP exporter.
+ * Spans arrive via onEnd() in child-first order (OTel guarantees children
+ * end before parents). The processor buffers them by trace_id in a Map.
+ * When the root span arrives (no parent_span_id) the entire trace is
+ * transformed into a single TraceDocumentProperties with pre-computed
+ * summaries and the full span tree, then queued for bulk indexing.
  *
- * The ES client is late-bound because it isn't available when the processor
- * is constructed (tracing bootstraps before plugin start).
+ * A periodic sweep discards traces that have been buffering longer than
+ * {@link ORPHAN_TIMEOUT_MS} without a root span arriving.
  */
 export class AgentBuilderESSpanProcessor implements tracing.SpanProcessor {
-  private queue: tracing.ReadableSpan[] = [];
+  /** Completed trace documents waiting to be flushed. */
+  private writeQueue: TraceDocumentProperties[] = [];
+  /** Spans buffered by trace_id waiting for their root span. */
+  private pendingTraces = new Map<string, PendingTrace>();
   private flushTimer: ReturnType<typeof setInterval> | undefined;
-  private esClient: ElasticsearchClient | undefined;
+  private storageClient: TraceStorageClient | undefined;
   private shuttingDown = false;
 
   constructor(private readonly config: ESSpanProcessorConfig, private readonly logger: Logger) {}
 
   /**
-   * Inject the internal ES client once it becomes available in plugin start().
+   * Inject the StorageIndexAdapter once it becomes available in plugin start().
    */
-  setClient(client: ElasticsearchClient): void {
-    this.esClient = client;
+  setStorage(traceStorage: TraceStorage): void {
+    this.storageClient = traceStorage.getClient();
 
-    // Start the periodic flush once we have a client
     if (!this.flushTimer) {
       this.flushTimer = setInterval(() => {
+        this.sweepOrphans();
         this.flush().catch((err) => {
           this.logger.error(`Trace flush failed: ${err.message}`);
         });
@@ -118,27 +112,41 @@ export class AgentBuilderESSpanProcessor implements tracing.SpanProcessor {
   }
 
   /**
-   * When a tracked span ends, transform it and add it to the batch queue.
+   * Buffer spans by trace_id. When the root span (no parent) arrives,
+   * assemble the complete trace document and move it to the write queue.
    */
   onEnd(span: tracing.ReadableSpan): void {
     if (!span.attributes[SHOULD_TRACK_ATTR]) {
       return;
     }
 
-    if (this.queue.length >= this.config.maxQueueSize) {
-      this.logger.warn(
-        `Trace queue full (${this.config.maxQueueSize}), dropping span [${span.name}]`
-      );
-      return;
+    const traceId = span.spanContext().traceId;
+    const isRoot = !span.parentSpanContext?.spanId;
+
+    let pending = this.pendingTraces.get(traceId);
+    if (!pending) {
+      pending = { spans: [], firstSeenMs: Date.now() };
+      this.pendingTraces.set(traceId, pending);
     }
+    pending.spans.push(span);
 
-    this.queue.push(span);
+    if (isRoot) {
+      this.pendingTraces.delete(traceId);
+      const doc = this.assembleTrace(traceId, pending.spans);
 
-    // Flush immediately if we've hit the batch threshold
-    if (this.queue.length >= this.config.maxBatchSize) {
-      this.flush().catch((err) => {
-        this.logger.error(`Trace batch flush failed: ${err.message}`);
-      });
+      if (this.writeQueue.length >= this.config.maxQueueSize) {
+        this.logger.warn(
+          `Trace write queue full (${this.config.maxQueueSize}), dropping trace [${traceId}]`
+        );
+        return;
+      }
+      this.writeQueue.push(doc);
+
+      if (this.writeQueue.length >= this.config.maxBatchSize) {
+        this.flush().catch((err) => {
+          this.logger.error(`Trace batch flush failed: ${err.message}`);
+        });
+      }
     }
   }
 
@@ -152,116 +160,175 @@ export class AgentBuilderESSpanProcessor implements tracing.SpanProcessor {
       clearInterval(this.flushTimer);
       this.flushTimer = undefined;
     }
+
+    // Flush any remaining buffered traces even if their root never arrived
+    for (const [traceId, pending] of this.pendingTraces) {
+      const doc = this.assembleTrace(traceId, pending.spans);
+      this.writeQueue.push(doc);
+    }
+    this.pendingTraces.clear();
+
     await this.flush();
   }
 
   /**
-   * Drains the current queue, transforms spans to trace documents,
-   * and bulk-indexes them into the data stream.
+   * Discard traces that have been buffering longer than the orphan timeout.
+   * This prevents unbounded memory growth if a root span never arrives.
    */
-  private async flush(): Promise<void> {
-    if (this.queue.length === 0 || !this.esClient) {
-      return;
-    }
-
-    const batch = this.queue.splice(0, this.config.maxBatchSize);
-    const operations = batch.flatMap((span) => {
-      const doc = this.transformSpan(span);
-      return [{ create: { _index: TRACE_DATA_STREAM_NAME } }, doc];
-    });
-
-    try {
-      const response = await this.esClient.bulk({ operations, refresh: false });
-
-      if (response.errors) {
-        const failedCount = response.items.filter((item) => item.create?.error).length;
-        this.logger.warn(`Trace bulk index: ${failedCount}/${batch.length} documents failed`);
-
-        // Re-queue failed spans (up to queue limit) unless shutting down
-        if (!this.shuttingDown) {
-          const failedIndices = new Set(
-            response.items
-              .map((item, idx) => (item.create?.error ? idx : -1))
-              .filter((idx) => idx >= 0)
-          );
-          const failedSpans = batch.filter((_, idx) => failedIndices.has(idx));
-          const requeued = failedSpans.slice(0, this.config.maxQueueSize - this.queue.length);
-          this.queue.push(...requeued);
-        }
-      } else {
-        this.logger.debug(`Trace bulk index: ${batch.length} documents indexed`);
-      }
-    } catch (error) {
-      this.logger.error(`Trace bulk index error: ${error.message}`);
-
-      // Re-queue the entire batch on transport errors (up to limit)
-      if (!this.shuttingDown) {
-        const requeued = batch.slice(0, this.config.maxQueueSize - this.queue.length);
-        this.queue.push(...requeued);
+  private sweepOrphans(): void {
+    const now = Date.now();
+    for (const [traceId, pending] of this.pendingTraces) {
+      if (now - pending.firstSeenMs > ORPHAN_TIMEOUT_MS) {
+        this.logger.warn(
+          `Discarding orphaned trace [${traceId}] with ${pending.spans.length} spans ` +
+            `(buffered for ${now - pending.firstSeenMs}ms without a root span)`
+        );
+        this.pendingTraces.delete(traceId);
       }
     }
   }
 
   /**
-   * Converts an OTel ReadableSpan into a flat trace document for ES.
+   * Drains the write queue and bulk-indexes complete trace documents.
    */
-  private transformSpan(span: tracing.ReadableSpan): TraceDocument {
-    const attrs = span.attributes;
-    const startTimeMs = span.startTime[0] * 1000 + span.startTime[1] / 1_000_000;
-    const endTimeMs = span.endTime[0] * 1000 + span.endTime[1] / 1_000_000;
-
-    const parentSpanId = span.parentSpanContext?.spanId;
-
-    // Build the flattened attributes map, excluding internal/large attrs
-    const filteredAttributes: Record<string, unknown> = {};
-    for (const [key, value] of Object.entries(attrs)) {
-      if (key === SHOULD_TRACK_ATTR) continue;
-      if (key === 'output.value' || key === 'input.value') continue;
-      if (key === ElasticGenAIAttributes.AgentConfig) continue;
-      filteredAttributes[key] = value;
+  private async flush(): Promise<void> {
+    if (this.writeQueue.length === 0 || !this.storageClient) {
+      return;
     }
 
-    const errorEvents = span.events.filter((e) => e.name === 'exception');
-    const errorInfo =
-      errorEvents.length > 0
-        ? {
-            message: String(errorEvents[0].attributes?.['exception.message'] ?? ''),
-            type: String(errorEvents[0].attributes?.['exception.type'] ?? ''),
-          }
-        : undefined;
+    const batch = this.writeQueue.splice(0, this.config.maxBatchSize);
+    const operations = batch.map((doc) => ({ index: { document: doc } }));
+
+    try {
+      const response = await this.storageClient.bulk({ operations, refresh: false });
+
+      if (response.errors) {
+        const failedCount = response.items.filter((item) => {
+          const op = Object.keys(item)[0] as keyof typeof item;
+          return item[op]?.error;
+        }).length;
+        this.logger.warn(`Trace bulk index: ${failedCount}/${batch.length} traces failed`);
+
+        if (!this.shuttingDown) {
+          const failedIndices = new Set(
+            response.items
+              .map((item, idx) => {
+                const op = Object.keys(item)[0] as keyof typeof item;
+                return item[op]?.error ? idx : -1;
+              })
+              .filter((idx) => idx >= 0)
+          );
+          const failedDocs = batch.filter((_, idx) => failedIndices.has(idx));
+          const space = this.config.maxQueueSize - this.writeQueue.length;
+          this.writeQueue.push(...failedDocs.slice(0, space));
+        }
+      } else {
+        this.logger.debug(`Trace bulk index: ${batch.length} traces indexed`);
+      }
+    } catch (error) {
+      this.logger.error(`Trace bulk index error: ${error.message}`);
+
+      if (!this.shuttingDown) {
+        const space = this.config.maxQueueSize - this.writeQueue.length;
+        this.writeQueue.push(...batch.slice(0, space));
+      }
+    }
+  }
+
+  /**
+   * Assembles a complete trace document from all collected spans.
+   * The root span provides trace-level metadata (agent_id, space_id, etc.),
+   * and token counts are aggregated across all LLM spans.
+   */
+  private assembleTrace(traceId: string, spans: tracing.ReadableSpan[]): TraceDocumentProperties {
+    const rootSpan = spans.find((s) => !s.parentSpanContext?.spanId);
+
+    // Root span attributes provide the trace-level metadata
+    const rootAttrs = rootSpan?.attributes ?? {};
+    const rootStartMs = rootSpan
+      ? rootSpan.startTime[0] * 1000 + rootSpan.startTime[1] / 1_000_000
+      : Date.now();
+    const rootEndMs = rootSpan
+      ? rootSpan.endTime[0] * 1000 + rootSpan.endTime[1] / 1_000_000
+      : rootStartMs;
+
+    let totalInputTokens = 0;
+    let totalOutputTokens = 0;
+    let hasError = false;
+
+    const spanDocs: SpanProperties[] = spans.map((span) => {
+      const attrs = span.attributes;
+      const startMs = span.startTime[0] * 1000 + span.startTime[1] / 1_000_000;
+      const endMs = span.endTime[0] * 1000 + span.endTime[1] / 1_000_000;
+
+      const inputTokens = asOptionalNumber(attrs[GenAISemanticConventions.GenAIUsageInputTokens]);
+      const outputTokens = asOptionalNumber(attrs[GenAISemanticConventions.GenAIUsageOutputTokens]);
+      if (inputTokens) totalInputTokens += inputTokens;
+      if (outputTokens) totalOutputTokens += outputTokens;
+
+      const isError = span.status.code === 2;
+      if (isError) hasError = true;
+
+      const errorEvents = span.events.filter((e) => e.name === 'exception');
+      const errorInfo =
+        errorEvents.length > 0
+          ? {
+              message: String(errorEvents[0].attributes?.['exception.message'] ?? ''),
+              type: String(errorEvents[0].attributes?.['exception.type'] ?? ''),
+            }
+          : undefined;
+
+      // Build filtered attributes, excluding internal/large values
+      const filteredAttributes: Record<string, unknown> = {};
+      for (const [key, value] of Object.entries(attrs)) {
+        if (key === SHOULD_TRACK_ATTR) continue;
+        if (key === 'output.value' || key === 'input.value') continue;
+        if (key === ElasticGenAIAttributes.AgentConfig) continue;
+        filteredAttributes[key] = value;
+      }
+
+      return {
+        span_id: span.spanContext().spanId,
+        parent_span_id: span.parentSpanContext?.spanId,
+        name: span.name,
+        kind: String(attrs[ElasticGenAIAttributes.InferenceSpanKind] ?? 'UNKNOWN'),
+        '@timestamp': new Date(startMs).toISOString(),
+        duration_ms: Math.round(endMs - startMs),
+        status: isError ? 'ERROR' : 'OK',
+        gen_ai: {
+          operation_name: asOptionalString(attrs[GenAISemanticConventions.GenAIOperationName]),
+          system: asOptionalString(attrs[GenAISemanticConventions.GenAISystem]),
+          request_model: asOptionalString(attrs[GenAISemanticConventions.GenAIRequestModel]),
+          response_model: asOptionalString(attrs[GenAISemanticConventions.GenAIResponseModel]),
+          usage_input_tokens: inputTokens,
+          usage_output_tokens: outputTokens,
+        },
+        tool: {
+          name: asOptionalString(attrs[GenAISemanticConventions.GenAIToolName]),
+        },
+        error: errorInfo,
+        attributes: filteredAttributes,
+      };
+    });
 
     return {
-      '@timestamp': new Date(startTimeMs).toISOString(),
-      trace_id: span.spanContext().traceId,
-      span_id: span.spanContext().spanId,
-      parent_span_id: parentSpanId,
-      name: span.name,
-      kind: String(attrs[ElasticGenAIAttributes.InferenceSpanKind] ?? 'UNKNOWN'),
-      duration_ms: Math.round(endTimeMs - startTimeMs),
-      status: span.status.code === 2 ? 'ERROR' : 'OK',
-      space_id: asOptionalString(attrs['elastic.agent.space_id']),
+      '@timestamp': new Date(rootStartMs).toISOString(),
+      trace_id: traceId,
+      space_id: asOptionalString(rootAttrs['elastic.agent.space_id']),
       agent_id: asOptionalString(
-        attrs[ElasticGenAIAttributes.AgentId] ?? attrs[GenAISemanticConventions.GenAIAgentId]
+        rootAttrs[ElasticGenAIAttributes.AgentId] ??
+          rootAttrs[GenAISemanticConventions.GenAIAgentId]
       ),
       conversation_id: asOptionalString(
-        attrs[ElasticGenAIAttributes.AgentConversationId] ??
-          attrs[GenAISemanticConventions.GenAIConversationId]
+        rootAttrs[ElasticGenAIAttributes.AgentConversationId] ??
+          rootAttrs[GenAISemanticConventions.GenAIConversationId]
       ),
-      gen_ai: {
-        operation_name: asOptionalString(attrs[GenAISemanticConventions.GenAIOperationName]),
-        system: asOptionalString(attrs[GenAISemanticConventions.GenAISystem]),
-        request_model: asOptionalString(attrs[GenAISemanticConventions.GenAIRequestModel]),
-        response_model: asOptionalString(attrs[GenAISemanticConventions.GenAIResponseModel]),
-        usage_input_tokens: asOptionalNumber(attrs[GenAISemanticConventions.GenAIUsageInputTokens]),
-        usage_output_tokens: asOptionalNumber(
-          attrs[GenAISemanticConventions.GenAIUsageOutputTokens]
-        ),
-      },
-      tool: {
-        name: asOptionalString(attrs[GenAISemanticConventions.GenAIToolName]),
-      },
-      error: errorInfo,
-      attributes: filteredAttributes,
+      duration_ms: Math.round(rootEndMs - rootStartMs),
+      status: hasError ? 'ERROR' : 'OK',
+      span_count: spans.length,
+      total_input_tokens: totalInputTokens,
+      total_output_tokens: totalOutputTokens,
+      spans: spanDocs,
     };
   }
 }

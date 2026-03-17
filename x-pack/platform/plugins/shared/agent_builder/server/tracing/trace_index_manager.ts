@@ -5,138 +5,101 @@
  * 2.0.
  */
 
-import type { ElasticsearchClient, Logger } from '@kbn/core/server';
+import type { Logger, ElasticsearchClient } from '@kbn/core/server';
+import type { IndexStorageSettings } from '@kbn/storage-adapter';
+import { StorageIndexAdapter, types } from '@kbn/storage-adapter';
 import { chatSystemIndex } from '@kbn/agent-builder-server';
 
 /**
- * Index name for agent builder trace data, within the .chat-* prefix
+ * System index name for agent builder trace data, within the .chat-* prefix
  * so the Kibana system user has write access automatically.
+ * Uses the same StorageIndexAdapter pattern as conversations, agents, tools, etc.
  */
-export const TRACE_DATA_STREAM_NAME = chatSystemIndex('traces');
-
-const INDEX_TEMPLATE_NAME = `${TRACE_DATA_STREAM_NAME}-template`;
+export const traceIndexName = chatSystemIndex('traces');
 
 /**
- * Manages the .chat-traces data stream: creates/updates the index template
- * and component template with trace document mappings.
- *
- * Called during plugin start() to ensure the data stream infrastructure
- * exists before the span processor begins indexing.
+ * Represents a single span within a trace, stored as a nested object
+ * inside the parent TraceDocumentProperties.
  */
-export class TraceIndexManager {
-  private installed = false;
-
-  constructor(private readonly esClient: ElasticsearchClient, private readonly logger: Logger) {}
-
-  /**
-   * Creates or updates the index template that backs the .chat-traces data stream.
-   * Idempotent: safe to call on every startup.
-   */
-  async install(): Promise<void> {
-    if (this.installed) {
-      return;
-    }
-
-    try {
-      await this.esClient.indices.putIndexTemplate({
-        name: INDEX_TEMPLATE_NAME,
-        create: false,
-        index_patterns: [`${TRACE_DATA_STREAM_NAME}*`],
-        data_stream: {},
-        template: {
-          settings: {
-            'index.lifecycle.name': `${TRACE_DATA_STREAM_NAME}-policy`,
-            number_of_shards: 1,
-            auto_expand_replicas: '0-1',
-          },
-          mappings: {
-            dynamic: false,
-            properties: {
-              '@timestamp': { type: 'date' },
-              trace_id: { type: 'keyword' },
-              span_id: { type: 'keyword' },
-              parent_span_id: { type: 'keyword' },
-              name: { type: 'keyword' },
-              kind: { type: 'keyword' },
-              duration_ms: { type: 'long' },
-              status: { type: 'keyword' },
-              space_id: { type: 'keyword' },
-              agent_id: { type: 'keyword' },
-              conversation_id: { type: 'keyword' },
-              gen_ai: {
-                properties: {
-                  operation_name: { type: 'keyword' },
-                  system: { type: 'keyword' },
-                  request_model: { type: 'keyword' },
-                  response_model: { type: 'keyword' },
-                  usage_input_tokens: { type: 'long' },
-                  usage_output_tokens: { type: 'long' },
-                },
-              },
-              tool: {
-                properties: {
-                  name: { type: 'keyword' },
-                },
-              },
-              error: {
-                properties: {
-                  message: { type: 'text' },
-                  type: { type: 'keyword' },
-                },
-              },
-              attributes: { type: 'flattened' },
-            },
-          },
-        },
-        priority: 100,
-      });
-
-      await this.ensureLifecyclePolicy();
-
-      this.installed = true;
-      this.logger.info(`Trace data stream template [${INDEX_TEMPLATE_NAME}] installed`);
-    } catch (error) {
-      this.logger.error(`Failed to install trace data stream template: ${error.message}`);
-      throw error;
-    }
-  }
-
-  /**
-   * Creates an ILM policy for trace data retention if it doesn't already exist.
-   * Default: delete after 30 days.
-   */
-  private async ensureLifecyclePolicy(): Promise<void> {
-    const policyName = `${TRACE_DATA_STREAM_NAME}-policy`;
-
-    try {
-      await this.esClient.ilm.getLifecycle({ name: policyName });
-    } catch (error) {
-      if (error.statusCode === 404) {
-        await this.esClient.ilm.putLifecycle({
-          name: policyName,
-          policy: {
-            phases: {
-              hot: {
-                actions: {
-                  rollover: {
-                    max_age: '7d',
-                    max_primary_shard_size: '10gb',
-                  },
-                },
-              },
-              delete: {
-                min_age: '30d',
-                actions: {
-                  delete: {},
-                },
-              },
-            },
-          },
-        });
-        this.logger.info(`Trace ILM policy [${policyName}] created`);
-      } else {
-        throw error;
-      }
-    }
-  }
+export interface SpanProperties {
+  span_id: string;
+  parent_span_id?: string;
+  name: string;
+  kind: string;
+  '@timestamp': string;
+  duration_ms: number;
+  status: string;
+  gen_ai?: {
+    operation_name?: string;
+    system?: string;
+    request_model?: string;
+    response_model?: string;
+    usage_input_tokens?: number;
+    usage_output_tokens?: number;
+  };
+  tool?: {
+    name?: string;
+  };
+  error?: {
+    message?: string;
+    type?: string;
+  };
+  attributes?: Record<string, unknown>;
 }
+
+const storageSettings = {
+  name: traceIndexName,
+  schema: {
+    properties: {
+      '@timestamp': types.date({}),
+      trace_id: types.keyword({}),
+      space_id: types.keyword({}),
+      agent_id: types.keyword({}),
+      conversation_id: types.keyword({}),
+      duration_ms: types.long({}),
+      status: types.keyword({}),
+      span_count: types.long({}),
+      total_input_tokens: types.long({}),
+      total_output_tokens: types.long({}),
+      // Spans are stored as a dynamic:false object array so individual span
+      // fields are not indexed -- the trace-level fields above cover queries.
+      spans: types.object({ dynamic: false, properties: {} }),
+    },
+  },
+} satisfies IndexStorageSettings;
+
+/**
+ * One document per complete trace (one conversation round).
+ * Contains pre-computed summaries and the full span tree as a nested array.
+ */
+export interface TraceDocumentProperties {
+  '@timestamp': string;
+  trace_id: string;
+  space_id?: string;
+  agent_id?: string;
+  conversation_id?: string;
+  duration_ms: number;
+  status: string;
+  span_count: number;
+  total_input_tokens: number;
+  total_output_tokens: number;
+  spans: SpanProperties[];
+}
+
+export type TraceStorageSettings = typeof storageSettings;
+
+export type TraceStorage = StorageIndexAdapter<TraceStorageSettings, TraceDocumentProperties>;
+
+export const createTraceStorage = ({
+  logger,
+  esClient,
+}: {
+  logger: Logger;
+  esClient: ElasticsearchClient;
+}): TraceStorage => {
+  return new StorageIndexAdapter<TraceStorageSettings, TraceDocumentProperties>(
+    esClient,
+    logger,
+    storageSettings
+  );
+};

@@ -11,22 +11,25 @@ import type { RouteDependencies } from './types';
 import { getHandlerWrapper } from './wrap_handler';
 import { apiPrivileges } from '../../common/features';
 import { internalApiPath } from '../../common/constants';
-import { TRACE_DATA_STREAM_NAME } from '../tracing/trace_index_manager';
+import { createTraceStorage } from '../tracing/trace_index_manager';
 
 /**
  * Registers internal API routes for querying trace data collected
- * by the AgentBuilderESSpanProcessor from the .chat-traces data stream.
+ * by the AgentBuilderESSpanProcessor from the .chat-traces system index.
+ *
+ * Each document is a complete trace (one conversation round) containing
+ * pre-computed summaries and the full span tree.
  *
  * - GET /internal/agent_builder/agents/{agent_id}/traces
- *   Lists root-level traces for a given agent, filtered by space.
+ *   Lists traces for a given agent, filtered by space.
  *
  * - GET /internal/agent_builder/traces/{trace_id}
- *   Returns all spans belonging to a single trace with summary stats.
+ *   Returns a single trace document by trace_id.
  */
 export function registerTracesRoutes({ router, coreSetup, logger }: RouteDependencies) {
   const wrapHandler = getHandlerWrapper({ logger });
 
-  // List traces for an agent (root spans only)
+  // List traces for an agent
   router.versioned
     .get({
       path: `${internalApiPath}/agents/{agent_id}/traces`,
@@ -60,28 +63,30 @@ export function registerTracesRoutes({ router, coreSetup, logger }: RouteDepende
         const esClient = coreStart.elasticsearch.client.asInternalUser;
         const spaceId = (await ctx.agentBuilder).spaces.getSpaceId();
 
+        const storageClient = createTraceStorage({ esClient, logger }).getClient();
+
         const { agent_id: agentId } = request.params;
         const { size, from, conversation_id: conversationId } = request.query;
 
         const filters: QueryDslQueryContainer[] = [
           { term: { agent_id: agentId } },
           { term: { space_id: spaceId } },
-          // Root spans only (Converse spans have no parent in the inference tree)
-          { bool: { must_not: { exists: { field: 'parent_span_id' } } } },
         ];
 
         if (conversationId) {
           filters.push({ term: { conversation_id: conversationId } });
         }
 
-        const result = await esClient.search({
-          index: TRACE_DATA_STREAM_NAME,
-          body: {
-            query: { bool: { filter: filters } },
-            sort: [{ '@timestamp': { order: 'desc' } }],
-            size,
-            from,
+        const result = await storageClient.search({
+          track_total_hits: true,
+          size,
+          from,
+          // Exclude the spans array from list results for smaller payloads
+          _source: {
+            excludes: ['spans'],
           },
+          query: { bool: { filter: filters } },
+          sort: [{ '@timestamp': { order: 'desc' } }],
         });
 
         const traces = result.hits.hits.map((hit) => ({
@@ -101,7 +106,7 @@ export function registerTracesRoutes({ router, coreSetup, logger }: RouteDepende
       })
     );
 
-  // Get all spans for a specific trace
+  // Get a single trace by trace_id (includes full span tree)
   router.versioned
     .get({
       path: `${internalApiPath}/traces/{trace_id}`,
@@ -109,7 +114,7 @@ export function registerTracesRoutes({ router, coreSetup, logger }: RouteDepende
         authz: { requiredPrivileges: [apiPrivileges.readAgentBuilder] },
       },
       access: 'internal',
-      summary: 'Get all spans for a trace',
+      summary: 'Get a trace by trace_id',
       options: {
         tags: ['traces', 'oas-tag:agent builder'],
       },
@@ -130,57 +135,29 @@ export function registerTracesRoutes({ router, coreSetup, logger }: RouteDepende
         const esClient = coreStart.elasticsearch.client.asInternalUser;
         const spaceId = (await ctx.agentBuilder).spaces.getSpaceId();
 
+        const storageClient = createTraceStorage({ esClient, logger }).getClient();
+
         const { trace_id: traceId } = request.params;
 
-        const result = await esClient.search({
-          index: TRACE_DATA_STREAM_NAME,
-          body: {
-            query: {
-              bool: {
-                filter: [{ term: { trace_id: traceId } }, { term: { space_id: spaceId } }],
-              },
+        const result = await storageClient.search({
+          track_total_hits: false,
+          size: 1,
+          query: {
+            bool: {
+              filter: [{ term: { trace_id: traceId } }, { term: { space_id: spaceId } }],
             },
-            sort: [{ '@timestamp': { order: 'asc' } }],
-            size: 500,
           },
         });
 
-        const spans = result.hits.hits.map((hit) => ({
-          _id: hit._id,
-          ...(hit._source as Record<string, unknown>),
-        }));
-
-        // Compute aggregated summary from the span tree
-        const rootSpan = spans.find((s) => !(s as Record<string, unknown>).parent_span_id) as
-          | Record<string, unknown>
-          | undefined;
-        const totalDurationMs = rootSpan?.duration_ms ?? 0;
-
-        let totalInputTokens = 0;
-        let totalOutputTokens = 0;
-        let hasError = false;
-
-        for (const span of spans) {
-          const s = span as Record<string, unknown>;
-          const genAi = s.gen_ai as Record<string, unknown> | undefined;
-          if (genAi) {
-            totalInputTokens += Number(genAi.usage_input_tokens ?? 0);
-            totalOutputTokens += Number(genAi.usage_output_tokens ?? 0);
-          }
-          if (s.status === 'ERROR') {
-            hasError = true;
-          }
+        const hit = result.hits.hits[0];
+        if (!hit) {
+          return response.notFound({ body: { message: `Trace [${traceId}] not found` } });
         }
 
         return response.ok({
           body: {
-            trace_id: traceId,
-            span_count: spans.length,
-            duration_ms: totalDurationMs,
-            total_input_tokens: totalInputTokens,
-            total_output_tokens: totalOutputTokens,
-            status: hasError ? 'ERROR' : 'OK',
-            spans,
+            _id: hit._id,
+            ...(hit._source as Record<string, unknown>),
           },
         });
       })
