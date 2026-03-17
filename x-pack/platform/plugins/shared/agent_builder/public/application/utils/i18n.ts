@@ -632,6 +632,15 @@ export const labels = {
     addSkillButton: i18n.translate('xpack.agentBuilder.agentSkills.addSkillButton', {
       defaultMessage: 'Add skill',
     }),
+    importFromLibraryMenuItem: i18n.translate(
+      'xpack.agentBuilder.agentSkills.importFromLibraryMenuItem',
+      {
+        defaultMessage: 'Import from skill library',
+      }
+    ),
+    createSkillMenuItem: i18n.translate('xpack.agentBuilder.agentSkills.createSkillMenuItem', {
+      defaultMessage: 'Create a skill',
+    }),
     createFromChatButton: i18n.translate('xpack.agentBuilder.agentSkills.createFromChatButton', {
       defaultMessage: 'Create from chat',
     }),

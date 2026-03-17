@@ -30,16 +30,38 @@ interface SkillLibraryPanelProps {
 }
 
 /**
- * Right sidebar panel that displays available skills from the library,
- * allowing the user to search and add them to the current agent.
+ * Flyout header content for the skill library panel.
+ * Renders the title and a link to the full skill library management page.
  */
-export const SkillLibraryPanel: React.FC<SkillLibraryPanelProps> = ({
+const SkillLibraryPanelHeader: React.FC = () => {
+  const { createAgentBuilderUrl } = useNavigation();
+  const manageLibraryUrl = createAgentBuilderUrl(appPaths.manage.skills);
+
+  return (
+    <EuiFlexGroup alignItems="center" justifyContent="spaceBetween" responsive={false}>
+      <EuiFlexItem grow={false}>
+        <EuiTitle size="xs">
+          <h2 id="skillLibraryFlyoutTitle">{labels.agentSkills.addSkillFromLibraryTitle}</h2>
+        </EuiTitle>
+      </EuiFlexItem>
+      <EuiFlexItem grow={false}>
+        <EuiLink href={manageLibraryUrl} external>
+          {labels.agentSkills.manageSkillLibraryLink}
+        </EuiLink>
+      </EuiFlexItem>
+    </EuiFlexGroup>
+  );
+};
+
+/**
+ * Flyout body content for the skill library panel.
+ * Provides search, summary count, and a list of available skills with "+ Add" buttons.
+ */
+const SkillLibraryPanelBody: React.FC<SkillLibraryPanelProps> = ({
   availableSkills,
   onAddSkill,
   isMutating,
 }) => {
-  const { euiTheme } = useEuiTheme();
-  const { createAgentBuilderUrl } = useNavigation();
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredSkills = useMemo(() => {
@@ -50,31 +72,8 @@ export const SkillLibraryPanel: React.FC<SkillLibraryPanelProps> = ({
     );
   }, [availableSkills, searchQuery]);
 
-  const manageLibraryUrl = createAgentBuilderUrl(appPaths.manage.skills);
-
   return (
-    <div
-      css={css`
-        padding: ${euiTheme.size.l};
-      `}
-    >
-      {/* Header */}
-      <EuiFlexGroup alignItems="center" justifyContent="spaceBetween" responsive={false}>
-        <EuiFlexItem grow={false}>
-          <EuiTitle size="xs">
-            <h2>{labels.agentSkills.addSkillFromLibraryTitle}</h2>
-          </EuiTitle>
-        </EuiFlexItem>
-        <EuiFlexItem grow={false}>
-          <EuiLink href={manageLibraryUrl} external>
-            {labels.agentSkills.manageSkillLibraryLink}
-          </EuiLink>
-        </EuiFlexItem>
-      </EuiFlexGroup>
-
-      <EuiSpacer size="m" />
-
-      {/* Search */}
+    <>
       <EuiFieldSearch
         placeholder={labels.agentSkills.searchAvailableSkillsPlaceholder}
         value={searchQuery}
@@ -85,14 +84,12 @@ export const SkillLibraryPanel: React.FC<SkillLibraryPanelProps> = ({
 
       <EuiSpacer size="m" />
 
-      {/* Summary count */}
       <EuiText size="xs" color="subdued">
         {labels.agentSkills.availableSkillsSummary(filteredSkills.length, availableSkills.length)}
       </EuiText>
 
       <EuiSpacer size="m" />
 
-      {/* Skills list */}
       {filteredSkills.length === 0 ? (
         <EuiText size="s" color="subdued" textAlign="center">
           {searchQuery.trim()
@@ -108,9 +105,17 @@ export const SkillLibraryPanel: React.FC<SkillLibraryPanelProps> = ({
           ))}
         </EuiFlexGroup>
       )}
-    </div>
+    </>
   );
 };
+
+/**
+ * Compound component that exposes `.Header` for `EuiFlyoutHeader`
+ * and the default export for `EuiFlyoutBody` content.
+ */
+export const SkillLibraryPanel = Object.assign(SkillLibraryPanelBody, {
+  Header: SkillLibraryPanelHeader,
+});
 
 interface AvailableSkillRowProps {
   skill: PublicSkillSummary;

@@ -11,10 +11,16 @@ import {
   EuiButton,
   EuiButtonEmpty,
   EuiButtonIcon,
+  EuiContextMenuItem,
+  EuiContextMenuPanel,
   EuiFieldSearch,
   EuiFlexGroup,
   EuiFlexItem,
+  EuiFlyout,
+  EuiFlyoutBody,
+  EuiFlyoutHeader,
   EuiLoadingSpinner,
+  EuiPopover,
   EuiSpacer,
   EuiText,
   EuiTitle,
@@ -31,6 +37,7 @@ import { useToasts } from '../../../hooks/use_toasts';
 import { queryKeys } from '../../../query_keys';
 import { useNavigation } from '../../../hooks/use_navigation';
 import { appPaths } from '../../../utils/app_paths';
+import { useFlyoutState } from '../../../hooks/use_flyout_state';
 import { SkillLibraryPanel } from './skill_library_panel';
 import { ActiveSkillRow } from './active_skill_row';
 
@@ -46,6 +53,24 @@ export const AgentSkills: React.FC = () => {
   const { skills: allSkills, isLoading: skillsLoading } = useSkillsService();
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
+  const {
+    isOpen: isLibraryOpen,
+    openFlyout: openLibrary,
+    closeFlyout: closeLibrary,
+  } = useFlyoutState();
+
+  const closeAddMenu = useCallback(() => setIsAddMenuOpen(false), []);
+
+  const handleImportFromLibrary = useCallback(() => {
+    closeAddMenu();
+    openLibrary();
+  }, [closeAddMenu, openLibrary]);
+
+  const handleCreateSkill = useCallback(() => {
+    closeAddMenu();
+    navigateToAgentBuilderUrl(appPaths.manage.skillsNew);
+  }, [closeAddMenu, navigateToAgentBuilderUrl]);
 
   // Skill IDs assigned to this agent. undefined means all skills are active (backward compat).
   const agentSkillIds = useMemo(
@@ -139,109 +164,138 @@ export const AgentSkills: React.FC = () => {
   }
 
   return (
-    <EuiFlexGroup
-      gutterSize="none"
-      responsive={false}
+    <div
       css={css`
         height: 100%;
+        overflow-y: auto;
       `}
     >
-      <EuiFlexItem
-        grow={3}
+      <div
         css={css`
-          overflow-y: auto;
+          padding: ${euiTheme.size.l};
         `}
       >
-        <div
-          css={css`
-            padding: ${euiTheme.size.l};
-          `}
-        >
-          <EuiFlexGroup alignItems="center" justifyContent="spaceBetween">
-            <EuiFlexItem grow={false}>
-              <EuiTitle size="l">
-                <h1>{labels.skills.title}</h1>
-              </EuiTitle>
-            </EuiFlexItem>
-            <EuiFlexItem grow={false}>
-              <EuiFlexGroup gutterSize="s" responsive={false}>
-                <EuiFlexItem grow={false}>
-                  <EuiButtonEmpty iconType="discuss">
-                    {labels.agentSkills.createFromChatButton}
-                  </EuiButtonEmpty>
-                </EuiFlexItem>
-                <EuiFlexItem grow={false}>
-                  <EuiButton
-                    fill
-                    iconType="plus"
-                    onClick={() => navigateToAgentBuilderUrl(appPaths.manage.skillsNew)}
-                  >
-                    {labels.agentSkills.addSkillButton}
-                  </EuiButton>
-                </EuiFlexItem>
-              </EuiFlexGroup>
-            </EuiFlexItem>
-          </EuiFlexGroup>
-
-          <EuiSpacer size="s" />
-          <EuiText size="s" color="subdued">
-            {labels.agentSkills.pageDescription}
-          </EuiText>
-
-          <EuiSpacer size="l" />
-
-          <EuiFlexGroup gutterSize="s" alignItems="center">
-            <EuiFlexItem>
-              <EuiFieldSearch
-                placeholder={labels.agentSkills.searchActiveSkillsPlaceholder}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                incremental
-                fullWidth
-              />
-            </EuiFlexItem>
-            <EuiFlexItem grow={false}>
-              <EuiButtonIcon iconType="filter" aria-label="Filter" display="base" size="m" />
-            </EuiFlexItem>
-          </EuiFlexGroup>
-
-          <EuiSpacer size="l" />
-
-          {filteredActiveSkills.length === 0 ? (
-            <EuiText size="s" color="subdued" textAlign="center">
-              {searchQuery.trim()
-                ? labels.agentSkills.noActiveSkillsMatchMessage
-                : labels.agentSkills.noActiveSkillsMessage}
-            </EuiText>
-          ) : (
-            <EuiFlexGroup direction="column" gutterSize="m">
-              {filteredActiveSkills.map((skill) => (
-                <EuiFlexItem key={skill.id} grow={false}>
-                  <ActiveSkillRow
-                    skill={skill}
-                    onEdit={handleEditSkill}
-                    onRemove={handleRemoveSkill}
+        <EuiFlexGroup alignItems="center" justifyContent="spaceBetween">
+          <EuiFlexItem grow={false}>
+            <EuiTitle size="l">
+              <h1>{labels.skills.title}</h1>
+            </EuiTitle>
+          </EuiFlexItem>
+          <EuiFlexItem grow={false}>
+            <EuiFlexGroup gutterSize="s" responsive={false}>
+              <EuiFlexItem grow={false}>
+                <EuiButtonEmpty iconType="discuss">
+                  {labels.agentSkills.createFromChatButton}
+                </EuiButtonEmpty>
+              </EuiFlexItem>
+              <EuiFlexItem grow={false}>
+                <EuiPopover
+                  button={
+                    <EuiButton
+                      fill
+                      iconType="plusInCircle"
+                      iconSide="left"
+                      onClick={() => setIsAddMenuOpen((prev) => !prev)}
+                    >
+                      {labels.agentSkills.addSkillButton}
+                    </EuiButton>
+                  }
+                  isOpen={isAddMenuOpen}
+                  closePopover={closeAddMenu}
+                  anchorPosition="downLeft"
+                  panelPaddingSize="none"
+                >
+                  <EuiContextMenuPanel
+                    items={[
+                      <EuiContextMenuItem
+                        key="importFromLibrary"
+                        icon="importAction"
+                        onClick={handleImportFromLibrary}
+                      >
+                        {labels.agentSkills.importFromLibraryMenuItem}
+                      </EuiContextMenuItem>,
+                      <EuiContextMenuItem
+                        key="createSkill"
+                        icon="pencil"
+                        onClick={handleCreateSkill}
+                      >
+                        {labels.agentSkills.createSkillMenuItem}
+                      </EuiContextMenuItem>,
+                    ]}
                   />
-                </EuiFlexItem>
-              ))}
+                </EuiPopover>
+              </EuiFlexItem>
             </EuiFlexGroup>
-          )}
-        </div>
-      </EuiFlexItem>
+          </EuiFlexItem>
+        </EuiFlexGroup>
 
-      <EuiFlexItem
-        grow={2}
-        css={css`
-          border-left: ${euiTheme.border.thin};
-          overflow-y: auto;
-        `}
-      >
-        <SkillLibraryPanel
-          availableSkills={availableSkills}
-          onAddSkill={handleAddSkill}
-          isMutating={updateSkillsMutation.isLoading}
-        />
-      </EuiFlexItem>
-    </EuiFlexGroup>
+        <EuiSpacer size="s" />
+        <EuiText size="s" color="subdued">
+          {labels.agentSkills.pageDescription}
+        </EuiText>
+
+        <EuiSpacer size="l" />
+
+        <EuiFlexGroup gutterSize="s" alignItems="center">
+          <EuiFlexItem>
+            <EuiFieldSearch
+              placeholder={labels.agentSkills.searchActiveSkillsPlaceholder}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              incremental
+              fullWidth
+            />
+          </EuiFlexItem>
+          <EuiFlexItem grow={false}>
+            <EuiButtonIcon iconType="filter" aria-label="Filter" display="base" size="m" />
+          </EuiFlexItem>
+        </EuiFlexGroup>
+
+        <EuiSpacer size="l" />
+
+        {filteredActiveSkills.length === 0 ? (
+          <EuiText size="s" color="subdued" textAlign="center">
+            {searchQuery.trim()
+              ? labels.agentSkills.noActiveSkillsMatchMessage
+              : labels.agentSkills.noActiveSkillsMessage}
+          </EuiText>
+        ) : (
+          <EuiFlexGroup direction="column" gutterSize="m">
+            {filteredActiveSkills.map((skill) => (
+              <EuiFlexItem key={skill.id} grow={false}>
+                <ActiveSkillRow
+                  skill={skill}
+                  onEdit={handleEditSkill}
+                  onRemove={handleRemoveSkill}
+                />
+              </EuiFlexItem>
+            ))}
+          </EuiFlexGroup>
+        )}
+      </div>
+
+      {isLibraryOpen && (
+        <EuiFlyout
+          type="push"
+          side="right"
+          size="s"
+          onClose={closeLibrary}
+          aria-labelledby="skillLibraryFlyoutTitle"
+          pushMinBreakpoint="xs"
+          hideCloseButton={false}
+        >
+          <EuiFlyoutHeader hasBorder>
+            <SkillLibraryPanel.Header />
+          </EuiFlyoutHeader>
+          <EuiFlyoutBody>
+            <SkillLibraryPanel
+              availableSkills={availableSkills}
+              onAddSkill={handleAddSkill}
+              isMutating={updateSkillsMutation.isLoading}
+            />
+          </EuiFlyoutBody>
+        </EuiFlyout>
+      )}
+    </div>
   );
 };
