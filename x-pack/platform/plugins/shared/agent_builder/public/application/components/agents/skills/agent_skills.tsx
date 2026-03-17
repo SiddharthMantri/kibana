@@ -15,7 +15,6 @@ import {
   EuiFlexGroup,
   EuiFlexItem,
   EuiLoadingSpinner,
-  EuiPanel,
   EuiSpacer,
   EuiText,
   EuiTitle,
@@ -33,6 +32,7 @@ import { queryKeys } from '../../../query_keys';
 import { useNavigation } from '../../../hooks/use_navigation';
 import { appPaths } from '../../../utils/app_paths';
 import { SkillLibraryPanel } from './skill_library_panel';
+import { ActiveSkillRow } from './active_skill_row';
 
 export const AgentSkills: React.FC = () => {
   const { agentId } = useParams<{ agentId: string }>();
@@ -243,73 +243,5 @@ export const AgentSkills: React.FC = () => {
         />
       </EuiFlexItem>
     </EuiFlexGroup>
-  );
-};
-
-interface ActiveSkillRowProps {
-  skill: PublicSkillSummary;
-  onEdit: (skill: PublicSkillSummary) => void;
-  onRemove: (skill: PublicSkillSummary) => void;
-}
-
-const ActiveSkillRow: React.FC<ActiveSkillRowProps> = ({ skill, onEdit, onRemove }) => {
-  const { euiTheme } = useEuiTheme();
-
-  return (
-    <EuiPanel
-      hasBorder
-      hasShadow={false}
-      paddingSize="m"
-      css={css`
-        &:hover {
-          background-color: ${euiTheme.colors.backgroundBaseSubdued};
-        }
-      `}
-    >
-      <EuiFlexGroup alignItems="center" gutterSize="m" responsive={false}>
-        <EuiFlexItem>
-          <EuiText
-            size="s"
-            css={css`
-              font-weight: ${euiTheme.font.weight.semiBold};
-            `}
-          >
-            {skill.name}
-          </EuiText>
-          <EuiText
-            size="xs"
-            color="subdued"
-            css={css`
-              display: -webkit-box;
-              -webkit-line-clamp: 2;
-              -webkit-box-orient: vertical;
-              overflow: hidden;
-            `}
-          >
-            {skill.description}
-          </EuiText>
-        </EuiFlexItem>
-        <EuiFlexItem grow={false}>
-          <EuiFlexGroup gutterSize="xs" responsive={false}>
-            <EuiFlexItem grow={false}>
-              <EuiButtonIcon
-                iconType="pencil"
-                aria-label={labels.agentSkills.editSkillAriaLabel}
-                color="text"
-                onClick={() => onEdit(skill)}
-              />
-            </EuiFlexItem>
-            <EuiFlexItem grow={false}>
-              <EuiButtonIcon
-                iconType="cross"
-                aria-label={labels.agentSkills.removeSkillAriaLabel}
-                color="danger"
-                onClick={() => onRemove(skill)}
-              />
-            </EuiFlexItem>
-          </EuiFlexGroup>
-        </EuiFlexItem>
-      </EuiFlexGroup>
-    </EuiPanel>
   );
 };
