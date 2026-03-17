@@ -624,6 +624,97 @@ export const labels = {
       defaultMessage: 'Select tools that this skill can use.',
     }),
   },
+  agentSkills: {
+    pageDescription: i18n.translate('xpack.agentBuilder.agentSkills.pageDescription', {
+      defaultMessage:
+        'Capabilities that help the agent analyze data, generate queries, and perform tasks.',
+    }),
+    addSkillButton: i18n.translate('xpack.agentBuilder.agentSkills.addSkillButton', {
+      defaultMessage: 'Add skill',
+    }),
+    createFromChatButton: i18n.translate('xpack.agentBuilder.agentSkills.createFromChatButton', {
+      defaultMessage: 'Create from chat',
+    }),
+    searchActiveSkillsPlaceholder: i18n.translate(
+      'xpack.agentBuilder.agentSkills.searchActiveSkillsPlaceholder',
+      {
+        defaultMessage: 'Search active skills',
+      }
+    ),
+    addSkillFromLibraryTitle: i18n.translate(
+      'xpack.agentBuilder.agentSkills.addSkillFromLibraryTitle',
+      {
+        defaultMessage: 'Add skill from library',
+      }
+    ),
+    manageSkillLibraryLink: i18n.translate(
+      'xpack.agentBuilder.agentSkills.manageSkillLibraryLink',
+      {
+        defaultMessage: 'Manage skill library',
+      }
+    ),
+    searchAvailableSkillsPlaceholder: i18n.translate(
+      'xpack.agentBuilder.agentSkills.searchAvailableSkillsPlaceholder',
+      {
+        defaultMessage: 'Search available skills',
+      }
+    ),
+    availableSkillsSummary: (showing: number, total: number) =>
+      i18n.translate('xpack.agentBuilder.agentSkills.availableSkillsSummary', {
+        defaultMessage:
+          'Showing {showing} of {total} {total, plural, one {Available skill} other {Available skills}}',
+        values: { showing, total },
+      }),
+    addButtonLabel: i18n.translate('xpack.agentBuilder.agentSkills.addButtonLabel', {
+      defaultMessage: 'Add',
+    }),
+    editSkillAriaLabel: i18n.translate('xpack.agentBuilder.agentSkills.editSkillAriaLabel', {
+      defaultMessage: 'Edit skill',
+    }),
+    removeSkillAriaLabel: i18n.translate('xpack.agentBuilder.agentSkills.removeSkillAriaLabel', {
+      defaultMessage: 'Remove skill from agent',
+    }),
+    noActiveSkillsMessage: i18n.translate(
+      'xpack.agentBuilder.agentSkills.noActiveSkillsMessage',
+      {
+        defaultMessage: 'No skills assigned to this agent yet. Add skills from the library.',
+      }
+    ),
+    noActiveSkillsMatchMessage: i18n.translate(
+      'xpack.agentBuilder.agentSkills.noActiveSkillsMatchMessage',
+      {
+        defaultMessage: 'No active skills match your search.',
+      }
+    ),
+    noAvailableSkillsMessage: i18n.translate(
+      'xpack.agentBuilder.agentSkills.noAvailableSkillsMessage',
+      {
+        defaultMessage: 'All skills have been added to this agent.',
+      }
+    ),
+    noAvailableSkillsMatchMessage: i18n.translate(
+      'xpack.agentBuilder.agentSkills.noAvailableSkillsMatchMessage',
+      {
+        defaultMessage: 'No available skills match your search.',
+      }
+    ),
+    removeSkillSuccessToast: (skillName: string) =>
+      i18n.translate('xpack.agentBuilder.agentSkills.removeSkillSuccessToast', {
+        defaultMessage: 'Skill "{skillName}" removed from agent',
+        values: { skillName },
+      }),
+    addSkillSuccessToast: (skillName: string) =>
+      i18n.translate('xpack.agentBuilder.agentSkills.addSkillSuccessToast', {
+        defaultMessage: 'Skill "{skillName}" added to agent',
+        values: { skillName },
+      }),
+    updateSkillsErrorToast: i18n.translate(
+      'xpack.agentBuilder.agentSkills.updateSkillsErrorToast',
+      {
+        defaultMessage: 'Unable to update agent skills',
+      }
+    ),
+  },
   plugins: {
     title: i18n.translate('xpack.agentBuilder.plugins.title', { defaultMessage: 'Plugins' }),
     pluginsTableCaption: (pluginsCount: number) =>

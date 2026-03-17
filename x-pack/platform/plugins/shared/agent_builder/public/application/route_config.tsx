@@ -10,6 +10,7 @@ import { matchPath } from 'react-router-dom';
 import { i18n } from '@kbn/i18n';
 
 import { RouteDisplay } from './components/common/route_display';
+import { AgentSkills } from './components/agents/skills/agent_skills';
 
 export type SidebarView = 'conversation' | 'agentSettings' | 'manage';
 
@@ -59,7 +60,7 @@ export const agentRoutes: RouteDefinition[] = [
     path: '/agents/:agentId/skills',
     sidebarView: 'agentSettings',
     navLabel: navLabels.skills,
-    element: <RouteDisplay />,
+    element: <AgentSkills />,
   },
   {
     path: '/agents/:agentId/plugins',
