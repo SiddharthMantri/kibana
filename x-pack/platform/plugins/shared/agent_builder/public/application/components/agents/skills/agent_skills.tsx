@@ -184,11 +184,6 @@ export const AgentSkills: React.FC = () => {
           <EuiFlexItem grow={false}>
             <EuiFlexGroup gutterSize="s" responsive={false}>
               <EuiFlexItem grow={false}>
-                <EuiButtonEmpty iconType="discuss">
-                  {labels.agentSkills.createFromChatButton}
-                </EuiButtonEmpty>
-              </EuiFlexItem>
-              <EuiFlexItem grow={false}>
                 <EuiPopover
                   button={
                     <EuiButton
