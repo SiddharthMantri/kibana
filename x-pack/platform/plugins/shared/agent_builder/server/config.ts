@@ -13,9 +13,9 @@ export const configSchema = schema.object({
   githubBaseUrl: schema.string({ defaultValue: 'https://github.com' }),
   traceCollection: schema.object({
     enabled: schema.boolean({ defaultValue: true }),
-    flushIntervalMs: schema.number({ defaultValue: 5000 }),
-    maxBatchSize: schema.number({ defaultValue: 100 }),
-    maxQueueSize: schema.number({ defaultValue: 1000 }),
+    flushIntervalMs: schema.number({ defaultValue: 5000, min: 1000 }),
+    maxBatchSize: schema.number({ defaultValue: 100, min: 1, max: 10000 }),
+    maxQueueSize: schema.number({ defaultValue: 1000, min: 1 }),
   }),
 });
 

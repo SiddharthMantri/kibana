@@ -134,7 +134,11 @@ describe('PluginsService', () => {
     start = service.start({
       logger: loggerMock.create(),
       elasticsearch: mockElasticsearch as any,
-      config: { enabled: true, githubBaseUrl: 'https://github.com' },
+      config: {
+        enabled: true,
+        githubBaseUrl: 'https://github.com',
+        traceCollection: { enabled: true, flushIntervalMs: 5000, maxBatchSize: 100, maxQueueSize: 1000 },
+      },
     });
   });
 

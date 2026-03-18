@@ -91,7 +91,7 @@ export function registerTracesRoutes({ router, coreSetup, logger }: RouteDepende
 
         const traces = result.hits.hits.map((hit) => ({
           _id: hit._id,
-          ...(hit._source as Record<string, unknown>),
+          ...(hit._source as unknown as Record<string, unknown>),
         }));
 
         return response.ok({
@@ -157,7 +157,7 @@ export function registerTracesRoutes({ router, coreSetup, logger }: RouteDepende
         return response.ok({
           body: {
             _id: hit._id,
-            ...(hit._source as Record<string, unknown>),
+            ...(hit._source as unknown as Record<string, unknown>),
           },
         });
       })

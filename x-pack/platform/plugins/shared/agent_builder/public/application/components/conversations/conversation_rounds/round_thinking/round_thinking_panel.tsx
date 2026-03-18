@@ -19,10 +19,10 @@ import React, { useState, useMemo } from 'react';
 import type { ConversationRound, ConversationRoundStep } from '@kbn/agent-builder-common';
 import { i18n } from '@kbn/i18n';
 import { css } from '@emotion/react';
-import { useKibana } from '../../../../hooks/use_kibana';
 import { useExperimentalFeatures } from '../../../../hooks/use_experimental_features';
 import { RoundFlyout } from './round_flyout';
 import { TraceFlyout } from './trace_flyout';
+import { AgentBuilderTraceWaterfall } from './agent_trace_waterfall';
 import { RoundSteps } from './steps/round_steps';
 import { ThinkingTimeDisplay } from './thinking_time_display';
 import { RoundIcon } from './round_icon';
@@ -59,11 +59,9 @@ export const RoundThinkingPanel = ({
   onClose,
 }: RoundThinkingPanelProps) => {
   const { euiTheme } = useEuiTheme();
-  const { services } = useKibana();
   const [showFlyout, setShowFlyout] = useState(false);
   const [showTraceFlyout, setShowTraceFlyout] = useState(false);
 
-  const TraceWaterfallComponent = services.plugins.evals?.TraceWaterfall;
   const isExperimentalEnabled = useExperimentalFeatures();
 
   const traceId = useMemo(() => {
@@ -72,7 +70,7 @@ export const RoundThinkingPanel = ({
     return Array.isArray(id) ? id[0] : id;
   }, [rawRound.trace_id]);
 
-  const showTraceButton = isExperimentalEnabled && !!TraceWaterfallComponent && !!traceId;
+  const showTraceButton = isExperimentalEnabled && !!traceId;
 
   const containerStyles = css`
     background-color: ${euiTheme.colors.backgroundBasePlain};
@@ -150,11 +148,11 @@ export const RoundThinkingPanel = ({
         )}
       </EuiFlexGroup>
       <RoundFlyout isOpen={showFlyout} onClose={toggleFlyout} rawRound={rawRound} />
-      {showTraceFlyout && TraceWaterfallComponent && traceId && (
+      {showTraceFlyout && traceId && (
         <TraceFlyout
           traceId={traceId}
           onClose={() => setShowTraceFlyout(false)}
-          TraceWaterfall={TraceWaterfallComponent}
+          TraceWaterfall={AgentBuilderTraceWaterfall}
         />
       )}
     </>
