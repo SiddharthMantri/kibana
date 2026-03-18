@@ -12,19 +12,31 @@ import { AppLayout } from './components/layout/app_layout';
 import { RootRedirect } from './components/redirects/root_redirect';
 import { LegacyConversationRedirect } from './components/redirects/legacy_conversation_redirect';
 import { allRoutes } from './route_config';
+import { AGENT_BUILDER_CONNECTORS_ENABLED_SETTING_ID } from '@kbn/management-settings-ids';
 import { useExperimentalFeatures } from './hooks/use_experimental_features';
+import { useKibana } from './hooks/use_kibana';
 
 export const AgentBuilderRoutes: React.FC<{}> = () => {
   const isExperimentalFeaturesEnabled = useExperimentalFeatures();
+  const {
+    services: { uiSettings },
+  } = useKibana();
+  const isConnectorsEnabled = uiSettings.get<boolean>(
+    AGENT_BUILDER_CONNECTORS_ENABLED_SETTING_ID,
+    false
+  );
 
   const enabledRoutes = useMemo(() => {
     return allRoutes.filter((route) => {
       if (route.isExperimental && !isExperimentalFeaturesEnabled) {
         return false;
       }
+      if (route.isConnectors && !isConnectorsEnabled) {
+        return false;
+      }
       return true;
     });
-  }, [isExperimentalFeaturesEnabled]);
+  }, [isExperimentalFeaturesEnabled, isConnectorsEnabled]);
 
   return (
     <AppLayout>

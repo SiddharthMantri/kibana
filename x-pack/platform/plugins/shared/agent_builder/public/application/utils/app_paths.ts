@@ -55,6 +55,9 @@ export const appPaths = {
     new: '/manage/agents/new',
     edit: ({ agentId }: { agentId: string }) => `/manage/agents/${agentId}`,
   },
+  connectors: {
+    list: '/connectors',
+  },
   tools: {
     list: '/manage/tools',
     new: '/manage/tools/new',
