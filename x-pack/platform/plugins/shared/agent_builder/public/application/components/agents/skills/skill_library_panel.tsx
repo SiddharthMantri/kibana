@@ -31,7 +31,7 @@ interface SkillLibraryPanelProps {
   allSkills: PublicSkillSummary[];
   activeSkillIdSet: Set<string>;
   onToggleSkill: (skill: PublicSkillSummary, isActive: boolean) => void;
-  isMutating: boolean;
+  mutatingSkillId: string | null;
 }
 
 /**
@@ -43,7 +43,7 @@ export const SkillLibraryPanel: React.FC<SkillLibraryPanelProps> = ({
   allSkills,
   activeSkillIdSet,
   onToggleSkill,
-  isMutating,
+  mutatingSkillId,
 }) => {
   const { createAgentBuilderUrl } = useNavigation();
   const manageLibraryUrl = createAgentBuilderUrl(appPaths.manage.skills);
@@ -92,7 +92,7 @@ export const SkillLibraryPanel: React.FC<SkillLibraryPanelProps> = ({
         <EuiSpacer size="m" />
 
         <EuiText size="xs" color="subdued">
-          {labels.agentSkills.allSkillsSummary(filteredSkills.length, allSkills.length)}
+          {labels.agentSkills.availableSkillsSummary(filteredSkills.length, allSkills.length)}
         </EuiText>
 
         <EuiSpacer size="m" />
@@ -111,7 +111,7 @@ export const SkillLibraryPanel: React.FC<SkillLibraryPanelProps> = ({
                   skill={skill}
                   isActive={activeSkillIdSet.has(skill.id)}
                   onToggle={onToggleSkill}
-                  isMutating={isMutating}
+                  isMutating={mutatingSkillId === skill.id}
                 />
               </EuiFlexItem>
             ))}
@@ -167,7 +167,8 @@ const SkillToggleRow: React.FC<SkillToggleRowProps> = ({
       </EuiFlexItem>
       <EuiFlexItem grow={false}>
         <EuiSwitch
-          label=""
+          label={skill.name}
+          showLabel={false}
           checked={isActive}
           onChange={(e) => onToggle(skill, e.target.checked)}
           disabled={isMutating}

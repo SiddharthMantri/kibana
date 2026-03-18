@@ -117,7 +117,7 @@ export const SkillEditFlyout: React.FC<SkillEditFlyoutProps> = ({ skillId, onClo
           </EuiFlexGroup>
         ) : (
           <FormProvider {...form}>
-            {skill && !skill.readonly && (
+            {skill && skill.readonly && (
               <>
                 <EuiCallOut
                   announceOnMount

@@ -27,7 +27,7 @@ import {
   EuiTitle,
 } from '@elastic/eui';
 import { Controller, FormProvider } from 'react-hook-form';
-import type { PublicSkillSummary } from '@kbn/agent-builder-common';
+import type { PublicSkillDefinition } from '@kbn/agent-builder-common';
 import { labels } from '../../../utils/i18n';
 import { useCreateSkill } from '../../../hooks/skills/use_create_skill';
 import { useSkillForm } from '../../../hooks/skills/use_skill_form';
@@ -37,7 +37,7 @@ import { appPaths } from '../../../utils/app_paths';
 
 interface SkillCreateFlyoutProps {
   onClose: () => void;
-  onSkillCreated?: (skill: PublicSkillSummary) => void;
+  onSkillCreated?: (skill: PublicSkillDefinition) => void;
 }
 
 /**
@@ -61,7 +61,7 @@ export const SkillCreateFlyout: React.FC<SkillCreateFlyoutProps> = ({
 
   const { isSubmitting, createSkill } = useCreateSkill({
     onSuccess: (response) => {
-      onSkillCreated?.(response as unknown as PublicSkillSummary);
+      onSkillCreated?.(response);
       onClose();
     },
   });

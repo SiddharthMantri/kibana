@@ -5,7 +5,7 @@
  * 2.0.
  */
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   EuiButton,
@@ -22,7 +22,7 @@ import {
   useEuiTheme,
 } from '@elastic/eui';
 import { css } from '@emotion/react';
-import type { PublicSkillSummary } from '@kbn/agent-builder-common';
+import type { PublicSkillDefinition, PublicSkillSummary } from '@kbn/agent-builder-common';
 import { useMutation, useQueryClient } from '@kbn/react-query';
 import { labels } from '../../../utils/i18n';
 import { useSkillsService } from '../../../hooks/skills/use_skills';
@@ -49,9 +49,11 @@ export const AgentSkills: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedSkillId, setSelectedSkillId] = useState<string | null>(null);
+  const pendingSelectSkillIdRef = useRef<string | null>(null);
   const [editingSkillId, setEditingSkillId] = useState<string | null>(null);
   const [isCreateFlyoutOpen, setIsCreateFlyoutOpen] = useState(false);
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
+  const [mutatingSkillId, setMutatingSkillId] = useState<string | null>(null);
   const {
     isOpen: isLibraryOpen,
     openFlyout: openLibrary,
@@ -86,16 +88,25 @@ export const AgentSkills: React.FC = () => {
     return allSkills.filter((s) => agentSkillIdSet.has(s.id));
   }, [allSkills, agentSkillIdSet]);
 
-  // Auto-select first skill when list loads
+  // Keep selection valid: auto-select first skill when none is selected,
+  // and correct stale selections when the active skills list changes.
+  // Also handles deferred selection for newly-created skills that aren't
+  // in activeSkills yet when the mutation's onSuccess fires.
   useEffect(() => {
-    if (!selectedSkillId && activeSkills.length > 0) {
-      setSelectedSkillId(activeSkills[0].id);
+    if (pendingSelectSkillIdRef.current) {
+      const pendingInActive = activeSkills.some((s) => s.id === pendingSelectSkillIdRef.current);
+      if (pendingInActive) {
+        setSelectedSkillId(pendingSelectSkillIdRef.current);
+        pendingSelectSkillIdRef.current = null;
+        return;
+      }
     }
-  }, [activeSkills, selectedSkillId]);
 
-  // Keep selection valid as skills change; clear when no active skill remains.
-  useEffect(() => {
-    if (selectedSkillId) {
+    if (!selectedSkillId) {
+      if (activeSkills.length > 0) {
+        setSelectedSkillId(activeSkills[0].id);
+      }
+    } else {
       const stillActive = activeSkills.some((s) => s.id === selectedSkillId);
       if (!stillActive) {
         setSelectedSkillId(activeSkills[0]?.id ?? null);
@@ -123,15 +134,22 @@ export const AgentSkills: React.FC = () => {
     },
   });
 
-  // Add a new skill ID to the agent configuration when it is not already assigned.
-  const handleAddSkill = (skill: PublicSkillSummary) => {
+  const handleAddSkill = (
+    skill: PublicSkillSummary | PublicSkillDefinition,
+    { selectOnSuccess = false }: { selectOnSuccess?: boolean } = {}
+  ) => {
     const currentIds = agentSkillIds ?? allSkills.map((s) => s.id);
     if (currentIds.includes(skill.id)) return;
     const newIds = [...currentIds, skill.id];
+    setMutatingSkillId(skill.id);
     updateSkillsMutation.mutate(newIds, {
       onSuccess: () => {
+        if (selectOnSuccess) {
+          pendingSelectSkillIdRef.current = skill.id;
+        }
         addSuccessToast({ title: labels.agentSkills.addSkillSuccessToast(skill.name) });
       },
+      onSettled: () => setMutatingSkillId(null),
     });
   };
 
@@ -139,11 +157,13 @@ export const AgentSkills: React.FC = () => {
   const handleRemoveSkill = (skill: PublicSkillSummary) => {
     const currentIds = agentSkillIds ?? allSkills.map((s) => s.id);
     const newIds = currentIds.filter((id) => id !== skill.id);
+    setMutatingSkillId(skill.id);
     updateSkillsMutation.mutate(newIds, {
       onSuccess: () => {
         setSelectedSkillId(null);
         addSuccessToast({ title: labels.agentSkills.removeSkillSuccessToast(skill.name) });
       },
+      onSettled: () => setMutatingSkillId(null),
     });
   };
 
@@ -162,7 +182,6 @@ export const AgentSkills: React.FC = () => {
     const skill = activeSkills.find((s) => s.id === selectedSkillId);
     if (skill) {
       handleRemoveSkill(skill);
-      setSelectedSkillId(null);
     }
   };
 
@@ -309,7 +328,6 @@ export const AgentSkills: React.FC = () => {
                   skill={skill}
                   isSelected={selectedSkillId === skill.id}
                   onSelect={(s) => setSelectedSkillId(s.id)}
-                  // Keep row-level remove action in sync with the same mutation as other remove paths.
                   onRemove={handleRemoveSkill}
                   isRemoving={updateSkillsMutation.isLoading}
                 />
@@ -351,7 +369,7 @@ export const AgentSkills: React.FC = () => {
           allSkills={allSkills}
           activeSkillIdSet={libraryActiveSkillIdSet}
           onToggleSkill={handleToggleSkill}
-          isMutating={updateSkillsMutation.isLoading}
+          mutatingSkillId={mutatingSkillId}
         />
       )}
 
@@ -362,7 +380,7 @@ export const AgentSkills: React.FC = () => {
       {isCreateFlyoutOpen && (
         <SkillCreateFlyout
           onClose={() => setIsCreateFlyoutOpen(false)}
-          onSkillCreated={handleAddSkill}
+          onSkillCreated={(skill) => handleAddSkill(skill, { selectOnSuccess: true })}
         />
       )}
     </div>

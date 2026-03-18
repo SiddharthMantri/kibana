@@ -765,6 +765,29 @@ export const labels = {
         defaultMessage: 'Select a skill to view details.',
       }
     ),
+    removeSkillConfirmTitle: (skillName: string) =>
+      i18n.translate('xpack.agentBuilder.agentSkills.removeSkillConfirmTitle', {
+        defaultMessage: 'Remove "{skillName}" from agent?',
+        values: { skillName },
+      }),
+    removeSkillConfirmBody: i18n.translate(
+      'xpack.agentBuilder.agentSkills.removeSkillConfirmBody',
+      {
+        defaultMessage: 'The skill will no longer be available to this agent.',
+      }
+    ),
+    removeSkillConfirmButton: i18n.translate(
+      'xpack.agentBuilder.agentSkills.removeSkillConfirmButton',
+      {
+        defaultMessage: 'Remove',
+      }
+    ),
+    removeSkillCancelButton: i18n.translate(
+      'xpack.agentBuilder.agentSkills.removeSkillCancelButton',
+      {
+        defaultMessage: 'Cancel',
+      }
+    ),
   },
   plugins: {
     title: i18n.translate('xpack.agentBuilder.plugins.title', { defaultMessage: 'Plugins' }),

@@ -19,10 +19,6 @@ export interface ActiveSkillRowProps {
   isRemoving?: boolean;
 }
 
-/**
- * A single selectable row in the active skills list showing the skill name.
- * Highlights when selected.
- */
 export const ActiveSkillRow: React.FC<ActiveSkillRowProps> = ({
   skill,
   isSelected,

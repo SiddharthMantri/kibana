@@ -5,9 +5,10 @@
  * 2.0.
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import {
   EuiButtonEmpty,
+  EuiConfirmModal,
   EuiFlexGroup,
   EuiFlexItem,
   EuiLoadingSpinner,
@@ -66,6 +67,7 @@ export const SkillDetailPanel: React.FC<SkillDetailPanelProps> = ({
 }) => {
   const { euiTheme } = useEuiTheme();
   const { skill, isLoading } = useSkill({ skillId });
+  const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -107,7 +109,7 @@ export const SkillDetailPanel: React.FC<SkillDetailPanelProps> = ({
           <EuiFlexGroup alignItems="center" justifyContent="spaceBetween" responsive={false}>
             <EuiFlexItem grow={false}>
               <EuiTitle size="s">
-                <h2>{skill.id}</h2>
+                <h2>{skill.name}</h2>
               </EuiTitle>
             </EuiFlexItem>
             <EuiFlexItem grow={false}>
@@ -118,7 +120,12 @@ export const SkillDetailPanel: React.FC<SkillDetailPanelProps> = ({
                   </EuiButtonEmpty>
                 </EuiFlexItem>
                 <EuiFlexItem grow={false}>
-                  <EuiButtonEmpty iconType="cross" size="xs" color="danger" onClick={onRemove}>
+                  <EuiButtonEmpty
+                    iconType="cross"
+                    size="xs"
+                    color="danger"
+                    onClick={() => setIsConfirmOpen(true)}
+                  >
                     {labels.agentSkills.removeSkillButtonLabel}
                   </EuiButtonEmpty>
                 </EuiFlexItem>
@@ -169,6 +176,22 @@ export const SkillDetailPanel: React.FC<SkillDetailPanelProps> = ({
           )}
         </div>
       </div>
+      {isConfirmOpen && (
+        <EuiConfirmModal
+          title={labels.agentSkills.removeSkillConfirmTitle(skill.name)}
+          aria-label={labels.agentSkills.removeSkillConfirmTitle(skill.name)}
+          onCancel={() => setIsConfirmOpen(false)}
+          onConfirm={() => {
+            setIsConfirmOpen(false);
+            onRemove();
+          }}
+          cancelButtonText={labels.agentSkills.removeSkillCancelButton}
+          confirmButtonText={labels.agentSkills.removeSkillConfirmButton}
+          buttonColor="danger"
+        >
+          <p>{labels.agentSkills.removeSkillConfirmBody}</p>
+        </EuiConfirmModal>
+      )}
     </div>
   );
 };
