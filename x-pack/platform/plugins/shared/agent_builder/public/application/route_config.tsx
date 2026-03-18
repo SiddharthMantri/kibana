@@ -23,6 +23,7 @@ import { AgentBuilderSkillCreatePage } from './pages/skill_create';
 import { AgentBuilderSkillDetailsPage } from './pages/skill_details';
 import { AgentBuilderPluginsPage } from './pages/plugins';
 import { AgentBuilderPluginDetailsPage } from './pages/plugin_details';
+import { AgentBuilderConnectorsPage } from './pages/connectors';
 
 export type SidebarView = 'conversation' | 'agentSettings' | 'manage';
 
@@ -31,6 +32,7 @@ export interface RouteDefinition {
   element: React.ReactNode;
   sidebarView: SidebarView;
   isExperimental?: boolean;
+  isConnectors?: boolean;
   navLabel?: string;
 }
 
@@ -166,7 +168,8 @@ export const manageRoutes: RouteDefinition[] = [
     path: '/manage/connectors',
     sidebarView: 'manage',
     navLabel: navLabels.connectors,
-    element: <RouteDisplay />,
+    isConnectors: true,
+    element: <AgentBuilderConnectorsPage />,
   },
 ];
 
