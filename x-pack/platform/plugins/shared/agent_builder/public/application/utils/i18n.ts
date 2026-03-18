@@ -683,12 +683,9 @@ export const labels = {
     removeSkillAriaLabel: i18n.translate('xpack.agentBuilder.agentSkills.removeSkillAriaLabel', {
       defaultMessage: 'Remove skill from agent',
     }),
-    noActiveSkillsMessage: i18n.translate(
-      'xpack.agentBuilder.agentSkills.noActiveSkillsMessage',
-      {
-        defaultMessage: 'No skills assigned to this agent yet. Add skills from the library.',
-      }
-    ),
+    noActiveSkillsMessage: i18n.translate('xpack.agentBuilder.agentSkills.noActiveSkillsMessage', {
+      defaultMessage: 'No skills assigned to this agent yet. Add skills from the library.',
+    }),
     noActiveSkillsMatchMessage: i18n.translate(
       'xpack.agentBuilder.agentSkills.noActiveSkillsMatchMessage',
       {
@@ -721,6 +718,51 @@ export const labels = {
       'xpack.agentBuilder.agentSkills.updateSkillsErrorToast',
       {
         defaultMessage: 'Unable to update agent skills',
+      }
+    ),
+    editSkillFlyoutTitle: i18n.translate('xpack.agentBuilder.agentSkills.editSkillFlyoutTitle', {
+      defaultMessage: 'Edit skill',
+    }),
+    createSkillFlyoutTitle: i18n.translate(
+      'xpack.agentBuilder.agentSkills.createSkillFlyoutTitle',
+      {
+        defaultMessage: 'Create skill',
+      }
+    ),
+    viewSkillLibraryLink: i18n.translate('xpack.agentBuilder.agentSkills.viewSkillLibraryLink', {
+      defaultMessage: 'View skill library',
+    }),
+    sharedSkillWarning: i18n.translate('xpack.agentBuilder.agentSkills.sharedSkillWarning', {
+      defaultMessage: 'This is a shared skill. Changes will affect all users using this skill.',
+    }),
+    newSkillLibraryInfo: i18n.translate('xpack.agentBuilder.agentSkills.newSkillLibraryInfo', {
+      defaultMessage:
+        'This skill will be added to your library and be available for other agents to use.',
+    }),
+    advancedOptionsLabel: i18n.translate('xpack.agentBuilder.agentSkills.advancedOptionsLabel', {
+      defaultMessage: 'Advanced options',
+    }),
+    allSkillsSummary: (showing: number, total: number) =>
+      i18n.translate('xpack.agentBuilder.agentSkills.allSkillsSummary', {
+        defaultMessage: 'Showing {showing} of {total} {total, plural, one {Skill} other {Skills}}',
+        values: { showing, total },
+      }),
+    removeSkillButtonLabel: i18n.translate(
+      'xpack.agentBuilder.agentSkills.removeSkillButtonLabel',
+      {
+        defaultMessage: 'Remove',
+      }
+    ),
+    skillDetailInstructionsLabel: i18n.translate(
+      'xpack.agentBuilder.agentSkills.skillDetailInstructionsLabel',
+      {
+        defaultMessage: 'Instructions',
+      }
+    ),
+    noSkillSelectedMessage: i18n.translate(
+      'xpack.agentBuilder.agentSkills.noSkillSelectedMessage',
+      {
+        defaultMessage: 'Select a skill to view details.',
       }
     ),
   },

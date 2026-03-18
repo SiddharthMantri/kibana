@@ -6,86 +6,76 @@
  */
 
 import React from 'react';
-import {
-  EuiButtonIcon,
-  EuiFlexGroup,
-  EuiFlexItem,
-  EuiPanel,
-  EuiText,
-  useEuiTheme,
-} from '@elastic/eui';
+import { EuiButtonIcon, EuiFlexGroup, EuiFlexItem, EuiText, useEuiTheme } from '@elastic/eui';
 import { css } from '@emotion/react';
 import type { PublicSkillSummary } from '@kbn/agent-builder-common';
 import { labels } from '../../../utils/i18n';
 
 export interface ActiveSkillRowProps {
   skill: PublicSkillSummary;
-  onEdit: (skill: PublicSkillSummary) => void;
+  isSelected: boolean;
+  onSelect: (skill: PublicSkillSummary) => void;
   onRemove: (skill: PublicSkillSummary) => void;
+  isRemoving?: boolean;
 }
 
 /**
- * A single row in the active skills list showing name, description,
- * and edit/remove action icons.
+ * A single selectable row in the active skills list showing the skill name.
+ * Highlights when selected.
  */
-export const ActiveSkillRow: React.FC<ActiveSkillRowProps> = ({ skill, onEdit, onRemove }) => {
+export const ActiveSkillRow: React.FC<ActiveSkillRowProps> = ({
+  skill,
+  isSelected,
+  onSelect,
+  onRemove,
+  isRemoving = false,
+}) => {
   const { euiTheme } = useEuiTheme();
 
   return (
-    <EuiPanel
-      hasBorder
-      hasShadow={false}
-      paddingSize="m"
+    <EuiFlexGroup
+      alignItems="center"
+      gutterSize="none"
+      responsive={false}
+      onClick={() => onSelect(skill)}
       css={css`
+        padding: ${euiTheme.size.s} ${euiTheme.size.m};
+        cursor: pointer;
+        border-radius: ${euiTheme.border.radius.medium};
+        background-color: ${isSelected
+          ? euiTheme.colors.backgroundBaseInteractiveHover
+          : 'transparent'};
         &:hover {
-          background-color: ${euiTheme.colors.backgroundBaseSubdued};
+          background-color: ${euiTheme.colors.backgroundBaseInteractiveHover};
         }
       `}
     >
-      <EuiFlexGroup alignItems="center" gutterSize="m" responsive={false}>
-        <EuiFlexItem>
-          <EuiText
-            size="s"
-            css={css`
-              font-weight: ${euiTheme.font.weight.semiBold};
-            `}
-          >
-            {skill.name}
-          </EuiText>
-          <EuiText
-            size="xs"
-            color="subdued"
-            css={css`
-              display: -webkit-box;
-              -webkit-line-clamp: 2;
-              -webkit-box-orient: vertical;
-              overflow: hidden;
-            `}
-          >
-            {skill.description}
-          </EuiText>
-        </EuiFlexItem>
+      <EuiFlexItem>
+        <EuiText
+          size="s"
+          css={css`
+            font-weight: ${isSelected
+              ? euiTheme.font.weight.semiBold
+              : euiTheme.font.weight.regular};
+          `}
+        >
+          {skill.name}
+        </EuiText>
+      </EuiFlexItem>
+      {isSelected && (
         <EuiFlexItem grow={false}>
-          <EuiFlexGroup gutterSize="xs" responsive={false}>
-            <EuiFlexItem grow={false}>
-              <EuiButtonIcon
-                iconType="pencil"
-                aria-label={labels.agentSkills.editSkillAriaLabel}
-                color="text"
-                onClick={() => onEdit(skill)}
-              />
-            </EuiFlexItem>
-            <EuiFlexItem grow={false}>
-              <EuiButtonIcon
-                iconType="cross"
-                aria-label={labels.agentSkills.removeSkillAriaLabel}
-                color="danger"
-                onClick={() => onRemove(skill)}
-              />
-            </EuiFlexItem>
-          </EuiFlexGroup>
+          <EuiButtonIcon
+            iconType="cross"
+            aria-label={labels.agentSkills.removeSkillAriaLabel}
+            disabled={isRemoving}
+            onClick={(event) => {
+              // Prevent row selection when clicking the remove control.
+              event.stopPropagation();
+              onRemove(skill);
+            }}
+          />
         </EuiFlexItem>
-      </EuiFlexGroup>
-    </EuiPanel>
+      )}
+    </EuiFlexGroup>
   );
 };

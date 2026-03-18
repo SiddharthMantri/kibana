@@ -7,12 +7,15 @@
 
 import React, { useMemo, useState } from 'react';
 import {
-  EuiButton,
   EuiFieldSearch,
   EuiFlexGroup,
   EuiFlexItem,
+  EuiFlyout,
+  EuiFlyoutBody,
+  EuiFlyoutHeader,
   EuiLink,
   EuiSpacer,
+  EuiSwitch,
   EuiText,
   EuiTitle,
   useEuiTheme,
@@ -24,110 +27,118 @@ import { useNavigation } from '../../../hooks/use_navigation';
 import { appPaths } from '../../../utils/app_paths';
 
 interface SkillLibraryPanelProps {
-  availableSkills: PublicSkillSummary[];
-  onAddSkill: (skill: PublicSkillSummary) => void;
+  onClose: () => void;
+  allSkills: PublicSkillSummary[];
+  activeSkillIdSet: Set<string>;
+  onToggleSkill: (skill: PublicSkillSummary, isActive: boolean) => void;
   isMutating: boolean;
 }
 
 /**
- * Flyout header content for the skill library panel.
- * Renders the title and a link to the full skill library management page.
+ * Skill library flyout including both header chrome and searchable toggle list body.
+ * Keeps the flyout structure in one place so parent pages only pass data and callbacks.
  */
-const SkillLibraryPanelHeader: React.FC = () => {
-  const { createAgentBuilderUrl } = useNavigation();
-  const manageLibraryUrl = createAgentBuilderUrl(appPaths.manage.skills);
-
-  return (
-    <EuiFlexGroup alignItems="center" justifyContent="spaceBetween" responsive={false}>
-      <EuiFlexItem grow={false}>
-        <EuiTitle size="xs">
-          <h2 id="skillLibraryFlyoutTitle">{labels.agentSkills.addSkillFromLibraryTitle}</h2>
-        </EuiTitle>
-      </EuiFlexItem>
-      <EuiFlexItem grow={false}>
-        <EuiLink href={manageLibraryUrl} external>
-          {labels.agentSkills.manageSkillLibraryLink}
-        </EuiLink>
-      </EuiFlexItem>
-    </EuiFlexGroup>
-  );
-};
-
-/**
- * Flyout body content for the skill library panel.
- * Provides search, summary count, and a list of available skills with "+ Add" buttons.
- */
-const SkillLibraryPanelBody: React.FC<SkillLibraryPanelProps> = ({
-  availableSkills,
-  onAddSkill,
+export const SkillLibraryPanel: React.FC<SkillLibraryPanelProps> = ({
+  onClose,
+  allSkills,
+  activeSkillIdSet,
+  onToggleSkill,
   isMutating,
 }) => {
+  const { createAgentBuilderUrl } = useNavigation();
+  const manageLibraryUrl = createAgentBuilderUrl(appPaths.manage.skills);
   const [searchQuery, setSearchQuery] = useState('');
 
   const filteredSkills = useMemo(() => {
-    if (!searchQuery.trim()) return availableSkills;
+    if (!searchQuery.trim()) return allSkills;
     const lower = searchQuery.toLowerCase();
-    return availableSkills.filter(
+    return allSkills.filter(
       (s) => s.name.toLowerCase().includes(lower) || s.description.toLowerCase().includes(lower)
     );
-  }, [availableSkills, searchQuery]);
+  }, [allSkills, searchQuery]);
 
   return (
-    <>
-      <EuiFieldSearch
-        placeholder={labels.agentSkills.searchAvailableSkillsPlaceholder}
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        incremental
-        fullWidth
-      />
-
-      <EuiSpacer size="m" />
-
-      <EuiText size="xs" color="subdued">
-        {labels.agentSkills.availableSkillsSummary(filteredSkills.length, availableSkills.length)}
-      </EuiText>
-
-      <EuiSpacer size="m" />
-
-      {filteredSkills.length === 0 ? (
-        <EuiText size="s" color="subdued" textAlign="center">
-          {searchQuery.trim()
-            ? labels.agentSkills.noAvailableSkillsMatchMessage
-            : labels.agentSkills.noAvailableSkillsMessage}
-        </EuiText>
-      ) : (
-        <EuiFlexGroup direction="column" gutterSize="m">
-          {filteredSkills.map((skill) => (
-            <EuiFlexItem key={skill.id} grow={false}>
-              <AvailableSkillRow skill={skill} onAdd={onAddSkill} isMutating={isMutating} />
-            </EuiFlexItem>
-          ))}
+    <EuiFlyout
+      side="right"
+      size="960px"
+      onClose={onClose}
+      aria-labelledby="skillLibraryFlyoutTitle"
+      pushMinBreakpoint="xs"
+      hideCloseButton={false}
+    >
+      <EuiFlyoutHeader hasBorder>
+        <EuiFlexGroup alignItems="center" justifyContent="spaceBetween" responsive={false}>
+          <EuiFlexItem grow={false}>
+            <EuiTitle size="xs">
+              <h2 id="skillLibraryFlyoutTitle">{labels.agentSkills.addSkillFromLibraryTitle}</h2>
+            </EuiTitle>
+          </EuiFlexItem>
+          <EuiFlexItem grow={false}>
+            <EuiLink href={manageLibraryUrl} external>
+              {labels.agentSkills.manageSkillLibraryLink}
+            </EuiLink>
+          </EuiFlexItem>
         </EuiFlexGroup>
-      )}
-    </>
+      </EuiFlyoutHeader>
+      <EuiFlyoutBody>
+        <EuiFieldSearch
+          placeholder={labels.agentSkills.searchAvailableSkillsPlaceholder}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          incremental
+          fullWidth
+        />
+
+        <EuiSpacer size="m" />
+
+        <EuiText size="xs" color="subdued">
+          {labels.agentSkills.allSkillsSummary(filteredSkills.length, allSkills.length)}
+        </EuiText>
+
+        <EuiSpacer size="m" />
+
+        {filteredSkills.length === 0 ? (
+          <EuiText size="s" color="subdued" textAlign="center">
+            {searchQuery.trim()
+              ? labels.agentSkills.noAvailableSkillsMatchMessage
+              : labels.agentSkills.noAvailableSkillsMessage}
+          </EuiText>
+        ) : (
+          <EuiFlexGroup direction="column" gutterSize="m">
+            {filteredSkills.map((skill) => (
+              <EuiFlexItem key={skill.id} grow={false}>
+                <SkillToggleRow
+                  skill={skill}
+                  isActive={activeSkillIdSet.has(skill.id)}
+                  onToggle={onToggleSkill}
+                  isMutating={isMutating}
+                />
+              </EuiFlexItem>
+            ))}
+          </EuiFlexGroup>
+        )}
+      </EuiFlyoutBody>
+    </EuiFlyout>
   );
 };
 
-/**
- * Compound component that exposes `.Header` for `EuiFlyoutHeader`
- * and the default export for `EuiFlyoutBody` content.
- */
-export const SkillLibraryPanel = Object.assign(SkillLibraryPanelBody, {
-  Header: SkillLibraryPanelHeader,
-});
-
-interface AvailableSkillRowProps {
+interface SkillToggleRowProps {
   skill: PublicSkillSummary;
-  onAdd: (skill: PublicSkillSummary) => void;
+  isActive: boolean;
+  onToggle: (skill: PublicSkillSummary, isActive: boolean) => void;
   isMutating: boolean;
 }
 
 /**
- * A single row in the available skills list showing name, truncated description,
- * and a "+ Add" button.
+ * A single row in the skill library list showing name, description,
+ * and a toggle switch to add/remove the skill from the agent.
  */
-const AvailableSkillRow: React.FC<AvailableSkillRowProps> = ({ skill, onAdd, isMutating }) => {
+const SkillToggleRow: React.FC<SkillToggleRowProps> = ({
+  skill,
+  isActive,
+  onToggle,
+  isMutating,
+}) => {
   const { euiTheme } = useEuiTheme();
 
   return (
@@ -155,15 +166,13 @@ const AvailableSkillRow: React.FC<AvailableSkillRowProps> = ({ skill, onAdd, isM
         </EuiText>
       </EuiFlexItem>
       <EuiFlexItem grow={false}>
-        <EuiButton
-          size="s"
-          iconType="plus"
-          onClick={() => onAdd(skill)}
-          isLoading={isMutating}
-          isDisabled={isMutating}
-        >
-          {labels.agentSkills.addButtonLabel}
-        </EuiButton>
+        <EuiSwitch
+          label=""
+          checked={isActive}
+          onChange={(e) => onToggle(skill, e.target.checked)}
+          disabled={isMutating}
+          compressed
+        />
       </EuiFlexItem>
     </EuiFlexGroup>
   );
