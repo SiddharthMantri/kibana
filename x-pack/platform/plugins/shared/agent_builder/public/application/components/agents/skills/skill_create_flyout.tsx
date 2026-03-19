@@ -40,10 +40,6 @@ interface SkillCreateFlyoutProps {
   onSkillCreated?: (skill: PublicSkillDefinition) => void;
 }
 
-/**
- * Flyout for creating a new skill from the agent skills context.
- * After creation, notifies the parent so the new skill can be added to the agent.
- */
 export const SkillCreateFlyout: React.FC<SkillCreateFlyoutProps> = ({
   onClose,
   onSkillCreated,

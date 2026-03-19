@@ -38,10 +38,6 @@ interface SkillLibraryPanelProps {
   builtinSkillIdSet?: Set<string>;
 }
 
-/**
- * Skill library flyout including both header chrome and searchable toggle list body.
- * Keeps the flyout structure in one place so parent pages only pass data and callbacks.
- */
 export const SkillLibraryPanel: React.FC<SkillLibraryPanelProps> = ({
   onClose,
   allSkills,

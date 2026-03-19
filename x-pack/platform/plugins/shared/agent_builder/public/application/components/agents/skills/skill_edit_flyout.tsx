@@ -40,10 +40,6 @@ interface SkillEditFlyoutProps {
   onClose: () => void;
 }
 
-/**
- * Flyout for editing a skill from the agent skills context.
- * Uses existing useEditSkill hook and skill form validation.
- */
 export const SkillEditFlyout: React.FC<SkillEditFlyoutProps> = ({ skillId, onClose }) => {
   const { createAgentBuilderUrl } = useNavigation();
   const skillLibraryUrl = createAgentBuilderUrl(appPaths.manage.skills);

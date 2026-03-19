@@ -60,19 +60,16 @@ export const AgentSkills: React.FC = () => {
     closeFlyout: closeLibrary,
   } = useFlyoutState();
 
-  // Close the add-skill menu before opening the library flyout to avoid stacked popovers.
   const handleImportFromLibrary = () => {
     setIsAddMenuOpen(false);
     openLibrary();
   };
 
-  // Close the menu first so create flow opens from a clean UI state.
   const handleOpenCreateFlyout = () => {
     setIsAddMenuOpen(false);
     setIsCreateFlyoutOpen(true);
   };
 
-  // Skill IDs assigned to this agent. undefined means all skills are active (backward compat).
   const agentSkillIds = useMemo(
     () => agent?.configuration?.skill_ids,
     [agent?.configuration?.skill_ids]
@@ -90,7 +87,7 @@ export const AgentSkills: React.FC = () => {
   const builtinSkillIdSet = useMemo(() => new Set(builtinSkills.map((s) => s.id)), [builtinSkills]);
 
   const activeSkills = useMemo(() => {
-    if (!agentSkillIdSet) return allSkills; // legacy: undefined = all active
+    if (!agentSkillIdSet) return allSkills;
     if (enableElasticCapabilities) {
       const explicitSkills = allSkills.filter((s) => agentSkillIdSet.has(s.id));
       const builtinNotExplicit = builtinSkills.filter((s) => !agentSkillIdSet.has(s.id));
@@ -99,10 +96,6 @@ export const AgentSkills: React.FC = () => {
     return allSkills.filter((s) => agentSkillIdSet.has(s.id));
   }, [allSkills, agentSkillIdSet, enableElasticCapabilities, builtinSkills]);
 
-  // Keep selection valid: auto-select first skill when none is selected,
-  // and correct stale selections when the active skills list changes.
-  // Also handles deferred selection for newly-created skills that aren't
-  // in activeSkills yet when the mutation's onSuccess fires.
   useEffect(() => {
     if (pendingSelectSkillIdRef.current) {
       const pendingInActive = activeSkills.some((s) => s.id === pendingSelectSkillIdRef.current);
@@ -164,7 +157,6 @@ export const AgentSkills: React.FC = () => {
     });
   };
 
-  // Remove a skill ID from the agent and clear detail selection until a valid one is chosen.
   const handleRemoveSkill = (skill: PublicSkillSummary) => {
     const currentIds = agentSkillIds ?? allSkills.map((s) => s.id);
     const newIds = currentIds.filter((id) => id !== skill.id);
@@ -178,9 +170,8 @@ export const AgentSkills: React.FC = () => {
     });
   };
 
-  // Route library switch changes to add/remove handlers.
   const handleToggleSkill = (skill: PublicSkillSummary, isActive: boolean) => {
-    if (enableElasticCapabilities && skill.readonly) return; // no-op for managed built-ins
+    if (enableElasticCapabilities && skill.readonly) return;
     if (isActive) {
       handleAddSkill(skill);
     } else {
@@ -188,12 +179,11 @@ export const AgentSkills: React.FC = () => {
     }
   };
 
-  // Remove whichever skill is currently shown in the detail panel.
   const handleRemoveSelectedSkill = () => {
     if (!selectedSkillId) return;
     const skill = activeSkills.find((s) => s.id === selectedSkillId);
     if (skill) {
-      if (enableElasticCapabilities && skill.readonly) return; // no-op for managed built-ins
+      if (enableElasticCapabilities && skill.readonly) return;
       handleRemoveSkill(skill);
     }
   };
