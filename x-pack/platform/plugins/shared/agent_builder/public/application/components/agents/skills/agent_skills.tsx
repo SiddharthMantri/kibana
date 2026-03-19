@@ -385,7 +385,14 @@ export const AgentSkills: React.FC = () => {
       )}
 
       {editingSkillId && (
-        <SkillEditFlyout skillId={editingSkillId} onClose={() => setEditingSkillId(null)} />
+        <SkillEditFlyout
+          skillId={editingSkillId}
+          onClose={() => setEditingSkillId(null)}
+          onSaved={() => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.skills.byId(editingSkillId) });
+            setSelectedSkillId(editingSkillId);
+          }}
+        />
       )}
 
       {isCreateFlyoutOpen && (

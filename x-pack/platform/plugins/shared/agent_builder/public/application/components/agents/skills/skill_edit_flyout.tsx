@@ -7,12 +7,9 @@
 
 import React, { useCallback, useEffect, useMemo } from 'react';
 import {
-  EuiAccordion,
   EuiButton,
   EuiButtonEmpty,
   EuiCallOut,
-  EuiComboBox,
-  EuiFieldText,
   EuiFlexGroup,
   EuiFlexItem,
   EuiFlyout,
@@ -20,28 +17,27 @@ import {
   EuiFlyoutFooter,
   EuiFlyoutHeader,
   EuiForm,
-  EuiFormRow,
   EuiLink,
   EuiLoadingSpinner,
-  EuiMarkdownEditor,
   EuiSpacer,
-  EuiTextArea,
   EuiTitle,
 } from '@elastic/eui';
-import { Controller, FormProvider } from 'react-hook-form';
+import { FormProvider } from 'react-hook-form';
 import { labels } from '../../../utils/i18n';
 import { useEditSkill } from '../../../hooks/skills/use_edit_skill';
 import { useSkillForm } from '../../../hooks/skills/use_skill_form';
 import { useTools } from '../../../hooks/tools/use_tools';
 import { useNavigation } from '../../../hooks/use_navigation';
 import { appPaths } from '../../../utils/app_paths';
+import { SkillForm } from './skill_form';
 
 interface SkillEditFlyoutProps {
   skillId: string;
   onClose: () => void;
+  onSaved?: () => void;
 }
 
-export const SkillEditFlyout: React.FC<SkillEditFlyoutProps> = ({ skillId, onClose }) => {
+export const SkillEditFlyout: React.FC<SkillEditFlyoutProps> = ({ skillId, onClose, onSaved }) => {
   const { createAgentBuilderUrl } = useNavigation();
   const skillLibraryUrl = createAgentBuilderUrl(appPaths.manage.skills);
   const { tools } = useTools();
@@ -56,7 +52,10 @@ export const SkillEditFlyout: React.FC<SkillEditFlyoutProps> = ({ skillId, onClo
 
   const { skill, isLoading, isSubmitting, editSkill } = useEditSkill({
     skillId,
-    onSuccess: onClose,
+    onSuccess: () => {
+      onSaved?.();
+      onClose();
+    },
   });
 
   useEffect(() => {
@@ -127,95 +126,7 @@ export const SkillEditFlyout: React.FC<SkillEditFlyoutProps> = ({ skillId, onClo
             )}
 
             <EuiForm component="form" onSubmit={handleSubmit(onSubmit)}>
-              {/* Keep ID and name aligned with create flyout's two-column header row. */}
-              <EuiFlexGroup gutterSize="m" responsive={false}>
-                <EuiFlexItem>
-                  <EuiFormRow label={labels.skills.skillIdLabel} fullWidth>
-                    <EuiFieldText value={skillId} disabled fullWidth />
-                  </EuiFormRow>
-                </EuiFlexItem>
-                <EuiFlexItem>
-                  <Controller
-                    name="name"
-                    control={control}
-                    render={({ field, fieldState: { error } }) => (
-                      <EuiFormRow
-                        label={labels.skills.nameLabel}
-                        isInvalid={!!error}
-                        error={error?.message}
-                        fullWidth
-                      >
-                        <EuiFieldText {...field} fullWidth isInvalid={!!error} />
-                      </EuiFormRow>
-                    )}
-                  />
-                </EuiFlexItem>
-              </EuiFlexGroup>
-              <EuiSpacer size="m" />
-              <Controller
-                name="description"
-                control={control}
-                render={({ field, fieldState: { error } }) => (
-                  <EuiFormRow
-                    label={labels.skills.descriptionLabel}
-                    isInvalid={!!error}
-                    error={error?.message}
-                    fullWidth
-                  >
-                    <EuiTextArea {...field} fullWidth isInvalid={!!error} rows={3} />
-                  </EuiFormRow>
-                )}
-              />
-
-              <Controller
-                name="content"
-                control={control}
-                render={({ field: { onChange, value }, fieldState: { error } }) => (
-                  <EuiFormRow
-                    label={labels.agentSkills.skillDetailInstructionsLabel}
-                    isInvalid={!!error}
-                    error={error?.message}
-                    fullWidth
-                  >
-                    <EuiMarkdownEditor
-                      onChange={onChange}
-                      value={value ?? ''}
-                      aria-label={labels.agentSkills.skillDetailInstructionsLabel}
-                    />
-                  </EuiFormRow>
-                )}
-              />
-
-              <EuiSpacer size="m" />
-
-              <EuiAccordion
-                id="skillEditAdvancedOptions"
-                buttonContent={labels.agentSkills.advancedOptionsLabel}
-              >
-                <EuiSpacer size="s" />
-                <Controller
-                  name="tool_ids"
-                  control={control}
-                  render={({ field: { value, onChange }, fieldState: { error } }) => (
-                    <EuiFormRow
-                      label={labels.skills.toolIdsLabel}
-                      isInvalid={!!error}
-                      error={error?.message}
-                      fullWidth
-                    >
-                      <EuiComboBox
-                        isInvalid={!!error}
-                        fullWidth
-                        options={toolOptions}
-                        selectedOptions={value.map((toolId) => ({ label: toolId, value: toolId }))}
-                        onChange={(selected) =>
-                          onChange(selected.map((opt) => opt.value as string))
-                        }
-                      />
-                    </EuiFormRow>
-                  )}
-                />
-              </EuiAccordion>
+              <SkillForm control={control} toolOptions={toolOptions} readonlySkillId={skillId} />
             </EuiForm>
           </FormProvider>
         )}

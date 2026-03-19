@@ -7,12 +7,9 @@
 
 import React, { useCallback, useMemo } from 'react';
 import {
-  EuiAccordion,
   EuiButton,
   EuiButtonEmpty,
   EuiCallOut,
-  EuiComboBox,
-  EuiFieldText,
   EuiFlexGroup,
   EuiFlexItem,
   EuiFlyout,
@@ -20,14 +17,11 @@ import {
   EuiFlyoutFooter,
   EuiFlyoutHeader,
   EuiForm,
-  EuiFormRow,
   EuiLink,
-  EuiMarkdownEditor,
   EuiSpacer,
-  EuiTextArea,
   EuiTitle,
 } from '@elastic/eui';
-import { Controller, FormProvider } from 'react-hook-form';
+import { FormProvider } from 'react-hook-form';
 import type { PublicSkillDefinition } from '@kbn/agent-builder-common';
 import { labels } from '../../../utils/i18n';
 import { useCreateSkill } from '../../../hooks/skills/use_create_skill';
@@ -35,6 +29,7 @@ import { useSkillForm } from '../../../hooks/skills/use_skill_form';
 import { useTools } from '../../../hooks/tools/use_tools';
 import { useNavigation } from '../../../hooks/use_navigation';
 import { appPaths } from '../../../utils/app_paths';
+import { SkillForm } from './skill_form';
 
 interface SkillCreateFlyoutProps {
   onClose: () => void;
@@ -117,103 +112,7 @@ export const SkillCreateFlyout: React.FC<SkillCreateFlyoutProps> = ({
           <EuiSpacer size="m" />
 
           <EuiForm component="form" onSubmit={handleSubmit(onSubmit)}>
-            <EuiFlexGroup gutterSize="m" responsive={false}>
-              <EuiFlexItem>
-                <Controller
-                  name="id"
-                  control={control}
-                  render={({ field, fieldState: { error } }) => (
-                    <EuiFormRow
-                      label={labels.skills.skillIdLabel}
-                      isInvalid={!!error}
-                      error={error?.message}
-                      fullWidth
-                    >
-                      <EuiFieldText {...field} fullWidth isInvalid={!!error} />
-                    </EuiFormRow>
-                  )}
-                />
-              </EuiFlexItem>
-              <EuiFlexItem>
-                <Controller
-                  name="name"
-                  control={control}
-                  render={({ field, fieldState: { error } }) => (
-                    <EuiFormRow
-                      label={labels.skills.nameLabel}
-                      isInvalid={!!error}
-                      error={error?.message}
-                      fullWidth
-                    >
-                      <EuiFieldText {...field} fullWidth isInvalid={!!error} />
-                    </EuiFormRow>
-                  )}
-                />
-              </EuiFlexItem>
-            </EuiFlexGroup>
-            <EuiSpacer size="m" />
-            <Controller
-              name="description"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <EuiFormRow
-                  label={labels.skills.descriptionLabel}
-                  isInvalid={!!error}
-                  error={error?.message}
-                  fullWidth
-                >
-                  <EuiTextArea {...field} fullWidth isInvalid={!!error} rows={3} />
-                </EuiFormRow>
-              )}
-            />
-
-            <Controller
-              name="content"
-              control={control}
-              render={({ field: { onChange, value }, fieldState: { error } }) => (
-                <EuiFormRow
-                  label={labels.agentSkills.skillDetailInstructionsLabel}
-                  isInvalid={!!error}
-                  error={error?.message}
-                  fullWidth
-                >
-                  <EuiMarkdownEditor
-                    onChange={onChange}
-                    value={value ?? ''}
-                    aria-label={labels.agentSkills.skillDetailInstructionsLabel}
-                  />
-                </EuiFormRow>
-              )}
-            />
-
-            <EuiSpacer size="m" />
-
-            <EuiAccordion
-              id="skillCreateAdvancedOptions"
-              buttonContent={labels.agentSkills.advancedOptionsLabel}
-            >
-              <EuiSpacer size="s" />
-              <Controller
-                name="tool_ids"
-                control={control}
-                render={({ field: { value, onChange }, fieldState: { error } }) => (
-                  <EuiFormRow
-                    label={labels.skills.toolIdsLabel}
-                    isInvalid={!!error}
-                    error={error?.message}
-                    fullWidth
-                  >
-                    <EuiComboBox
-                      isInvalid={!!error}
-                      fullWidth
-                      options={toolOptions}
-                      selectedOptions={value.map((toolId) => ({ label: toolId, value: toolId }))}
-                      onChange={(selected) => onChange(selected.map((opt) => opt.value as string))}
-                    />
-                  </EuiFormRow>
-                )}
-              />
-            </EuiAccordion>
+            <SkillForm control={control} toolOptions={toolOptions} />
           </EuiForm>
         </FormProvider>
       </EuiFlyoutBody>
