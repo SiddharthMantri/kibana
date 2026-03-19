@@ -22,6 +22,7 @@ import {
   EuiForm,
   EuiFormRow,
   EuiLink,
+  EuiMarkdownEditor,
   EuiSpacer,
   EuiTextArea,
   EuiTitle,
@@ -150,7 +151,7 @@ export const SkillCreateFlyout: React.FC<SkillCreateFlyoutProps> = ({
                 />
               </EuiFlexItem>
             </EuiFlexGroup>
-
+            <EuiSpacer size="m" />
             <Controller
               name="description"
               control={control}
@@ -169,14 +170,18 @@ export const SkillCreateFlyout: React.FC<SkillCreateFlyoutProps> = ({
             <Controller
               name="content"
               control={control}
-              render={({ field, fieldState: { error } }) => (
+              render={({ field: { onChange, value }, fieldState: { error } }) => (
                 <EuiFormRow
                   label={labels.agentSkills.skillDetailInstructionsLabel}
                   isInvalid={!!error}
                   error={error?.message}
                   fullWidth
                 >
-                  <EuiTextArea {...field} fullWidth isInvalid={!!error} rows={8} />
+                  <EuiMarkdownEditor
+                    onChange={onChange}
+                    value={value ?? ''}
+                    aria-label={labels.agentSkills.skillDetailInstructionsLabel}
+                  />
                 </EuiFormRow>
               )}
             />

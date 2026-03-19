@@ -23,6 +23,7 @@ import {
   EuiFormRow,
   EuiLink,
   EuiLoadingSpinner,
+  EuiMarkdownEditor,
   EuiSpacer,
   EuiTextArea,
   EuiTitle,
@@ -150,7 +151,7 @@ export const SkillEditFlyout: React.FC<SkillEditFlyoutProps> = ({ skillId, onClo
                   />
                 </EuiFlexItem>
               </EuiFlexGroup>
-
+              <EuiSpacer size="m" />
               <Controller
                 name="description"
                 control={control}
@@ -169,14 +170,18 @@ export const SkillEditFlyout: React.FC<SkillEditFlyoutProps> = ({ skillId, onClo
               <Controller
                 name="content"
                 control={control}
-                render={({ field, fieldState: { error } }) => (
+                render={({ field: { onChange, value }, fieldState: { error } }) => (
                   <EuiFormRow
                     label={labels.agentSkills.skillDetailInstructionsLabel}
                     isInvalid={!!error}
                     error={error?.message}
                     fullWidth
                   >
-                    <EuiTextArea {...field} fullWidth isInvalid={!!error} rows={8} />
+                    <EuiMarkdownEditor
+                      onChange={onChange}
+                      value={value ?? ''}
+                      aria-label={labels.agentSkills.skillDetailInstructionsLabel}
+                    />
                   </EuiFormRow>
                 )}
               />
