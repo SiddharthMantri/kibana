@@ -7,7 +7,7 @@
 
 import { formatAgentBuilderErrorMessage } from '@kbn/agent-builder-browser';
 import type { PublicSkillDefinition } from '@kbn/agent-builder-common';
-import { useQuery, } from '@kbn/react-query';
+import { useQuery } from '@kbn/react-query';
 import { useEffect } from 'react';
 import { queryKeys } from '../../query_keys';
 import { labels } from '../../utils/i18n';
@@ -21,7 +21,6 @@ export const useSkillsService = () => {
     queryKey: queryKeys.skills.all,
     queryFn: () => skillsService.list(),
     keepPreviousData: true,
-    refetchOnWindowFocus: false,
   });
 
   return { skills: data ?? [], isLoading, error, isError };
