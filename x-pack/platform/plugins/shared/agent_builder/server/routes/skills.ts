@@ -78,7 +78,6 @@ export function registerSkillsRoutes({
         validate: false,
       },
       wrapHandler(async (ctx, request, response) => {
-        console.log('list skills');
         const { skills: skillService } = getInternalServices();
         const registry = await skillService.getRegistry({ request });
         const skills = await registry.list({ summaryOnly: true });
