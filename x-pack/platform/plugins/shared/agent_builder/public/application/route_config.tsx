@@ -10,6 +10,7 @@ import { matchPath } from 'react-router-dom';
 import { i18n } from '@kbn/i18n';
 
 import { RouteDisplay } from './components/common/route_display';
+import { AgentSkills } from './components/agents/skills/agent_skills';
 import { AgentBuilderConversationsPage } from './pages/conversations';
 import { AgentBuilderAgentsPage } from './pages/agents';
 import { AgentBuilderAgentsCreate } from './pages/agent_create';
@@ -74,7 +75,7 @@ export const agentRoutes: RouteDefinition[] = [
     path: '/agents/:agentId/skills',
     sidebarView: 'agentSettings',
     navLabel: navLabels.skills,
-    element: <RouteDisplay />,
+    element: <AgentSkills />,
   },
   {
     path: '/agents/:agentId/plugins',
