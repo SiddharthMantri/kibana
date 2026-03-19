@@ -24,6 +24,7 @@ import {
   createReasoningStep,
   createToolCallStep,
 } from '@kbn/agent-builder-common/chat/conversation';
+import { i18n } from '@kbn/i18n';
 import { finalize, type Observable, type Subscription } from 'rxjs';
 import { isBrowserToolCallEvent } from '@kbn/agent-builder-common/chat/events';
 import { useRef } from 'react';
@@ -133,7 +134,11 @@ export const useSubscribeToChatEvents = ({
       conversationActions.addCompactionStep({
         tokenCountBefore: event.data.token_count_before,
       });
-      setAgentReasoning('Optimizing conversation context...');
+      setAgentReasoning(
+        i18n.translate('xpack.agentBuilder.chatEvents.compactionStarted', {
+          defaultMessage: 'Compacting conversation context...',
+        })
+      );
     } else if (isCompactionCompletedEvent(event)) {
       conversationActions.setCompactionStepComplete({
         tokenCountAfter: event.data.token_count_after,

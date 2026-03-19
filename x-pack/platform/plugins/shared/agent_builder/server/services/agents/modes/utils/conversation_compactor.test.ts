@@ -87,6 +87,7 @@ const createMockChatModel = () =>
         discussion_summary: 'Test conversation summary',
         user_intent: 'Investigate test data',
         key_topics: ['testing', 'data'],
+        entities: [{ type: 'index', name: 'test-index' }],
         outcomes_and_decisions: ['Decided to use approach A'],
         unanswered_questions: [],
       }),
@@ -103,30 +104,11 @@ describe('extractProgrammaticSummary', () => {
     expect(result.tool_calls_summary[0].params_summary).toContain('test-index');
   });
 
-  it('should extract entities from tool params', () => {
+  it('should not extract entities (delegated to LLM)', () => {
     const rounds = [createMockRound('r1', 50, 1)];
     const result = extractProgrammaticSummary(rounds);
 
-    const indexEntities = result.entities.filter((e) => e.type === 'index');
-    expect(indexEntities).toHaveLength(1);
-    expect(indexEntities[0].name).toBe('test-index');
-  });
-
-  it('should extract query entities from tool params', () => {
-    const rounds = [createMockRound('r1', 50, 1)];
-    const result = extractProgrammaticSummary(rounds);
-
-    const queryEntities = result.entities.filter((e) => e.type === 'query');
-    expect(queryEntities).toHaveLength(1);
-    expect(queryEntities[0].name).toContain('FROM test-index');
-  });
-
-  it('should deduplicate entities across rounds', () => {
-    const rounds = [createMockRound('r1', 50, 2), createMockRound('r2', 50, 2)];
-    const result = extractProgrammaticSummary(rounds);
-
-    const indexEntities = result.entities.filter((e) => e.type === 'index');
-    expect(indexEntities).toHaveLength(1);
+    expect(result).not.toHaveProperty('entities');
   });
 
   it('should generate agent_actions for each tool call', () => {
@@ -142,7 +124,6 @@ describe('extractProgrammaticSummary', () => {
     const result = extractProgrammaticSummary(rounds);
 
     expect(result.tool_calls_summary).toHaveLength(0);
-    expect(result.entities).toHaveLength(0);
     expect(result.agent_actions).toHaveLength(0);
   });
 
@@ -293,10 +274,13 @@ describe('compactConversation', () => {
     expect(data.discussion_summary).toBe('Test conversation summary');
     expect(data.user_intent).toBe('Investigate test data');
 
+    // LLM-extracted entities
+    expect(data.entities.length).toBeGreaterThan(0);
+    expect(data.entities[0]).toEqual({ type: 'index', name: 'test-index' });
+
     // Programmatically extracted fields
     expect(data.tool_calls_summary.length).toBeGreaterThan(0);
     expect(data.tool_calls_summary[0].tool_id).toBe('tool-0');
-    expect(data.entities.length).toBeGreaterThan(0);
     expect(data.agent_actions.length).toBeGreaterThan(0);
   });
 

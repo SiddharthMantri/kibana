@@ -7,11 +7,7 @@
 
 import type { AgentBuilderEvent } from '../base/events';
 import type { ToolResult } from '../tools/tool_result';
-import type {
-  CompactionSummary,
-  ConversationInternalState,
-  ConversationRound,
-} from './conversation';
+import type { ConversationInternalState, ConversationRound } from './conversation';
 import type { PromptRequestSource, PromptRequest } from '../agents/prompts';
 import type { VersionedAttachment } from '../attachments';
 
@@ -228,11 +224,6 @@ export interface RoundCompleteEventData {
    * Updated conversation-level attachments after this round.
    **/
   attachments?: VersionedAttachment[];
-  /**
-   * Compaction summary generated during this round, if compaction was triggered.
-   * Persisted at the conversation level for reuse in subsequent rounds.
-   */
-  compaction_summary?: CompactionSummary;
 }
 
 export type RoundCompleteEvent = ChatEventBase<ChatEventType.roundComplete, RoundCompleteEventData>;

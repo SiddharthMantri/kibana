@@ -30,15 +30,17 @@ type ResearchAgentPromptParams = PromptFactoryParams & ResearchAgentPromptRuntim
 export const getResearchAgentPrompt = async (
   params: ResearchAgentPromptParams
 ): Promise<BaseMessageLike[]> => {
-  const { actions, processedConversation, resultTransformer, compactionSummary } = params;
+  const { actions, processedConversation, resultTransformer } = params;
   const clearSystemMessage = params.configuration.research.replace_default_instructions;
 
   // Generate messages from the conversation's rounds, optionally
   // injecting a compaction summary for older compacted rounds.
+  // The summary is sourced from processedConversation.compactionSummary,
+  // which is set during the compaction phase in the conversation pipeline.
   const previousRoundsAsMessages = await convertPreviousRounds({
     conversation: processedConversation,
     resultTransformer,
-    compactionSummary,
+    compactionSummary: processedConversation.compactionSummary,
   });
 
   return [

@@ -143,17 +143,12 @@ export const fromEs = (document: Document): Conversation => {
 
   const roundsWithRefs = applyAttachmentRefsToRounds(deserializedRounds, refsByRound);
 
-  const compactionSummaryProp = document._source!.compaction_summary
-    ? { compaction_summary: document._source!.compaction_summary }
-    : {};
-
   if (existingAttachments && existingAttachments.length > 0) {
     return {
       ...base,
       rounds: roundsWithRefs,
       attachments: existingAttachments,
       ...(document._source!.state && { state: document._source!.state }),
-      ...compactionSummaryProp,
     };
   }
 
@@ -163,7 +158,6 @@ export const fromEs = (document: Document): Conversation => {
       rounds: roundsWithRefs,
       ...(attachmentsForRefs.length > 0 && { attachments: attachmentsForRefs }),
       ...(document._source!.state && { state: document._source!.state }),
-      ...compactionSummaryProp,
     };
   }
 
@@ -171,9 +165,6 @@ export const fromEs = (document: Document): Conversation => {
     ...base,
     rounds: roundsWithRefs,
     ...(document._source!.state && { state: document._source!.state }),
-    ...(document._source!.compaction_summary && {
-      compaction_summary: document._source!.compaction_summary,
-    }),
   };
 };
 
@@ -195,7 +186,6 @@ export const toEs = (conversation: Conversation, space: string): ConversationPro
     conversation_rounds: serializeStepResults(conversation.rounds),
     attachments: conversation.attachments ?? [],
     state: conversation.state,
-    compaction_summary: conversation.compaction_summary,
   };
 };
 
@@ -242,6 +232,5 @@ export const createRequestToEs = ({
     conversation_rounds: serializeStepResults(conversation.rounds),
     attachments: conversation.attachments ?? [],
     state: conversation.state,
-    compaction_summary: conversation.compaction_summary,
   };
 };

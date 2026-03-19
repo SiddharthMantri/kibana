@@ -9,9 +9,10 @@ import { z } from '@kbn/zod';
 
 /**
  * Zod schema for the LLM-generated portion of the compaction summary.
- * Only includes semantic fields that require natural language understanding.
- * Deterministic fields (tool_calls_summary, entities, agent_actions) are
- * extracted programmatically and merged afterward.
+ * Includes semantic fields that require natural language understanding,
+ * plus entity extraction (delegated to the LLM for flexibility).
+ * Deterministic fields (tool_calls_summary, agent_actions) are extracted
+ * programmatically and merged afterward.
  */
 export const llmCompactionSchema = z.object({
   discussion_summary: z
@@ -29,6 +30,20 @@ export const llmCompactionSchema = z.object({
     .describe(
       "Primary subjects discussed, e.g., 'Elasticsearch indexing', 'API authentication', 'dashboard configuration'."
     ),
+  entities: z
+    .array(
+      z.object({
+        type: z
+          .string()
+          .describe(
+            "The entity type. Currently only 'index' is supported — extract Elasticsearch index names, data views, or index patterns mentioned in the conversation."
+          ),
+        name: z.string().describe('The entity value, e.g. the index name or pattern.'),
+      })
+    )
+    .describe(
+      "Structured entities referenced in the conversation. Extract only supported entity types. Currently the only supported type is 'index' (Elasticsearch index names, data views, and index patterns). Deduplicate entries."
+    ),
   outcomes_and_decisions: z
     .array(z.string())
     .describe(
@@ -45,20 +60,21 @@ export type LlmCompactionOutput = z.infer<typeof llmCompactionSchema>;
 
 /**
  * System prompt for the compaction summarization LLM call.
- * The LLM focuses on semantic understanding; tool call history and
- * entities are provided as reference context but should not be reproduced.
+ * The LLM handles semantic understanding and entity extraction;
+ * tool call history is provided as reference context but should not be reproduced.
  */
 export const COMPACTION_SYSTEM_PROMPT = `You are an expert AI assistant summarizing an ongoing conversation to enable seamless continuation.
 
 Your summary will REPLACE the detailed conversation history -- the agent will ONLY see your summary plus the most recent conversation rounds. It is critical that you preserve everything needed to continue working effectively.
 
-NOTE: Tool call history and entity details have already been extracted and will be provided separately. You do NOT need to reproduce them. Focus on the semantic understanding that cannot be extracted programmatically.
+NOTE: Tool call history has already been extracted and will be provided separately. You do NOT need to reproduce tool call details. Focus on the semantic understanding and entity extraction that cannot be captured programmatically.
 
 ## What to preserve
 - **User intent**: What the user is trying to achieve
 - **Decisions and findings**: Key conclusions, resolved issues, data discovered
 - **User constraints and preferences**: Any stated requirements or preferences
 - **Current task state**: Where things stand, what has been done, what remains
+- **Entities**: Extract structured entities from the conversation. Currently the only supported entity type is "index" — capture any Elasticsearch index names, data views, or index patterns referenced in tool calls, user messages, or agent responses. Deduplicate entries.
 
 ## What to omit
 - Tool call details (already captured separately)

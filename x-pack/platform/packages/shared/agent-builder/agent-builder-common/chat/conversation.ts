@@ -279,12 +279,6 @@ export interface Conversation {
    * Keeps track of which prompts have been answered and the response.
    */
   state?: ConversationInternalState;
-  /**
-   * Summary of compacted older conversation rounds.
-   * Generated when the conversation approaches the model's context window limit.
-   * Reused across rounds until regeneration is needed.
-   */
-  compaction_summary?: CompactionSummary;
 }
 
 /**
@@ -298,6 +292,12 @@ export interface ConversationInternalState {
    * These tools are persisted across rounds so they remain available.
    */
   dynamic_tool_ids?: string[];
+  /**
+   * Summary of compacted older conversation rounds.
+   * Generated when the conversation approaches the model's context window limit.
+   * Reused across rounds until regeneration is needed.
+   */
+  compaction_summary?: CompactionSummary;
 }
 
 export type ConversationWithoutRounds = Omit<Conversation, 'rounds'>;
@@ -322,8 +322,8 @@ export interface CompactionEntity {
 /**
  * Structured data produced by the compaction pipeline.
  * Semantic fields (discussion_summary, user_intent, key_topics,
- * outcomes_and_decisions, unanswered_questions) are LLM-generated.
- * Deterministic fields (tool_calls_summary, entities, agent_actions)
+ * outcomes_and_decisions, unanswered_questions, entities) are LLM-generated.
+ * Deterministic fields (tool_calls_summary, agent_actions)
  * are extracted programmatically from the round data.
  */
 export interface CompactionStructuredData {

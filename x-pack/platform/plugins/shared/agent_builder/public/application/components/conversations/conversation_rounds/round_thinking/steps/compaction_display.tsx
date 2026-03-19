@@ -46,7 +46,7 @@ export const CompactionDisplay: React.FC<CompactionDisplayProps> = ({
           <EuiText size="s" color={textColor}>
             <FormattedMessage
               id="xpack.agentBuilder.thinking.compaction.inProgress"
-              defaultMessage="Optimizing conversation context..."
+              defaultMessage="Compacting conversation context..."
             />
           </EuiText>
         </div>

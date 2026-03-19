@@ -12,13 +12,16 @@ import type {
   CompactionSummary,
   CompactionStructuredData,
   CompactionToolCallSummary,
-  CompactionEntity,
 } from '@kbn/agent-builder-common';
 import { isToolCallStep } from '@kbn/agent-builder-common';
 import { estimateTokens } from '@kbn/agent-builder-genai-utils/tools/utils/token_count';
 import type { ProcessedConversation, ProcessedConversationRound } from './prepare_conversation';
 import type { ContextBudget } from './context_budget';
-import { estimateConversationTokens, shouldTriggerCompaction } from './context_budget';
+import {
+  estimateConversationTokens,
+  estimateRoundTokens,
+  shouldTriggerCompaction,
+} from './context_budget';
 import { convertPreviousRounds } from './to_langchain_messages';
 import { llmCompactionSchema, COMPACTION_SYSTEM_PROMPT } from './compaction_schema';
 import type { LlmCompactionOutput } from './compaction_schema';
@@ -128,20 +131,19 @@ const summarizeParams = (params: Record<string, unknown>): string => {
 /**
  * Walks conversation rounds and extracts deterministic summary fields:
  * - tool_calls_summary: list of tool calls with their params
- * - entities: index names, fields, queries found in tool params
  * - agent_actions: human-readable description of each tool call
+ *
+ * Entity extraction (e.g. index names) is delegated to the LLM via
+ * structured output so new entity types can be added without code changes.
  */
 export const extractProgrammaticSummary = (
   rounds: ProcessedConversationRound[]
 ): {
   tool_calls_summary: CompactionToolCallSummary[];
-  entities: CompactionEntity[];
   agent_actions: string[];
 } => {
   const toolCalls: CompactionToolCallSummary[] = [];
-  const entities: CompactionEntity[] = [];
   const agentActions: string[] = [];
-  const seenEntities = new Set<string>();
 
   for (const round of rounds) {
     for (const step of round.steps) {
@@ -152,56 +154,13 @@ export const extractProgrammaticSummary = (
       const paramsSummary = summarizeParams(step.params);
       toolCalls.push({ tool_id: step.tool_id, params_summary: paramsSummary });
       agentActions.push(`Called ${step.tool_id}(${paramsSummary})`);
-
-      extractEntitiesFromParams(step.params, entities, seenEntities);
     }
   }
 
   return {
     tool_calls_summary: toolCalls,
-    entities,
     agent_actions: agentActions,
   };
-};
-
-/**
- * Extracts known entity types from tool call params.
- * Currently recognises index names and query strings; extend as needed.
- */
-const extractEntitiesFromParams = (
-  params: Record<string, unknown>,
-  entities: CompactionEntity[],
-  seen: Set<string>
-): void => {
-  const addEntity = (type: string, name: string) => {
-    const key = `${type}:${name}`;
-    if (!seen.has(key)) {
-      seen.add(key);
-      entities.push({ type, name });
-    }
-  };
-
-  // Index names
-  if (typeof params.index === 'string') {
-    addEntity('index', params.index);
-  }
-  if (typeof params.indices === 'string') {
-    addEntity('index', params.indices);
-  }
-  if (Array.isArray(params.indices)) {
-    for (const idx of params.indices) {
-      if (typeof idx === 'string') {
-        addEntity('index', idx);
-      }
-    }
-  }
-
-  // Query strings
-  if (typeof params.query === 'string' && params.query.length > 0) {
-    const truncatedQuery =
-      params.query.length > 80 ? `${params.query.slice(0, 80)}…` : params.query;
-    addEntity('query', truncatedQuery);
-  }
 };
 
 // ---------------------------------------------------------------------------
@@ -213,8 +172,8 @@ const extractEntitiesFromParams = (
  *
  * 1. Check whether compaction is needed (token threshold)
  * 2. Reuse an existing summary if it still fits
- * 3. Extract deterministic fields programmatically (tool calls, entities, actions)
- * 4. Call the LLM for semantic fields (summary, intent, outcomes, etc.)
+ * 3. Extract deterministic fields programmatically (tool calls, actions)
+ * 4. Call the LLM for semantic fields (summary, intent, entities, outcomes, etc.)
  * 5. Merge both into CompactionStructuredData and persist
  * 6. Fall back to hard truncation if the result still exceeds the budget
  */
@@ -340,7 +299,7 @@ const summarizeOlderRounds = async (
   const programmatic = extractProgrammaticSummary(roundsToSummarize);
 
   try {
-    // Phase 2: LLM call for semantic fields.
+    // Phase 2: LLM call for semantic fields and entity extraction.
     // Pass the existing summary so the LLM builds on it rather than re-processing
     // rounds it has already seen, and to avoid overflowing the summarizer's context.
     const llmOutput = await generateLlmSummary(
@@ -397,7 +356,6 @@ const generateLlmSummary = async (
   roundsToSummarize: ProcessedConversationRound[],
   programmatic: {
     tool_calls_summary: CompactionToolCallSummary[];
-    entities: CompactionEntity[];
     agent_actions: string[];
   },
   chatModel: InferenceChatModel,
@@ -451,18 +409,23 @@ const applyHardTruncation = (
   conversation: ProcessedConversation,
   budget: ContextBudget
 ): ProcessedConversation => {
-  const rounds = [...conversation.previousRounds];
+  const { previousRounds } = conversation;
+  let currentTokens = estimateConversationTokens(previousRounds);
 
-  while (rounds.length > PRESERVED_RECENT_ROUNDS) {
-    const currentTokens = estimateConversationTokens(rounds);
-    if (currentTokens <= budget.historyBudget) {
-      break;
-    }
-    rounds.shift();
+  if (currentTokens <= budget.historyBudget) {
+    return conversation;
+  }
+
+  const minStart = previousRounds.length - PRESERVED_RECENT_ROUNDS;
+  let start = 0;
+
+  while (start < minStart && currentTokens > budget.historyBudget) {
+    currentTokens -= estimateRoundTokens(previousRounds[start]);
+    start++;
   }
 
   return {
     ...conversation,
-    previousRounds: rounds,
+    previousRounds: previousRounds.slice(start),
   };
 };

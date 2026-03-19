@@ -21,14 +21,14 @@ type AnswerAgentPromptParams = PromptFactoryParams & AnswerAgentPromptRuntimePar
 export const getAnswerAgentPrompt = async (
   params: AnswerAgentPromptParams
 ): Promise<BaseMessageLike[]> => {
-  const { actions, answerActions, processedConversation, resultTransformer, compactionSummary } =
-    params;
+  const { actions, answerActions, processedConversation, resultTransformer } = params;
 
   // Generate messages from the conversation's rounds, with optional compaction summary
+  // sourced from processedConversation.compactionSummary (set during compaction phase).
   const previousRoundsAsMessages = await convertPreviousRounds({
     conversation: processedConversation,
     resultTransformer,
-    compactionSummary,
+    compactionSummary: processedConversation.compactionSummary,
   });
 
   return [
@@ -110,16 +110,16 @@ export const getStructuredAnswerPrompt = async (
     capabilities,
     processedConversation,
     resultTransformer,
-    compactionSummary,
   } = params;
   const { attachmentTypes, versionedAttachmentPresentation } = processedConversation;
   const visEnabled = capabilities.visualizations;
 
   // Generate messages from the conversation's rounds, with optional compaction summary
+  // sourced from processedConversation.compactionSummary (set during compaction phase).
   const previousRoundsAsMessages = await convertPreviousRounds({
     conversation: processedConversation,
     resultTransformer,
-    compactionSummary,
+    compactionSummary: processedConversation.compactionSummary,
   });
 
   return [
