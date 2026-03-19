@@ -7,6 +7,7 @@
 
 import React, { useMemo, useState } from 'react';
 import {
+  EuiCallOut,
   EuiFieldSearch,
   EuiFlexGroup,
   EuiFlexItem,
@@ -18,6 +19,7 @@ import {
   EuiSwitch,
   EuiText,
   EuiTitle,
+  EuiToolTip,
   useEuiTheme,
 } from '@elastic/eui';
 import { css } from '@emotion/react';
@@ -32,6 +34,8 @@ interface SkillLibraryPanelProps {
   activeSkillIdSet: Set<string>;
   onToggleSkill: (skill: PublicSkillSummary, isActive: boolean) => void;
   mutatingSkillId: string | null;
+  enableElasticCapabilities?: boolean;
+  builtinSkillIdSet?: Set<string>;
 }
 
 /**
@@ -44,6 +48,8 @@ export const SkillLibraryPanel: React.FC<SkillLibraryPanelProps> = ({
   activeSkillIdSet,
   onToggleSkill,
   mutatingSkillId,
+  enableElasticCapabilities = false,
+  builtinSkillIdSet,
 }) => {
   const { createAgentBuilderUrl } = useNavigation();
   const manageLibraryUrl = createAgentBuilderUrl(appPaths.manage.skills);
@@ -97,6 +103,17 @@ export const SkillLibraryPanel: React.FC<SkillLibraryPanelProps> = ({
 
         <EuiSpacer size="m" />
 
+        {enableElasticCapabilities && (
+          <>
+            <EuiCallOut
+              size="s"
+              iconType="iInCircle"
+              title={labels.agentSkills.elasticCapabilitiesCallout}
+            />
+            <EuiSpacer size="m" />
+          </>
+        )}
+
         {filteredSkills.length === 0 ? (
           <EuiText size="s" color="subdued" textAlign="center">
             {searchQuery.trim()
@@ -112,6 +129,8 @@ export const SkillLibraryPanel: React.FC<SkillLibraryPanelProps> = ({
                   isActive={activeSkillIdSet.has(skill.id)}
                   onToggle={onToggleSkill}
                   isMutating={mutatingSkillId === skill.id}
+                  enableElasticCapabilities={enableElasticCapabilities}
+                  builtinSkillIdSet={builtinSkillIdSet}
                 />
               </EuiFlexItem>
             ))}
@@ -127,6 +146,8 @@ interface SkillToggleRowProps {
   isActive: boolean;
   onToggle: (skill: PublicSkillSummary, isActive: boolean) => void;
   isMutating: boolean;
+  enableElasticCapabilities?: boolean;
+  builtinSkillIdSet?: Set<string>;
 }
 
 /**
@@ -138,8 +159,11 @@ const SkillToggleRow: React.FC<SkillToggleRowProps> = ({
   isActive,
   onToggle,
   isMutating,
+  enableElasticCapabilities = false,
+  builtinSkillIdSet,
 }) => {
   const { euiTheme } = useEuiTheme();
+  const isBuiltinManaged = enableElasticCapabilities && (builtinSkillIdSet?.has(skill.id) ?? false);
 
   return (
     <EuiFlexGroup alignItems="center" gutterSize="m" responsive={false}>
@@ -166,14 +190,27 @@ const SkillToggleRow: React.FC<SkillToggleRowProps> = ({
         </EuiText>
       </EuiFlexItem>
       <EuiFlexItem grow={false}>
-        <EuiSwitch
-          label={skill.name}
-          showLabel={false}
-          checked={isActive}
-          onChange={(e) => onToggle(skill, e.target.checked)}
-          disabled={isMutating}
-          compressed
-        />
+        {isBuiltinManaged ? (
+          <EuiToolTip content={labels.agentSkills.elasticCapabilitiesManagedTooltip}>
+            <EuiSwitch
+              label={skill.name}
+              showLabel={false}
+              checked={true}
+              onChange={() => {}}
+              disabled={true}
+              compressed
+            />
+          </EuiToolTip>
+        ) : (
+          <EuiSwitch
+            label={skill.name}
+            showLabel={false}
+            checked={isActive}
+            onChange={(e) => onToggle(skill, e.target.checked)}
+            disabled={isMutating}
+            compressed
+          />
+        )}
       </EuiFlexItem>
     </EuiFlexGroup>
   );

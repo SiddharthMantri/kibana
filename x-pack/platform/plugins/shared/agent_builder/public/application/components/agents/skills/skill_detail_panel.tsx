@@ -24,6 +24,7 @@ interface SkillDetailPanelProps {
   skillId: string;
   onEdit: () => void;
   onRemove: () => void;
+  isReadOnly?: boolean;
 }
 
 interface SkillDetailRowProps {
@@ -64,6 +65,7 @@ export const SkillDetailPanel: React.FC<SkillDetailPanelProps> = ({
   skillId,
   onEdit,
   onRemove,
+  isReadOnly = false,
 }) => {
   const { euiTheme } = useEuiTheme();
   const { skill, isLoading } = useSkill({ skillId });
@@ -114,21 +116,25 @@ export const SkillDetailPanel: React.FC<SkillDetailPanelProps> = ({
             </EuiFlexItem>
             <EuiFlexItem grow={false}>
               <EuiFlexGroup gutterSize="s" responsive={false}>
-                <EuiFlexItem grow={false}>
-                  <EuiButtonEmpty iconType="pencil" size="xs" onClick={onEdit}>
-                    {labels.skills.editSkillButtonLabel}
-                  </EuiButtonEmpty>
-                </EuiFlexItem>
-                <EuiFlexItem grow={false}>
-                  <EuiButtonEmpty
-                    iconType="cross"
-                    size="xs"
-                    color="danger"
-                    onClick={() => setIsConfirmOpen(true)}
-                  >
-                    {labels.agentSkills.removeSkillButtonLabel}
-                  </EuiButtonEmpty>
-                </EuiFlexItem>
+                {!skill.readonly && (
+                  <EuiFlexItem grow={false}>
+                    <EuiButtonEmpty iconType="pencil" size="xs" onClick={onEdit}>
+                      {labels.skills.editSkillButtonLabel}
+                    </EuiButtonEmpty>
+                  </EuiFlexItem>
+                )}
+                {!isReadOnly && (
+                  <EuiFlexItem grow={false}>
+                    <EuiButtonEmpty
+                      iconType="cross"
+                      size="xs"
+                      color="danger"
+                      onClick={() => setIsConfirmOpen(true)}
+                    >
+                      {labels.agentSkills.removeSkillButtonLabel}
+                    </EuiButtonEmpty>
+                  </EuiFlexItem>
+                )}
               </EuiFlexGroup>
             </EuiFlexItem>
           </EuiFlexGroup>

@@ -788,6 +788,26 @@ export const labels = {
         defaultMessage: 'Cancel',
       }
     ),
+    elasticCapabilitiesManagedTooltip: i18n.translate(
+      'xpack.agentBuilder.agentSkills.elasticCapabilitiesManagedTooltip',
+      {
+        defaultMessage:
+          'This built-in skill is automatically included because Elastic Capabilities is enabled for this agent.',
+      }
+    ),
+    elasticCapabilitiesReadOnlyBadge: i18n.translate(
+      'xpack.agentBuilder.agentSkills.elasticCapabilitiesReadOnlyBadge',
+      {
+        defaultMessage: 'Managed',
+      }
+    ),
+    elasticCapabilitiesCallout: i18n.translate(
+      'xpack.agentBuilder.agentSkills.elasticCapabilitiesCallout',
+      {
+        defaultMessage:
+          'Built-in skills are automatically included while Elastic Capabilities is enabled.',
+      }
+    ),
   },
   plugins: {
     title: i18n.translate('xpack.agentBuilder.plugins.title', { defaultMessage: 'Plugins' }),

@@ -83,10 +83,21 @@ export const AgentSkills: React.FC = () => {
     [agentSkillIds]
   );
 
+  const enableElasticCapabilities = agent?.configuration?.enable_elastic_capabilities ?? false;
+
+  const builtinSkills = useMemo(() => allSkills.filter((s) => s.readonly), [allSkills]);
+
+  const builtinSkillIdSet = useMemo(() => new Set(builtinSkills.map((s) => s.id)), [builtinSkills]);
+
   const activeSkills = useMemo(() => {
-    if (!agentSkillIdSet) return allSkills;
+    if (!agentSkillIdSet) return allSkills; // legacy: undefined = all active
+    if (enableElasticCapabilities) {
+      const explicitSkills = allSkills.filter((s) => agentSkillIdSet.has(s.id));
+      const builtinNotExplicit = builtinSkills.filter((s) => !agentSkillIdSet.has(s.id));
+      return [...explicitSkills, ...builtinNotExplicit];
+    }
     return allSkills.filter((s) => agentSkillIdSet.has(s.id));
-  }, [allSkills, agentSkillIdSet]);
+  }, [allSkills, agentSkillIdSet, enableElasticCapabilities, builtinSkills]);
 
   // Keep selection valid: auto-select first skill when none is selected,
   // and correct stale selections when the active skills list changes.
@@ -169,6 +180,7 @@ export const AgentSkills: React.FC = () => {
 
   // Route library switch changes to add/remove handlers.
   const handleToggleSkill = (skill: PublicSkillSummary, isActive: boolean) => {
+    if (enableElasticCapabilities && skill.readonly) return; // no-op for managed built-ins
     if (isActive) {
       handleAddSkill(skill);
     } else {
@@ -181,14 +193,16 @@ export const AgentSkills: React.FC = () => {
     if (!selectedSkillId) return;
     const skill = activeSkills.find((s) => s.id === selectedSkillId);
     if (skill) {
+      if (enableElasticCapabilities && skill.readonly) return; // no-op for managed built-ins
       handleRemoveSkill(skill);
     }
   };
 
-  const libraryActiveSkillIdSet = useMemo(
-    () => agentSkillIdSet ?? new Set(allSkills.map((s) => s.id)),
-    [agentSkillIdSet, allSkills]
-  );
+  const libraryActiveSkillIdSet = useMemo(() => {
+    if (!agentSkillIdSet) return new Set(allSkills.map((s) => s.id));
+    if (enableElasticCapabilities) return new Set([...agentSkillIdSet, ...builtinSkillIdSet]);
+    return agentSkillIdSet;
+  }, [agentSkillIdSet, allSkills, enableElasticCapabilities, builtinSkillIdSet]);
 
   const isLoading = agentLoading || skillsLoading;
 
@@ -330,6 +344,7 @@ export const AgentSkills: React.FC = () => {
                   onSelect={(s) => setSelectedSkillId(s.id)}
                   onRemove={handleRemoveSkill}
                   isRemoving={updateSkillsMutation.isLoading}
+                  readOnly={enableElasticCapabilities && skill.readonly}
                 />
               ))
             )}
@@ -346,6 +361,10 @@ export const AgentSkills: React.FC = () => {
               skillId={selectedSkillId}
               onEdit={() => setEditingSkillId(selectedSkillId)}
               onRemove={handleRemoveSelectedSkill}
+              isReadOnly={
+                enableElasticCapabilities &&
+                (activeSkills.find((s) => s.id === selectedSkillId)?.readonly ?? false)
+              }
             />
           ) : (
             <EuiFlexGroup
@@ -370,6 +389,8 @@ export const AgentSkills: React.FC = () => {
           activeSkillIdSet={libraryActiveSkillIdSet}
           onToggleSkill={handleToggleSkill}
           mutatingSkillId={mutatingSkillId}
+          enableElasticCapabilities={enableElasticCapabilities}
+          builtinSkillIdSet={builtinSkillIdSet}
         />
       )}
 

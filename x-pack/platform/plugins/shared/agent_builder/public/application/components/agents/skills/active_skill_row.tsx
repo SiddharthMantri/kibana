@@ -6,7 +6,14 @@
  */
 
 import React from 'react';
-import { EuiButtonIcon, EuiFlexGroup, EuiFlexItem, EuiText, useEuiTheme } from '@elastic/eui';
+import {
+  EuiBadge,
+  EuiButtonIcon,
+  EuiFlexGroup,
+  EuiFlexItem,
+  EuiText,
+  useEuiTheme,
+} from '@elastic/eui';
 import { css } from '@emotion/react';
 import type { PublicSkillSummary } from '@kbn/agent-builder-common';
 import { labels } from '../../../utils/i18n';
@@ -17,6 +24,7 @@ export interface ActiveSkillRowProps {
   onSelect: (skill: PublicSkillSummary) => void;
   onRemove: (skill: PublicSkillSummary) => void;
   isRemoving?: boolean;
+  readOnly?: boolean;
 }
 
 export const ActiveSkillRow: React.FC<ActiveSkillRowProps> = ({
@@ -25,6 +33,7 @@ export const ActiveSkillRow: React.FC<ActiveSkillRowProps> = ({
   onSelect,
   onRemove,
   isRemoving = false,
+  readOnly = false,
 }) => {
   const { euiTheme } = useEuiTheme();
 
@@ -60,16 +69,22 @@ export const ActiveSkillRow: React.FC<ActiveSkillRowProps> = ({
       </EuiFlexItem>
       {isSelected && (
         <EuiFlexItem grow={false}>
-          <EuiButtonIcon
-            iconType="cross"
-            aria-label={labels.agentSkills.removeSkillAriaLabel}
-            disabled={isRemoving}
-            onClick={(event) => {
-              // Prevent row selection when clicking the remove control.
-              event.stopPropagation();
-              onRemove(skill);
-            }}
-          />
+          {readOnly ? (
+            <EuiBadge color="hollow">
+              {labels.agentSkills.elasticCapabilitiesReadOnlyBadge}
+            </EuiBadge>
+          ) : (
+            <EuiButtonIcon
+              iconType="cross"
+              aria-label={labels.agentSkills.removeSkillAriaLabel}
+              disabled={isRemoving}
+              onClick={(event) => {
+                // Prevent row selection when clicking the remove control.
+                event.stopPropagation();
+                onRemove(skill);
+              }}
+            />
+          )}
         </EuiFlexItem>
       )}
     </EuiFlexGroup>
