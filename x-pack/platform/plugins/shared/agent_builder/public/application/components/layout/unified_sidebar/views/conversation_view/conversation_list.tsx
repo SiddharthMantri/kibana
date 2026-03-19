@@ -17,15 +17,15 @@ import {
 } from '@elastic/eui';
 import { css } from '@emotion/react';
 
-import { appPaths } from '../../../../utils/app_paths';
-import { useConversationList } from '../../../../hooks/use_conversation_list';
+import { appPaths } from '../../../../../utils/app_paths';
+import { useConversationList } from '../../../../../hooks/use_conversation_list';
 
-interface SidebarConversationListProps {
+interface ConversationListProps {
   agentId: string;
   currentConversationId: string | undefined;
 }
 
-export const SidebarConversationList: React.FC<SidebarConversationListProps> = ({
+export const ConversationList: React.FC<ConversationListProps> = ({
   agentId,
   currentConversationId,
 }) => {
@@ -43,7 +43,9 @@ export const SidebarConversationList: React.FC<SidebarConversationListProps> = (
     color: ${euiTheme.colors.textParagraph};
     font-size: ${euiTheme.font.scale.s}${euiTheme.font.defaultUnits};
     &:hover {
-      text-decoration: underline;
+      background-color: ${euiTheme.colors.backgroundLightPrimary};
+      color: ${euiTheme.colors.textPrimary};
+      text-decoration: none;
     }
   `;
 
