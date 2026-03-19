@@ -147,9 +147,11 @@ export const RoundThinkingPanel = ({
         )}
       </EuiFlexGroup>
       <RoundFlyout isOpen={showFlyout} onClose={toggleFlyout} rawRound={rawRound} />
-      {showTraceFlyout && traceId && (
-        <TraceFlyout traceId={traceId} onClose={() => setShowTraceFlyout(false)} />
-      )}
+      <TraceFlyout
+        isOpen={showTraceFlyout}
+        traceId={traceId}
+        onClose={() => setShowTraceFlyout(false)}
+      />
     </>
   );
 };

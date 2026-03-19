@@ -22,14 +22,20 @@ const traceFlyoutTitle = i18n.translate('xpack.agentBuilder.conversation.traceFl
 });
 
 interface TraceFlyoutProps {
-  traceId: string;
+  isOpen: boolean;
+  traceId?: string;
   onClose: () => void;
 }
 
 /**
  * Hosts the trace waterfall in a resizable flyout bound to a trace ID.
  */
-export const TraceFlyout: React.FC<TraceFlyoutProps> = ({ traceId, onClose }) => {
+export const TraceFlyout: React.FC<TraceFlyoutProps> = ({ isOpen, traceId, onClose }) => {
+  // Keep component mounted by caller while avoiding flyout rendering when closed or trace is missing.
+  if (!isOpen || !traceId) {
+    return null;
+  }
+
   const { euiTheme } = useEuiTheme();
   const baseFlyoutZIndex =
     typeof euiTheme.levels.flyout === 'number'
