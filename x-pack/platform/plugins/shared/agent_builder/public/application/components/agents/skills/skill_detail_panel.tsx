@@ -19,6 +19,7 @@ import {
 import { css } from '@emotion/react';
 import { labels } from '../../../utils/i18n';
 import { useSkill } from '../../../hooks/skills/use_skills';
+import { DetailRow } from '../common/detail_row';
 
 interface SkillDetailPanelProps {
   skillId: string;
@@ -26,40 +27,6 @@ interface SkillDetailPanelProps {
   onRemove: () => void;
   isReadOnly?: boolean;
 }
-
-interface SkillDetailRowProps {
-  label: string;
-  children: React.ReactNode;
-  isLast?: boolean;
-}
-
-const SkillDetailRow: React.FC<SkillDetailRowProps> = ({ label, children, isLast = false }) => {
-  const { euiTheme } = useEuiTheme();
-
-  return (
-    <EuiFlexGroup
-      gutterSize="none"
-      responsive={false}
-      css={css`
-        padding: ${euiTheme.size.m};
-        border-bottom: ${isLast ? 'none' : euiTheme.border.thin};
-      `}
-    >
-      <EuiFlexItem
-        grow={false}
-        css={css`
-          width: 180px;
-          padding-right: ${euiTheme.size.m};
-        `}
-      >
-        <EuiText size="s">
-          <strong>{label}</strong>
-        </EuiText>
-      </EuiFlexItem>
-      <EuiFlexItem grow>{children}</EuiFlexItem>
-    </EuiFlexGroup>
-  );
-};
 
 export const SkillDetailPanel: React.FC<SkillDetailPanelProps> = ({
   skillId,
@@ -145,16 +112,16 @@ export const SkillDetailPanel: React.FC<SkillDetailPanelProps> = ({
             padding: ${euiTheme.size.m};
           `}
         >
-          <SkillDetailRow label={labels.skills.skillIdLabel}>
+          <DetailRow label={labels.skills.skillIdLabel}>
             <EuiText size="s">{skill.id}</EuiText>
-          </SkillDetailRow>
-          <SkillDetailRow label={labels.skills.nameLabel}>
+          </DetailRow>
+          <DetailRow label={labels.skills.nameLabel}>
             <EuiText size="s">{skill.name}</EuiText>
-          </SkillDetailRow>
-          <SkillDetailRow label={labels.skills.descriptionLabel}>
+          </DetailRow>
+          <DetailRow label={labels.skills.descriptionLabel}>
             <EuiText size="s">{skill.description}</EuiText>
-          </SkillDetailRow>
-          <SkillDetailRow
+          </DetailRow>
+          <DetailRow
             label={labels.agentSkills.skillDetailInstructionsLabel}
             isLast={!skill.tool_ids || skill.tool_ids.length === 0}
           >
@@ -166,9 +133,9 @@ export const SkillDetailPanel: React.FC<SkillDetailPanelProps> = ({
             >
               <EuiText size="s">{skill.content}</EuiText>
             </div>
-          </SkillDetailRow>
+          </DetailRow>
           {skill.tool_ids && skill.tool_ids.length > 0 && (
-            <SkillDetailRow label={labels.skills.toolsLabel} isLast>
+            <DetailRow label={labels.skills.toolsLabel} isLast>
               <EuiFlexGroup direction="column" gutterSize="xs">
                 {skill.tool_ids.map((toolId) => (
                   <EuiFlexItem key={toolId} grow={false}>
@@ -178,7 +145,7 @@ export const SkillDetailPanel: React.FC<SkillDetailPanelProps> = ({
                   </EuiFlexItem>
                 ))}
               </EuiFlexGroup>
-            </SkillDetailRow>
+            </DetailRow>
           )}
         </div>
       </div>

@@ -809,6 +809,164 @@ export const labels = {
       }
     ),
   },
+  agentPlugins: {
+    pageDescription: i18n.translate('xpack.agentBuilder.agentPlugins.pageDescription', {
+      defaultMessage: 'Pre-built packages that bundle multiple capabilities into a single install.',
+    }),
+    installPluginButton: i18n.translate('xpack.agentBuilder.agentPlugins.installPluginButton', {
+      defaultMessage: 'Install plugin',
+    }),
+    fromUrlOrZipMenuItem: i18n.translate('xpack.agentBuilder.agentPlugins.fromUrlOrZipMenuItem', {
+      defaultMessage: 'From URL or ZIP',
+    }),
+    fromLibraryMenuItem: i18n.translate('xpack.agentBuilder.agentPlugins.fromLibraryMenuItem', {
+      defaultMessage: 'From library',
+    }),
+    searchActivePluginsPlaceholder: i18n.translate(
+      'xpack.agentBuilder.agentPlugins.searchActivePluginsPlaceholder',
+      {
+        defaultMessage: 'Search active plugins',
+      }
+    ),
+    noActivePluginsMessage: i18n.translate(
+      'xpack.agentBuilder.agentPlugins.noActivePluginsMessage',
+      {
+        defaultMessage:
+          'No plugins assigned to this agent yet. Install or add plugins from the library.',
+      }
+    ),
+    noActivePluginsMatchMessage: i18n.translate(
+      'xpack.agentBuilder.agentPlugins.noActivePluginsMatchMessage',
+      {
+        defaultMessage: 'No active plugins match your search.',
+      }
+    ),
+    removePluginButtonLabel: i18n.translate(
+      'xpack.agentBuilder.agentPlugins.removePluginButtonLabel',
+      {
+        defaultMessage: 'Remove',
+      }
+    ),
+    removePluginAriaLabel: i18n.translate('xpack.agentBuilder.agentPlugins.removePluginAriaLabel', {
+      defaultMessage: 'Remove plugin from agent',
+    }),
+    removePluginConfirmTitle: (pluginName: string) =>
+      i18n.translate('xpack.agentBuilder.agentPlugins.removePluginConfirmTitle', {
+        defaultMessage: 'Remove "{pluginName}" from agent?',
+        values: { pluginName },
+      }),
+    removePluginConfirmBody: i18n.translate(
+      'xpack.agentBuilder.agentPlugins.removePluginConfirmBody',
+      {
+        defaultMessage: 'The plugin and its skills will no longer be available to this agent.',
+      }
+    ),
+    removePluginConfirmButton: i18n.translate(
+      'xpack.agentBuilder.agentPlugins.removePluginConfirmButton',
+      {
+        defaultMessage: 'Remove',
+      }
+    ),
+    removePluginCancelButton: i18n.translate(
+      'xpack.agentBuilder.agentPlugins.removePluginCancelButton',
+      {
+        defaultMessage: 'Cancel',
+      }
+    ),
+    addPluginSuccessToast: (pluginName: string) =>
+      i18n.translate('xpack.agentBuilder.agentPlugins.addPluginSuccessToast', {
+        defaultMessage: 'Plugin "{pluginName}" added to agent',
+        values: { pluginName },
+      }),
+    removePluginSuccessToast: (pluginName: string) =>
+      i18n.translate('xpack.agentBuilder.agentPlugins.removePluginSuccessToast', {
+        defaultMessage: 'Plugin "{pluginName}" removed from agent',
+        values: { pluginName },
+      }),
+    updatePluginsErrorToast: i18n.translate(
+      'xpack.agentBuilder.agentPlugins.updatePluginsErrorToast',
+      {
+        defaultMessage: 'Unable to update agent plugins',
+      }
+    ),
+    noPluginSelectedMessage: i18n.translate(
+      'xpack.agentBuilder.agentPlugins.noPluginSelectedMessage',
+      {
+        defaultMessage: 'Select a plugin to view details.',
+      }
+    ),
+    skillsCountBadge: (count: number) =>
+      i18n.translate('xpack.agentBuilder.agentPlugins.skillsCountBadge', {
+        defaultMessage: '{count} {count, plural, one {Skill} other {Skills}}',
+        values: { count },
+      }),
+    addPluginFromLibraryTitle: i18n.translate(
+      'xpack.agentBuilder.agentPlugins.addPluginFromLibraryTitle',
+      {
+        defaultMessage: 'Add plugin from library',
+      }
+    ),
+    managePluginLibraryLink: i18n.translate(
+      'xpack.agentBuilder.agentPlugins.managePluginLibraryLink',
+      {
+        defaultMessage: 'Manage plugin library',
+      }
+    ),
+    searchAvailablePluginsPlaceholder: i18n.translate(
+      'xpack.agentBuilder.agentPlugins.searchAvailablePluginsPlaceholder',
+      {
+        defaultMessage: 'Search available plugins',
+      }
+    ),
+    availablePluginsSummary: (showing: number, total: number) =>
+      i18n.translate('xpack.agentBuilder.agentPlugins.availablePluginsSummary', {
+        defaultMessage:
+          'Showing {showing} of {total} {total, plural, one {Available plugin} other {Available plugins}}',
+        values: { showing, total },
+      }),
+    noAvailablePluginsMatchMessage: i18n.translate(
+      'xpack.agentBuilder.agentPlugins.noAvailablePluginsMatchMessage',
+      {
+        defaultMessage: 'No available plugins match your search.',
+      }
+    ),
+    noAvailablePluginsMessage: i18n.translate(
+      'xpack.agentBuilder.agentPlugins.noAvailablePluginsMessage',
+      {
+        defaultMessage: 'All plugins have been added to this agent.',
+      }
+    ),
+    pluginDetailIdLabel: i18n.translate('xpack.agentBuilder.agentPlugins.pluginDetailIdLabel', {
+      defaultMessage: 'ID',
+    }),
+    pluginDetailNameLabel: i18n.translate('xpack.agentBuilder.agentPlugins.pluginDetailNameLabel', {
+      defaultMessage: 'Name',
+    }),
+    pluginDetailDescriptionLabel: i18n.translate(
+      'xpack.agentBuilder.agentPlugins.pluginDetailDescriptionLabel',
+      {
+        defaultMessage: 'Description',
+      }
+    ),
+    pluginDetailSkillsLabel: i18n.translate(
+      'xpack.agentBuilder.agentPlugins.pluginDetailSkillsLabel',
+      {
+        defaultMessage: 'Skills',
+      }
+    ),
+    pluginDetailAuthorLabel: i18n.translate(
+      'xpack.agentBuilder.agentPlugins.pluginDetailAuthorLabel',
+      {
+        defaultMessage: 'Author',
+      }
+    ),
+    pluginDetailSourceLabel: i18n.translate(
+      'xpack.agentBuilder.agentPlugins.pluginDetailSourceLabel',
+      {
+        defaultMessage: 'Source',
+      }
+    ),
+  },
   plugins: {
     title: i18n.translate('xpack.agentBuilder.plugins.title', { defaultMessage: 'Plugins' }),
     pluginsTableCaption: (pluginsCount: number) =>
