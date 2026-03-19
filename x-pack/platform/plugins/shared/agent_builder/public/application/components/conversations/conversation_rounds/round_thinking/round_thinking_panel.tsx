@@ -22,7 +22,6 @@ import { css } from '@emotion/react';
 import { useExperimentalFeatures } from '../../../../hooks/use_experimental_features';
 import { RoundFlyout } from './round_flyout';
 import { TraceFlyout } from './trace_flyout';
-import { AgentBuilderTraceWaterfall } from './agent_trace_waterfall';
 import { RoundSteps } from './steps/round_steps';
 import { ThinkingTimeDisplay } from './thinking_time_display';
 import { RoundIcon } from './round_icon';
@@ -149,11 +148,7 @@ export const RoundThinkingPanel = ({
       </EuiFlexGroup>
       <RoundFlyout isOpen={showFlyout} onClose={toggleFlyout} rawRound={rawRound} />
       {showTraceFlyout && traceId && (
-        <TraceFlyout
-          traceId={traceId}
-          onClose={() => setShowTraceFlyout(false)}
-          TraceWaterfall={AgentBuilderTraceWaterfall}
-        />
+        <TraceFlyout traceId={traceId} onClose={() => setShowTraceFlyout(false)} />
       )}
     </>
   );

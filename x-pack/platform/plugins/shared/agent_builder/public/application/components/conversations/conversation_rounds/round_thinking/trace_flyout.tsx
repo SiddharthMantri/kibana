@@ -5,11 +5,17 @@
  * 2.0.
  */
 
-import React, { type ComponentType } from 'react';
-import { EuiFlyoutResizable, EuiFlyoutHeader, EuiTitle, EuiFlyoutBody } from '@elastic/eui';
-import { euiThemeVars } from '@kbn/ui-theme';
+import React from 'react';
+import {
+  EuiFlyoutResizable,
+  EuiFlyoutHeader,
+  EuiTitle,
+  EuiFlyoutBody,
+  useEuiTheme,
+} from '@elastic/eui';
 import { css } from '@emotion/react';
 import { i18n } from '@kbn/i18n';
+import { AgentBuilderTraceWaterfall } from './agent_trace_waterfall';
 
 const traceFlyoutTitle = i18n.translate('xpack.agentBuilder.conversation.traceFlyout.title', {
   defaultMessage: 'Trace',
@@ -18,10 +24,18 @@ const traceFlyoutTitle = i18n.translate('xpack.agentBuilder.conversation.traceFl
 interface TraceFlyoutProps {
   traceId: string;
   onClose: () => void;
-  TraceWaterfall: ComponentType<{ traceId: string }>;
 }
 
-export const TraceFlyout: React.FC<TraceFlyoutProps> = ({ traceId, onClose, TraceWaterfall }) => {
+/**
+ * Hosts the trace waterfall in a resizable flyout bound to a trace ID.
+ */
+export const TraceFlyout: React.FC<TraceFlyoutProps> = ({ traceId, onClose }) => {
+  const { euiTheme } = useEuiTheme();
+  const baseFlyoutZIndex =
+    typeof euiTheme.levels.flyout === 'number'
+      ? euiTheme.levels.flyout
+      : Number(euiTheme.levels.flyout);
+
   return (
     <EuiFlyoutResizable
       onClose={onClose}
@@ -31,7 +45,7 @@ export const TraceFlyout: React.FC<TraceFlyoutProps> = ({ traceId, onClose, Trac
       maxWidth={1200}
       ownFocus={false}
       css={css`
-        z-index: ${euiThemeVars.euiZFlyout + 4};
+        z-index: ${baseFlyoutZIndex + 4};
         .euiFlyoutBody__overflowContent {
           height: 100%;
           padding: 0;
@@ -50,7 +64,7 @@ export const TraceFlyout: React.FC<TraceFlyoutProps> = ({ traceId, onClose, Trac
       </EuiFlyoutHeader>
       <EuiFlyoutBody>
         <div style={{ height: '100%', padding: 16 }}>
-          <TraceWaterfall traceId={traceId} />
+          <AgentBuilderTraceWaterfall traceId={traceId} />
         </div>
       </EuiFlyoutBody>
     </EuiFlyoutResizable>

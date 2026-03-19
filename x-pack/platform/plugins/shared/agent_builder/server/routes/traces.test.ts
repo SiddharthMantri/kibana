@@ -9,72 +9,29 @@ import type { IRouter } from '@kbn/core/server';
 import { loggingSystemMock } from '@kbn/core/server/mocks';
 import { registerTracesRoutes } from './traces';
 import type { RouteDependencies } from './types';
+import type { InternalStartServices } from '../services';
 import { internalApiPath } from '../../common/constants';
+import type { TracesClient, TracesListResponseBody } from '../services/traces';
 
-// ---------------------------------------------------------------------------
-// Mock createTraceStorage so we can control search results without ES
-// ---------------------------------------------------------------------------
-
-const mockSearch = jest.fn();
-const mockGetClient = jest.fn().mockReturnValue({ search: mockSearch });
-
-jest.mock('../tracing/trace_index_manager', () => ({
-  createTraceStorage: jest.fn(() => ({ getClient: mockGetClient })),
-}));
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-const createMockContext = (spaceId = 'default') => ({
-  agentBuilder: Promise.resolve({
-    spaces: { getSpaceId: jest.fn().mockReturnValue(spaceId) },
-  }),
+const createMockContext = () => ({
   licensing: Promise.resolve({
     license: { status: 'active', hasAtLeast: jest.fn().mockReturnValue(true) },
   }),
 });
 
-const mockResponse = {
-  ok: jest.fn((params: { body?: unknown }) => ({ status: 200, payload: params.body })),
-  notFound: jest.fn((params?: { body?: { message?: string } }) => ({
-    status: 404,
-    payload: params?.body,
-  })),
-  badRequest: jest.fn((params?: { body?: { message?: string } }) => ({
-    status: 400,
-    payload: params?.body,
-  })),
-  internalError: jest.fn((params?: { body?: { message?: string } }) => ({
-    status: 500,
-    payload: params?.body,
-  })),
-};
-
-const makeTraceDoc = (overrides: Record<string, unknown> = {}) => ({
-  _id: 'doc-1',
-  _source: {
-    trace_id: 'trace-abc',
-    agent_id: 'agent-1',
-    conversation_id: 'conv-1',
-    space_id: 'default',
-    '@timestamp': '2025-01-01T00:00:00Z',
-    duration_ms: 1500,
-    status: 'OK',
-    span_count: 3,
-    total_input_tokens: 50,
-    total_output_tokens: 20,
-    spans: [],
-    ...overrides,
-  },
-});
-
-// ---------------------------------------------------------------------------
-// Route handler capture
-// ---------------------------------------------------------------------------
-
 type Handler = (ctx: unknown, req: unknown, res: unknown) => Promise<unknown>;
 let routeHandlers: Record<string, Handler>;
+
+const mockListTraces = jest.fn<Promise<TracesListResponseBody>, []>();
+const mockGetTraceById = jest.fn<Promise<Record<string, unknown> | undefined>, []>();
+const mockGetScopedClient = jest.fn<
+  TracesClient,
+  [
+    {
+      request: unknown;
+    },
+  ]
+>();
 
 const setupRoutes = () => {
   routeHandlers = {};
@@ -97,14 +54,20 @@ const setupRoutes = () => {
   } as unknown as jest.Mocked<IRouter>;
 
   const mockCoreSetup = {
-    getStartServices: jest.fn().mockResolvedValue([
-      { elasticsearch: { client: { asInternalUser: {} } } },
-    ]),
+    getStartServices: jest.fn(),
   };
+  const mockTracesService = {
+    getScopedClient: mockGetScopedClient,
+  };
+  const mockGetInternalServices = () =>
+    ({
+      traces: mockTracesService,
+    } as unknown as InternalStartServices);
 
   registerTracesRoutes({
     router: mockRouter,
     coreSetup: mockCoreSetup as unknown as RouteDependencies['coreSetup'],
+    getInternalServices: mockGetInternalServices,
     logger: loggingSystemMock.createLogger(),
   } as unknown as RouteDependencies);
 
@@ -121,28 +84,31 @@ const singlePath = `${internalApiPath}/traces/{trace_id}`;
 describe('Traces routes', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockGetScopedClient.mockReturnValue({
+      listTraces: mockListTraces,
+      getTraceById: mockGetTraceById,
+    });
     setupRoutes();
   });
 
   describe(`GET ${listPath}`, () => {
     const getListHandler = () => routeHandlers[`GET:${listPath}`];
 
-    it('returns paginated traces for an agent filtered by space', async () => {
-      const doc = makeTraceDoc();
-      mockSearch.mockResolvedValueOnce({
-        hits: {
-          total: { value: 1 },
-          hits: [doc],
-        },
-      });
+    it('returns list traces payload from traces service', async () => {
+      const servicePayload: TracesListResponseBody = {
+        total: 1,
+        results: [{ _id: 'doc-1', trace_id: 'trace-abc' }],
+      };
+      mockListTraces.mockResolvedValueOnce(servicePayload);
 
-      const ctx = createMockContext('default');
       const request = {
         params: { agent_id: 'agent-1' },
         query: { size: 20, from: 0 },
       };
 
-      const result = (await getListHandler()(ctx, request, mockResponse)) as {
+      const result = (await getListHandler()(createMockContext(), request, {
+        ok: jest.fn((params: { body?: unknown }) => ({ status: 200, payload: params.body })),
+      })) as {
         status: number;
         payload: { total: number; results: unknown[] };
       };
@@ -150,116 +116,57 @@ describe('Traces routes', () => {
       expect(result.status).toBe(200);
       expect(result.payload.total).toBe(1);
       expect(result.payload.results).toHaveLength(1);
-    });
-
-    it('includes conversation_id filter when provided', async () => {
-      mockSearch.mockResolvedValueOnce({ hits: { total: 0, hits: [] } });
-
-      const ctx = createMockContext();
-      const request = {
-        params: { agent_id: 'agent-1' },
-        query: { size: 20, from: 0, conversation_id: 'conv-xyz' },
-      };
-
-      await getListHandler()(ctx, request, mockResponse);
-
-      const searchCall = mockSearch.mock.calls[0][0];
-      const filters = searchCall.query.bool.filter;
-      expect(filters).toEqual(
-        expect.arrayContaining([{ term: { conversation_id: 'conv-xyz' } }])
-      );
-    });
-
-    it('always filters by agent_id and space_id', async () => {
-      mockSearch.mockResolvedValueOnce({ hits: { total: 0, hits: [] } });
-
-      await getListHandler()(
-        createMockContext('my-space'),
-        { params: { agent_id: 'agent-42' }, query: { size: 10, from: 0 } },
-        mockResponse
-      );
-
-      const filters = mockSearch.mock.calls[0][0].query.bool.filter;
-      expect(filters).toEqual(
-        expect.arrayContaining([
-          { term: { agent_id: 'agent-42' } },
-          { term: { space_id: 'my-space' } },
-        ])
-      );
-    });
-
-    it('excludes spans array from list results', async () => {
-      mockSearch.mockResolvedValueOnce({ hits: { total: 0, hits: [] } });
-
-      await getListHandler()(
-        createMockContext(),
-        { params: { agent_id: 'agent-1' }, query: { size: 20, from: 0 } },
-        mockResponse
-      );
-
-      expect(mockSearch.mock.calls[0][0]._source).toEqual({ excludes: ['spans'] });
-    });
-
-    it('returns total as 0 when no hits', async () => {
-      mockSearch.mockResolvedValueOnce({ hits: { total: 0, hits: [] } });
-
-      const result = (await getListHandler()(
-        createMockContext(),
-        { params: { agent_id: 'agent-1' }, query: { size: 20, from: 0 } },
-        mockResponse
-      )) as { payload: { total: number; results: unknown[] } };
-
-      expect(result.payload.total).toBe(0);
-      expect(result.payload.results).toHaveLength(0);
+      expect(mockGetScopedClient).toHaveBeenCalledWith({ request });
+      expect(mockListTraces).toHaveBeenCalledTimes(1);
     });
   });
 
   describe(`GET ${singlePath}`, () => {
     const getSingleHandler = () => routeHandlers[`GET:${singlePath}`];
 
-    it('returns 404 when no trace found', async () => {
-      mockSearch.mockResolvedValueOnce({ hits: { hits: [] } });
+    it('returns 404 when traces service does not find a trace', async () => {
+      mockGetTraceById.mockResolvedValueOnce(undefined);
 
       const result = (await getSingleHandler()(
         createMockContext(),
         { params: { trace_id: 'missing-trace' } },
-        mockResponse
+        {
+          ok: jest.fn((params: { body?: unknown }) => ({ status: 200, payload: params.body })),
+          notFound: jest.fn((params?: { body?: { message?: string } }) => ({
+            status: 404,
+            payload: params?.body,
+          })),
+        }
       )) as { status: number };
 
       expect(result.status).toBe(404);
+      expect(mockGetTraceById).toHaveBeenCalledTimes(1);
     });
 
-    it('returns trace document when found', async () => {
-      const doc = makeTraceDoc({ spans: [{ span_id: 'span-1', name: 'Converse' }] });
-      mockSearch.mockResolvedValueOnce({ hits: { hits: [doc] } });
+    it('returns trace document from traces service', async () => {
+      mockGetTraceById.mockResolvedValueOnce({
+        _id: 'doc-1',
+        trace_id: 'trace-abc',
+        spans: [{ span_id: 'span-1', name: 'Converse' }],
+      });
 
+      const request = { params: { trace_id: 'trace-abc' } };
       const result = (await getSingleHandler()(
         createMockContext(),
-        { params: { trace_id: 'trace-abc' } },
-        mockResponse
+        request,
+        {
+          ok: jest.fn((params: { body?: unknown }) => ({ status: 200, payload: params.body })),
+          notFound: jest.fn((params?: { body?: { message?: string } }) => ({
+            status: 404,
+            payload: params?.body,
+          })),
+        }
       )) as { status: number; payload: Record<string, unknown> };
 
       expect(result.status).toBe(200);
       expect(result.payload.trace_id).toBe('trace-abc');
       expect(result.payload._id).toBe('doc-1');
-    });
-
-    it('filters by trace_id and space_id', async () => {
-      mockSearch.mockResolvedValueOnce({ hits: { hits: [] } });
-
-      await getSingleHandler()(
-        createMockContext('prod-space'),
-        { params: { trace_id: 'trace-xyz' } },
-        mockResponse
-      );
-
-      const filters = mockSearch.mock.calls[0][0].query.bool.filter;
-      expect(filters).toEqual(
-        expect.arrayContaining([
-          { term: { trace_id: 'trace-xyz' } },
-          { term: { space_id: 'prod-space' } },
-        ])
-      );
+      expect(mockGetScopedClient).toHaveBeenCalledWith({ request });
     });
   });
 });

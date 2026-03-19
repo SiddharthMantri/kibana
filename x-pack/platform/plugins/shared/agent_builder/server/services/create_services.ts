@@ -30,6 +30,7 @@ import {
   type ConsumptionService,
 } from './metering';
 import { type PluginsService, createPluginsService } from './plugins';
+import { createTracesService, type TracesService } from './traces';
 
 interface ServiceInstances {
   tools: ToolsService;
@@ -41,6 +42,7 @@ interface ServiceInstances {
   metering: MeteringService;
   sml: SmlServiceInstance;
   consumption: ConsumptionService;
+  traces: TracesService;
 }
 
 export class ServiceManager {
@@ -69,6 +71,7 @@ export class ServiceManager {
       metering: createMeteringService({ cloud, usageApi, logger: logger.get('metering') }),
       sml: createSmlService(),
       consumption: createConsumptionService(),
+      traces: createTracesService(),
     };
 
     this.internalSetup = {
@@ -217,6 +220,11 @@ export class ServiceManager {
     });
 
     const consumption = this.services.consumption.start({ elasticsearch, spaces });
+    const traces = this.services.traces.start({
+      elasticsearch,
+      spaces,
+      logger: logger.get('traces'),
+    });
 
     this.internalStart = {
       tools,
@@ -236,6 +244,7 @@ export class ServiceManager {
       sml,
       plugins,
       consumption,
+      traces,
     };
 
     return this.internalStart;

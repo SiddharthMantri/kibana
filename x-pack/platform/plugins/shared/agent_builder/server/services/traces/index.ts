@@ -5,6 +5,10 @@
  * 2.0.
  */
 
-export type { InternalSetupServices, InternalStartServices } from './types';
-export { ServiceManager } from './create_services';
-export type { TracesServiceStart, TracesClient, TracesListResponseBody } from './traces';
+export {
+  createTracesService,
+  type TracesService,
+  type TracesServiceStart,
+  type TracesClient,
+  type TracesListResponseBody,
+} from './traces_service';
