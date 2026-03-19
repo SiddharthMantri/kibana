@@ -5,13 +5,14 @@
  * 2.0.
  */
 
-import React, { useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import useLocalStorage from 'react-use/lib/useLocalStorage';
 
-import { EuiFlexGroup, EuiPanel } from '@elastic/eui';
+import { EuiFlexGroup, EuiPanel, useEuiTheme } from '@elastic/eui';
 import { css } from '@emotion/react';
 
+import { agentBuilderDefaultAgentId } from '@kbn/agent-builder-common';
 import { storageKeys } from '../../../storage_keys';
 import { getSidebarViewForRoute, getAgentIdFromPath } from '../../../route_config';
 import { useAgentBuilderAgents } from '../../../hooks/agents/use_agents';
@@ -19,16 +20,25 @@ import { useValidateAgentId } from '../../../hooks/agents/use_validate_agent_id'
 import { ConversationSidebarView } from './views/conversation_view';
 import { AgentSettingsSidebarView } from './views/agent_settings_view';
 import { ManageSidebarView } from './views/manage_view';
+import { SidebarHeader } from './shared/sidebar_header';
+import { appPaths } from '../../../utils/app_paths';
 
-const SIDEBAR_WIDTH = 300;
+export const SIDEBAR_WIDTH = 300;
+export const CONDENSED_SIDEBAR_WIDTH = 64;
 
-export const UnifiedSidebar: React.FC = () => {
+interface UnifiedSidebarProps {
+  isCondensed: boolean;
+  onToggleCondensed: () => void;
+}
+
+export const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({ isCondensed, onToggleCondensed }) => {
   const location = useLocation();
   const sidebarView = getSidebarViewForRoute(location.pathname);
-  const agentIdFromPath = getAgentIdFromPath(location.pathname);
+  const agentIdFromPath = getAgentIdFromPath(location.pathname) ?? agentBuilderDefaultAgentId;
   const [, setStoredAgentId] = useLocalStorage<string>(storageKeys.agentId);
   const { isFetched: isAgentsFetched } = useAgentBuilderAgents();
   const validateAgentId = useValidateAgentId();
+  const { euiTheme } = useEuiTheme();
 
   useEffect(() => {
     // Wait for agents to load before validating — prevents falsely skipping valid IDs during initial load
@@ -37,10 +47,16 @@ export const UnifiedSidebar: React.FC = () => {
     }
   }, [isAgentsFetched, agentIdFromPath, validateAgentId, setStoredAgentId]);
 
+  const getNavigationPath = useCallback(
+    (newAgentId: string) => appPaths.agent.root({ agentId: newAgentId }),
+    []
+  );
+
   const sidebarStyles = css`
-    width: ${SIDEBAR_WIDTH}px;
+    width: ${isCondensed ? CONDENSED_SIDEBAR_WIDTH : SIDEBAR_WIDTH}px;
     height: 100%;
     border-radius: 0;
+    border-right: 1px solid ${euiTheme.colors.borderBaseSubdued};
     display: flex;
     flex-direction: column;
   `;
@@ -56,17 +72,26 @@ export const UnifiedSidebar: React.FC = () => {
       css={sidebarStyles}
       paddingSize="none"
       hasShadow={false}
-      hasBorder
+      hasBorder={false}
       role="navigation"
       aria-label="Agent Builder navigation"
     >
-      <EuiFlexGroup css={sidebarContentStyles}>
-        {sidebarView === 'conversation' && <ConversationSidebarView />}
-        {sidebarView === 'agentSettings' && (
-          <AgentSettingsSidebarView pathname={location.pathname} />
-        )}
-        {sidebarView === 'manage' && <ManageSidebarView pathname={location.pathname} />}
-      </EuiFlexGroup>
+      <SidebarHeader
+        sidebarView={sidebarView}
+        agentId={agentIdFromPath}
+        getNavigationPath={getNavigationPath}
+        isCondensed={isCondensed}
+        onToggleCondensed={onToggleCondensed}
+      />
+      {!isCondensed && (
+        <EuiFlexGroup css={sidebarContentStyles}>
+          {sidebarView === 'conversation' && <ConversationSidebarView />}
+          {sidebarView === 'agentSettings' && (
+            <AgentSettingsSidebarView pathname={location.pathname} />
+          )}
+          {sidebarView === 'manage' && <ManageSidebarView pathname={location.pathname} />}
+        </EuiFlexGroup>
+      )}
     </EuiPanel>
   );
 };
