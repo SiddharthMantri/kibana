@@ -55,4 +55,7 @@ export const queryKeys = {
   traces: {
     detail: (traceId: string) => ['traces', traceId] as const,
   },
+  connectors: {
+    all: ['connectors'] as const,
+  },
 };
