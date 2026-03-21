@@ -6,7 +6,7 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
-import { EMPTY, filter, finalize, from, merge, of, shareReplay, Subject } from 'rxjs';
+import { filter, finalize, from, merge, ReplaySubject, shareReplay } from 'rxjs';
 import { Command } from '@langchain/langgraph';
 import {
   isStreamEvent,
@@ -108,7 +108,9 @@ export const runDefaultAgentMode: RunChatAgentFn = async (
   const resolvedConfiguration = resolveConfiguration(agentConfiguration);
   logger.debug(`Running chat agent with connector: ${model.connector.name}, runId: ${runId}`);
 
-  const manualEvents$ = new Subject<ChatAgentEvent>();
+  // ReplaySubject so events emitted before subscription (e.g. compaction) are
+  // replayed to late subscribers when the merged stream is subscribed to.
+  const manualEvents$ = new ReplaySubject<ChatAgentEvent>();
   const eventEmitter: AgentEventEmitterFn = (event) => {
     manualEvents$.next(event);
   };
@@ -195,23 +197,22 @@ export const runDefaultAgentMode: RunChatAgentFn = async (
   // Reassign to the (possibly compacted) conversation for prompt construction
   processedConversation = compactionResult.processedConversation;
 
-  // Build compaction events as a cold observable so they emit upon subscription.
-  // Cannot use the eventEmitter (Subject) here because nobody is subscribed yet.
-  const compactionEvents$ = compactionResult.compactionTriggered
-    ? of(
-        {
-          type: ChatEventType.compactionStarted as const,
-          data: { token_count_before: compactionResult.tokensBefore ?? 0 },
-        },
-        {
-          type: ChatEventType.compactionCompleted as const,
-          data: {
-            token_count_after: compactionResult.tokensAfter ?? 0,
-            summarized_round_count: compactionResult.summarizedRoundCount ?? 0,
-          },
-        }
-      )
-    : EMPTY;
+  // Emit compaction lifecycle events via the eventEmitter. Because manualEvents$
+  // is a ReplaySubject these will be delivered to subscribers even though the
+  // merged stream hasn't been subscribed to yet.
+  if (compactionResult.compactionTriggered) {
+    eventEmitter({
+      type: ChatEventType.compactionStarted as const,
+      data: { token_count_before: compactionResult.tokensBefore ?? 0 },
+    });
+    eventEmitter({
+      type: ChatEventType.compactionCompleted as const,
+      data: {
+        token_count_after: compactionResult.tokensAfter ?? 0,
+        summarized_round_count: compactionResult.summarizedRoundCount ?? 0,
+      },
+    });
+  }
 
   const promptFactory = createPromptFactory({
     configuration: resolvedConfiguration,
@@ -278,7 +279,7 @@ export const runDefaultAgentMode: RunChatAgentFn = async (
   // Use provided overrides, or fall back to pending round's overrides (for HITL resume)
   const effectiveOverrides = configurationOverrides ?? pendingRound?.configuration_overrides;
 
-  const events$ = merge(compactionEvents$, graphEvents$, manualEvents$).pipe(
+  const events$ = merge(graphEvents$, manualEvents$).pipe(
     addRoundCompleteEvent({
       userInput: processedInput,
       getConversationState: () =>
