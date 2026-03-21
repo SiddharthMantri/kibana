@@ -221,9 +221,9 @@ export const compactConversation = async ({
   );
 
   if (summarizationResult.summary) {
-    const afterTokens = estimateConversationTokens(
-      summarizationResult.processedConversation.previousRounds
-    );
+    const afterTokens =
+      estimateConversationTokens(summarizationResult.processedConversation.previousRounds) +
+      summarizationResult.summary.token_count;
     if (afterTokens <= contextBudget.historyBudget) {
       logger.debug(
         `Summarization sufficient: ${afterTokens} tokens (budget: ${contextBudget.historyBudget})`
@@ -240,7 +240,10 @@ export const compactConversation = async ({
 
   // Hard truncation fallback
   const truncated = applyHardTruncation(summarizationResult.processedConversation, contextBudget);
-  const truncatedTokens = estimateConversationTokens(truncated.previousRounds);
+  // Account for the summary tokens (if present) so the reported total is accurate.
+  const truncatedTokens =
+    estimateConversationTokens(truncated.previousRounds) +
+    (summarizationResult.summary?.token_count ?? 0);
   logger.debug('Applied hard truncation fallback');
   return {
     processedConversation: truncated,
