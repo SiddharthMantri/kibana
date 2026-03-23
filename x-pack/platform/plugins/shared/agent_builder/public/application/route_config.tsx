@@ -39,6 +39,7 @@ export interface RouteDefinition {
   navLabel?: string;
   navIcon?: string;
   navSection?: string;
+  isAgentDisplayName?: boolean;
 }
 
 const navLabels = {
@@ -62,6 +63,18 @@ const navLabels = {
   }),
 };
 
+const navSections = {
+  about: i18n.translate('xpack.agentBuilder.routeConfig.about', {
+    defaultMessage: 'About',
+  }),
+  capabilities: i18n.translate('xpack.agentBuilder.routeConfig.capabilities', {
+    defaultMessage: 'Capabilities',
+  }),
+  advanced: i18n.translate('xpack.agentBuilder.routeConfig.advanced', {
+    defaultMessage: 'Advanced',
+  }),
+};
+
 // Routes ordered from most specific to least specific for correct matching
 export const agentRoutes: RouteDefinition[] = [
   {
@@ -72,16 +85,17 @@ export const agentRoutes: RouteDefinition[] = [
   {
     path: '/agents/:agentId/overview',
     sidebarView: 'agentSettings',
-    navLabel: navLabels.overview,
+    navSection: navSections.about,
+    navIcon: 'sparkles',
+    isAgentDisplayName: true,
     element: <RouteDisplay />,
-    navIcon: 'info',
   },
   {
     path: '/agents/:agentId/skills',
     sidebarView: 'agentSettings',
     navLabel: navLabels.skills,
     navIcon: 'bolt',
-    navSection: 'Capabilities',
+    navSection: navSections.capabilities,
     element: <AgentSkills />,
   },
   {
@@ -89,7 +103,7 @@ export const agentRoutes: RouteDefinition[] = [
     sidebarView: 'agentSettings',
     navLabel: navLabels.plugins,
     navIcon: 'package',
-    navSection: 'Capabilities',
+    navSection: navSections.capabilities,
     element: <AgentPlugins />,
   },
   {
@@ -97,7 +111,7 @@ export const agentRoutes: RouteDefinition[] = [
     sidebarView: 'agentSettings',
     navLabel: navLabels.connectors,
     navIcon: 'plugs',
-    navSection: 'Capabilities',
+    navSection: navSections.capabilities,
     element: <RouteDisplay />,
   },
   {
@@ -226,17 +240,22 @@ export interface SidebarNavItem {
   section?: string;
   isExperimental?: boolean;
   isConnectors?: boolean;
+  isAgentDisplayName?: boolean;
 }
 
 export const getAgentSettingsNavItems = (agentId: string): SidebarNavItem[] => {
   return agentRoutes
-    .filter((route) => route.navLabel && route.sidebarView === 'agentSettings')
+    .filter(
+      (route) =>
+        (route.navLabel ?? route.isAgentDisplayName) && route.sidebarView === 'agentSettings'
+    )
     .map((route) => ({
       label: route.navLabel!,
       path: route.path.replace(':agentId', agentId),
       icon: route.navIcon,
       section: route.navSection,
       isConnectors: route.isConnectors,
+      isAgentDisplayName: route.isAgentDisplayName,
     }));
 };
 
