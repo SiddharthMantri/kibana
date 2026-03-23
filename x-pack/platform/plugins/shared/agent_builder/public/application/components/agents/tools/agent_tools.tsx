@@ -83,8 +83,6 @@ export const AgentTools: React.FC = () => {
 
   const builtinToolIdSet = useMemo(() => new Set(builtinTools.map((t) => t.id)), [builtinTools]);
 
-  // When elastic capabilities is on, builtin (readonly) tools are auto-included
-  // even if they aren't in the explicit tool selections.
   const activeTools = useMemo(() => {
     if (!agent) return [];
     const explicitTools = allTools.filter((t) => isToolSelected(t, agentToolSelections));
@@ -98,7 +96,6 @@ export const AgentTools: React.FC = () => {
 
   const activeToolIdSet = useMemo(() => new Set(activeTools.map((t) => t.id)), [activeTools]);
 
-  // For the library flyout: union of explicit selections and builtin IDs when elastic capabilities is on
   const libraryActiveToolIdSet = useMemo(() => {
     if (enableElasticCapabilities) return new Set([...activeToolIdSet, ...builtinToolIdSet]);
     return activeToolIdSet;
@@ -125,7 +122,6 @@ export const AgentTools: React.FC = () => {
     );
   }, [activeTools, searchQuery]);
 
-  // Mutation to update the agent's tool selections
   const updateToolsMutation = useMutation({
     mutationFn: (newToolSelections: ToolSelection[]) => {
       return agentService.update(agentId!, { configuration: { tools: newToolSelections } });

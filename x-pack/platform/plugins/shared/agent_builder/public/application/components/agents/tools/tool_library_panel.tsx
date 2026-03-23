@@ -35,11 +35,6 @@ interface ToolLibraryPanelProps {
   builtinToolIdSet?: Set<string>;
 }
 
-/**
- * Flyout that lists all available tools from the library with toggle switches
- * to add/remove tools from the current agent. Mirrors the skill library panel pattern.
- * When elastic capabilities is enabled, builtin tools are locked on with a tooltip.
- */
 export const ToolLibraryPanel: React.FC<ToolLibraryPanelProps> = ({
   onClose,
   allTools,
