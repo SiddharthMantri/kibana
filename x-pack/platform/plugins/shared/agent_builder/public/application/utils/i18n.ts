@@ -984,6 +984,16 @@ export const labels = {
         defaultMessage: 'Upload ZIP',
       }
     ),
+    autoBadge: i18n.translate('xpack.agentBuilder.agentPlugins.autoBadge', {
+      defaultMessage: 'Auto',
+    }),
+    autoPluginManagedTooltip: i18n.translate(
+      'xpack.agentBuilder.agentPlugins.autoPluginManagedTooltip',
+      {
+        defaultMessage:
+          'This plugin is automatically included while Elastic Capabilities is enabled.',
+      }
+    ),
   },
   plugins: {
     title: i18n.translate('xpack.agentBuilder.plugins.title', { defaultMessage: 'Plugins' }),

@@ -20,10 +20,6 @@ export interface ActiveSkillRowProps {
   readOnly?: boolean;
 }
 
-/**
- * Thin wrapper around ActiveItemRow that maps PublicSkillSummary props
- * and handles the read-only "Managed" badge for built-in skills.
- */
 export const ActiveSkillRow: React.FC<ActiveSkillRowProps> = ({
   skill,
   isSelected,

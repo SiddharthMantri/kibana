@@ -25,6 +25,7 @@ import {
   EuiTitle,
   useEuiTheme,
 } from '@elastic/eui';
+import type { PluginDefinition } from '@kbn/agent-builder-common';
 import { labels } from '../../../utils/i18n';
 import {
   useInstallPluginFromUrl,
@@ -35,20 +36,41 @@ type InstallTab = 'url' | 'upload';
 
 interface InstallPluginFlyoutProps {
   onClose: () => void;
+  /** Called after a plugin is successfully installed, receives the new plugin data.
+   *  May return a promise — the flyout waits for it to settle before closing. */
+  onPluginInstalled?: (plugin: PluginDefinition) => void | Promise<void>;
 }
 
-export const InstallPluginFlyout: React.FC<InstallPluginFlyoutProps> = ({ onClose }) => {
+/**
+ * Flyout with two tabs (URL / Upload ZIP) for installing a plugin.
+ * After a successful install the `onPluginInstalled` callback fires
+ * so the parent can auto-enable the plugin on the current agent.
+ */
+export const InstallPluginFlyout: React.FC<InstallPluginFlyoutProps> = ({
+  onClose,
+  onPluginInstalled,
+}) => {
   const [activeTab, setActiveTab] = useState<InstallTab>('url');
   const { euiTheme } = useEuiTheme();
   const [url, setUrl] = useState('');
   const [file, setFile] = useState<File | null>(null);
 
+  /** Await the install callback (e.g. mutation) before closing the flyout so
+   *  the user sees the plugin added to the agent config first. */
+  const handleInstallSuccess = useCallback(
+    async (data: PluginDefinition) => {
+      await onPluginInstalled?.(data);
+      onClose();
+    },
+    [onPluginInstalled, onClose]
+  );
+
   const { installFromUrl, isLoading: isUrlLoading } = useInstallPluginFromUrl({
-    onSuccess: () => onClose(),
+    onSuccess: handleInstallSuccess,
   });
 
   const { uploadPlugin, isLoading: isUploadLoading } = useUploadPlugin({
-    onSuccess: () => onClose(),
+    onSuccess: handleInstallSuccess,
   });
 
   const isLoading = isUrlLoading || isUploadLoading;

@@ -30,11 +30,15 @@ interface PluginLibraryPanelProps {
   activePluginIdSet: Set<string>;
   onTogglePlugin: (plugin: PluginDefinition, isActive: boolean) => void;
   mutatingPluginId: string | null;
+  /** Plugins auto-included by the Elastic Capabilities flag. Their toggles are locked on. */
+  autoPluginIdSet?: Set<string>;
 }
 
 /**
  * Flyout that lists all installed plugins with toggle switches,
  * allowing the user to add or remove plugins from the current agent.
+ * Plugins in `autoPluginIdSet` are locked on with a disabled toggle
+ * and a tooltip explaining they are managed by Elastic Capabilities.
  */
 export const PluginLibraryPanel: React.FC<PluginLibraryPanelProps> = ({
   onClose,
@@ -42,6 +46,7 @@ export const PluginLibraryPanel: React.FC<PluginLibraryPanelProps> = ({
   activePluginIdSet,
   onTogglePlugin,
   mutatingPluginId,
+  autoPluginIdSet,
 }) => {
   const { createAgentBuilderUrl } = useNavigation();
   const manageLibraryUrl = createAgentBuilderUrl(appPaths.plugins.list);
@@ -112,6 +117,12 @@ export const PluginLibraryPanel: React.FC<PluginLibraryPanelProps> = ({
                   isActive={activePluginIdSet.has(plugin.id)}
                   onToggle={(checked) => onTogglePlugin(plugin, checked)}
                   isMutating={mutatingPluginId === plugin.id}
+                  isDisabled={autoPluginIdSet?.has(plugin.id)}
+                  disabledTooltip={
+                    autoPluginIdSet?.has(plugin.id)
+                      ? labels.agentPlugins.autoPluginManagedTooltip
+                      : undefined
+                  }
                 />
               </EuiFlexItem>
             ))}

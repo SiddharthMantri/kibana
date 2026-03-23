@@ -137,21 +137,28 @@ export const AgentPlugins: React.FC = () => {
     },
   });
 
+  /**
+   * Adds a plugin to the agent config. Returns a promise so callers (e.g. the
+   * install flyout) can wait for the mutation to settle before proceeding.
+   */
   const handleAddPlugin = useCallback(
-    (plugin: PluginDefinition, { selectOnSuccess = false }: { selectOnSuccess?: boolean } = {}) => {
+    async (
+      plugin: PluginDefinition,
+      { selectOnSuccess = false }: { selectOnSuccess?: boolean } = {}
+    ) => {
       const currentIds = agentPluginIds ?? [];
       if (currentIds.includes(plugin.id)) return;
       const newIds = [...currentIds, plugin.id];
       setMutatingPluginId(plugin.id);
-      updatePluginsMutation.mutate(newIds, {
-        onSuccess: () => {
-          if (selectOnSuccess) {
-            pendingSelectPluginIdRef.current = plugin.id;
-          }
-          addSuccessToast({ title: labels.agentPlugins.addPluginSuccessToast(plugin.name) });
-        },
-        onSettled: () => setMutatingPluginId(null),
-      });
+      try {
+        await updatePluginsMutation.mutateAsync(newIds);
+        if (selectOnSuccess) {
+          pendingSelectPluginIdRef.current = plugin.id;
+        }
+        addSuccessToast({ title: labels.agentPlugins.addPluginSuccessToast(plugin.name) });
+      } finally {
+        setMutatingPluginId(null);
+      }
     },
     [agentPluginIds, updatePluginsMutation, addSuccessToast]
   );
@@ -378,7 +385,9 @@ export const AgentPlugins: React.FC = () => {
       )}
 
       {/* Install plugin flyout (URL / Upload ZIP tabs) */}
-      {isInstallFlyoutOpen && <InstallPluginFlyout onClose={closeInstallFlyout} />}
+      {isInstallFlyoutOpen && (
+        <InstallPluginFlyout onClose={closeInstallFlyout} onPluginInstalled={handleAddPlugin} />
+      )}
     </div>
   );
 };

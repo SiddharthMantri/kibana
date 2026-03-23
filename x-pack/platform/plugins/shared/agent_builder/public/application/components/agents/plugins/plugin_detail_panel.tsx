@@ -28,14 +28,21 @@ import { DetailRow } from '../common/detail_row';
 interface PluginDetailPanelProps {
   pluginId: string;
   onRemove: () => void;
+  /** When true the plugin is auto-included by the Elastic Capabilities flag and cannot be removed. */
+  isAuto?: boolean;
 }
 
 /**
  * Detail panel displayed on the right side of the agent plugins page.
  * Shows plugin metadata (ID, name, description, skills, author, source)
- * with a remove action and confirmation modal.
+ * with a remove action and confirmation modal. The remove action is
+ * hidden when `isAuto` is true (plugin managed by Elastic Capabilities).
  */
-export const PluginDetailPanel: React.FC<PluginDetailPanelProps> = ({ pluginId, onRemove }) => {
+export const PluginDetailPanel: React.FC<PluginDetailPanelProps> = ({
+  pluginId,
+  onRemove,
+  isAuto = false,
+}) => {
   const { euiTheme } = useEuiTheme();
   const { plugin, isLoading } = usePlugin({ pluginId });
   const { createAgentBuilderUrl } = useNavigation();
@@ -93,16 +100,18 @@ export const PluginDetailPanel: React.FC<PluginDetailPanelProps> = ({ pluginId, 
                 </EuiFlexItem>
               </EuiFlexGroup>
             </EuiFlexItem>
-            <EuiFlexItem grow={false}>
-              <EuiButtonEmpty
-                iconType="cross"
-                size="xs"
-                color="danger"
-                onClick={() => setIsConfirmOpen(true)}
-              >
-                {labels.agentPlugins.removePluginButtonLabel}
-              </EuiButtonEmpty>
-            </EuiFlexItem>
+            {!isAuto && (
+              <EuiFlexItem grow={false}>
+                <EuiButtonEmpty
+                  iconType="cross"
+                  size="xs"
+                  color="danger"
+                  onClick={() => setIsConfirmOpen(true)}
+                >
+                  {labels.agentPlugins.removePluginButtonLabel}
+                </EuiButtonEmpty>
+              </EuiFlexItem>
+            )}
           </EuiFlexGroup>
         </div>
 
