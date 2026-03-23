@@ -63,8 +63,6 @@ export const AgentTools: React.FC = () => {
 
   const enableElasticCapabilities = agent?.configuration?.enable_elastic_capabilities ?? false;
 
-  // The static set of tool IDs managed by the elastic capabilities flag,
-  // matching the exact server-side defaultAgentToolIds list for backward compatibility.
   const defaultToolIdSet = useMemo(() => new Set<string>(defaultAgentToolIds), []);
 
   const activeTools = useMemo(() => {
