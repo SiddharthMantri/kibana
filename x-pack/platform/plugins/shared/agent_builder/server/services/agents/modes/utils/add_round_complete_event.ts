@@ -312,10 +312,6 @@ const createRound = ({
 
   const steps: ConversationRoundStep[] = [];
 
-  // Compaction step sourced from the compaction pipeline result rather than
-  // stream events. The compaction events (of()) emit synchronously and are
-  // missed by the toArray() collector due to share() timing, so we derive
-  // the step from the compactionResult passed via the closure instead.
   if (compactionResult?.compactionTriggered && compactionResult.summary) {
     const compactionStep: CompactionStep = {
       type: ConversationRoundStepType.compaction,
