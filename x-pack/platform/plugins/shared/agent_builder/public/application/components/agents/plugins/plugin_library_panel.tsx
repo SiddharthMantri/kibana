@@ -23,6 +23,7 @@ import { labels } from '../../../utils/i18n';
 import { useNavigation } from '../../../hooks/use_navigation';
 import { appPaths } from '../../../utils/app_paths';
 import { LibraryToggleRow } from '../common/library_toggle_row';
+import { FLYOUT_WIDTH } from '../common/constants';
 
 interface PluginLibraryPanelProps {
   onClose: () => void;
@@ -56,7 +57,7 @@ export const PluginLibraryPanel: React.FC<PluginLibraryPanelProps> = ({
   return (
     <EuiFlyout
       side="right"
-      size="960px"
+      size={FLYOUT_WIDTH}
       onClose={onClose}
       aria-labelledby="pluginLibraryFlyoutTitle"
       pushMinBreakpoint="xs"

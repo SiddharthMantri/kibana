@@ -24,6 +24,7 @@ import { labels } from '../../../utils/i18n';
 import { useNavigation } from '../../../hooks/use_navigation';
 import { appPaths } from '../../../utils/app_paths';
 import { LibraryToggleRow } from '../common/library_toggle_row';
+import { FLYOUT_WIDTH } from '../common/constants';
 
 interface SkillLibraryPanelProps {
   onClose: () => void;
@@ -59,7 +60,7 @@ export const SkillLibraryPanel: React.FC<SkillLibraryPanelProps> = ({
   return (
     <EuiFlyout
       side="right"
-      size="960px"
+      size={FLYOUT_WIDTH}
       onClose={onClose}
       aria-labelledby="skillLibraryFlyoutTitle"
       pushMinBreakpoint="xs"
