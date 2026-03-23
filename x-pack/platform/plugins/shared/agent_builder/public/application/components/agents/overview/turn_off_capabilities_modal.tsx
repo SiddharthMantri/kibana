@@ -27,12 +27,6 @@ interface TurnOffCapabilitiesModalProps {
   onCancel: () => void;
 }
 
-/**
- * Confirmation modal shown when the user toggles off the "Include built-in
- * capabilities automatically" switch. Includes a "Don't show this warning
- * again" checkbox whose value is propagated to the parent via onConfirm so
- * it can be persisted to localStorage.
- */
 export const TurnOffCapabilitiesModal: React.FC<TurnOffCapabilitiesModalProps> = ({
   onConfirm,
   onCancel,
@@ -65,7 +59,6 @@ export const TurnOffCapabilitiesModal: React.FC<TurnOffCapabilitiesModalProps> =
         </EuiText>
       </EuiModalBody>
 
-      {/* Footer with checkbox on the left and action buttons on the right */}
       <EuiModalFooter>
         <EuiFlexGroup alignItems="center" justifyContent="spaceBetween" responsive={false}>
           <EuiFlexItem grow={false}>

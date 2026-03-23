@@ -57,11 +57,6 @@ interface EditDetailsFlyoutProps {
   onClose: () => void;
 }
 
-/**
- * Flyout that allows editing the agent's display-facing details:
- * name, description, avatar symbol/color, and tags (labels).
- * Mirrors the "Edit agent details" panel shown in the overview screenshots.
- */
 export const EditDetailsFlyout: React.FC<EditDetailsFlyoutProps> = ({ agent, onClose }) => {
   const { agentService } = useAgentBuilderServices();
   const { addSuccessToast, addErrorToast } = useToasts();

@@ -74,7 +74,6 @@ export const AgentOverview: React.FC = () => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [instructions, setInstructions] = useState<string | undefined>(undefined);
 
-  // localStorage-backed preference for suppressing the turn-off warning
   const [warningDismissed, setWarningDismissed] = useLocalStorage(
     storageKeys.autoIncludeWarningDismissed,
     false
@@ -91,7 +90,6 @@ export const AgentOverview: React.FC = () => {
     });
   }, [manageAgents, agent, isExperimentalFeaturesEnabled, currentUser, isAdmin]);
 
-  // Keep local instructions state in sync with agent data
   const currentInstructions = instructions ?? agent?.configuration?.instructions ?? '';
 
   const enableElasticCapabilities = agent?.configuration?.enable_elastic_capabilities ?? false;
@@ -100,8 +98,6 @@ export const AgentOverview: React.FC = () => {
   const pluginsCount = agent?.configuration?.plugin_ids?.length ?? 0;
   const connectorsCount = 0;
 
-  // --- Mutations ---
-
   const updateAgentMutation = useMutation({
     mutationFn: (data: Record<string, unknown>) => agentService.update(agentId!, data),
     onSuccess: () => {
@@ -109,7 +105,6 @@ export const AgentOverview: React.FC = () => {
     },
   });
 
-  /** Toggle the enable_elastic_capabilities flag on the agent. */
   const handleToggleAutoInclude = useCallback(
     (checked: boolean) => {
       if (!checked && !warningDismissed) {
@@ -172,7 +167,6 @@ export const AgentOverview: React.FC = () => {
     [updateAgentMutation, setWarningDismissed, addSuccessToast, addErrorToast]
   );
 
-  /** Save custom instructions via the "Save instructions" button. */
   const handleSaveInstructions = useCallback(() => {
     updateAgentMutation.mutate(
       { configuration: { instructions: currentInstructions } },
@@ -218,7 +212,6 @@ export const AgentOverview: React.FC = () => {
 
   return (
     <div css={containerStyles} data-test-subj="agentOverviewPage">
-      {/* ── Header ── */}
       <EuiFlexGroup alignItems="center" gutterSize="m" responsive={false}>
         <EuiFlexItem grow={false}>
           <AgentAvatar agent={agent} size="xl" />
@@ -288,13 +281,11 @@ export const AgentOverview: React.FC = () => {
         </EuiFlexItem>
       </EuiFlexGroup>
 
-      {/* ── Description ── */}
       <EuiSpacer size="s" />
       <EuiText size="s" color="subdued">
         {agent.description}
       </EuiText>
 
-      {/* ── Tags ── */}
       {agent.labels && agent.labels.length > 0 && (
         <>
           <EuiSpacer size="s" />
@@ -390,7 +381,6 @@ export const AgentOverview: React.FC = () => {
               />
             )}
 
-            {/* Connectors row — gated behind connectors-enabled UI setting */}
             {isConnectorsEnabled && (
               <CapabilityRow
                 count={connectorsCount}
@@ -444,7 +434,6 @@ export const AgentOverview: React.FC = () => {
         </EuiFlexItem>
 
         <EuiFlexItem grow={2}>
-          {/* Auto-include toggle row: label/description on the left, switch on the right */}
           <EuiFlexGroup alignItems="center" justifyContent="spaceBetween" responsive={false}>
             <EuiFlexItem grow>
               <EuiTitle size="xs">

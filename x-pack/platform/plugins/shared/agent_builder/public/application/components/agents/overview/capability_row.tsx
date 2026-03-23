@@ -25,10 +25,6 @@ export interface CapabilityRowProps {
   onAction?: () => void;
 }
 
-/**
- * Renders one capability row: "{count} {label}" with a description and an
- * action button (e.g. "Add a skill" or "Customize").
- */
 export const CapabilityRow: React.FC<CapabilityRowProps> = ({
   count,
   label,
