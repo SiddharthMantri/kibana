@@ -969,6 +969,21 @@ export const labels = {
         defaultMessage: 'Source',
       }
     ),
+    installPluginFlyoutTitle: i18n.translate(
+      'xpack.agentBuilder.agentPlugins.installPluginFlyoutTitle',
+      {
+        defaultMessage: 'Install plugin...',
+      }
+    ),
+    installPluginUrlTab: i18n.translate('xpack.agentBuilder.agentPlugins.installPluginUrlTab', {
+      defaultMessage: 'URL',
+    }),
+    installPluginUploadTab: i18n.translate(
+      'xpack.agentBuilder.agentPlugins.installPluginUploadTab',
+      {
+        defaultMessage: 'Upload ZIP',
+      }
+    ),
   },
   plugins: {
     title: i18n.translate('xpack.agentBuilder.plugins.title', { defaultMessage: 'Plugins' }),

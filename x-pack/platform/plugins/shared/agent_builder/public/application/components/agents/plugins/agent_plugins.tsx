@@ -31,13 +31,10 @@ import { useAgentBuilderServices } from '../../../hooks/use_agent_builder_servic
 import { useToasts } from '../../../hooks/use_toasts';
 import { queryKeys } from '../../../query_keys';
 import { useFlyoutState } from '../../../hooks/use_flyout_state';
-import { InstallFromUrlModal } from '../../plugins/install_from_url_modal';
-import { UploadPluginModal } from '../../plugins/upload_plugin_modal';
 import { ActiveItemRow } from '../common/active_item_row';
 import { PluginLibraryPanel } from './plugin_library_panel';
 import { PluginDetailPanel } from './plugin_detail_panel';
-
-type InstallModalType = 'url' | 'upload' | null;
+import { InstallPluginFlyout } from './install_plugin_flyout';
 
 /**
  * Main component for the `/agents/:agentId/plugins` route.
@@ -59,11 +56,15 @@ export const AgentPlugins: React.FC = () => {
   const pendingSelectPluginIdRef = useRef<string | null>(null);
   const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
   const [mutatingPluginId, setMutatingPluginId] = useState<string | null>(null);
-  const [installModal, setInstallModal] = useState<InstallModalType>(null);
   const {
     isOpen: isLibraryOpen,
     openFlyout: openLibrary,
     closeFlyout: closeLibrary,
+  } = useFlyoutState();
+  const {
+    isOpen: isInstallFlyoutOpen,
+    openFlyout: openInstallFlyout,
+    closeFlyout: closeInstallFlyout,
   } = useFlyoutState();
 
   const handleOpenLibrary = useCallback(() => {
@@ -71,10 +72,10 @@ export const AgentPlugins: React.FC = () => {
     openLibrary();
   }, [openLibrary]);
 
-  const handleOpenInstallModal = useCallback(() => {
+  const handleOpenInstallFlyout = useCallback(() => {
     setIsAddMenuOpen(false);
-    setInstallModal('url');
-  }, []);
+    openInstallFlyout();
+  }, [openInstallFlyout]);
 
   const agentPluginIds = useMemo(
     () => agent?.configuration?.plugin_ids,
@@ -251,7 +252,7 @@ export const AgentPlugins: React.FC = () => {
                   <EuiContextMenuItem
                     key="fromUrlOrZip"
                     icon="link"
-                    onClick={handleOpenInstallModal}
+                    onClick={handleOpenInstallFlyout}
                   >
                     {labels.agentPlugins.fromUrlOrZipMenuItem}
                   </EuiContextMenuItem>,
@@ -376,11 +377,8 @@ export const AgentPlugins: React.FC = () => {
         />
       )}
 
-      {/* Install from URL modal */}
-      {installModal === 'url' && <InstallFromUrlModal onClose={() => setInstallModal(null)} />}
-
-      {/* Upload ZIP modal */}
-      {installModal === 'upload' && <UploadPluginModal onClose={() => setInstallModal(null)} />}
+      {/* Install plugin flyout (URL / Upload ZIP tabs) */}
+      {isInstallFlyoutOpen && <InstallPluginFlyout onClose={closeInstallFlyout} />}
     </div>
   );
 };
