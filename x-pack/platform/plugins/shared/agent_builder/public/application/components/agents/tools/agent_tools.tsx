@@ -10,13 +10,10 @@ import { useParams } from 'react-router-dom';
 import {
   EuiBadge,
   EuiButton,
-  EuiContextMenuItem,
-  EuiContextMenuPanel,
   EuiFieldSearch,
   EuiFlexGroup,
   EuiFlexItem,
   EuiLoadingSpinner,
-  EuiPopover,
   EuiSpacer,
   EuiText,
   EuiTitle,
@@ -32,8 +29,6 @@ import { useAgentBuilderServices } from '../../../hooks/use_agent_builder_servic
 import { useToasts } from '../../../hooks/use_toasts';
 import { queryKeys } from '../../../query_keys';
 import { useFlyoutState } from '../../../hooks/use_flyout_state';
-import { useNavigation } from '../../../hooks/use_navigation';
-import { appPaths } from '../../../utils/app_paths';
 import { isToolSelected, toggleToolSelection } from '../../../utils/tool_selection_utils';
 import { ActiveItemRow } from '../common/active_item_row';
 import { ToolLibraryPanel } from './tool_library_panel';
@@ -46,7 +41,6 @@ export const AgentTools: React.FC = () => {
   const { euiTheme } = useEuiTheme();
   const { agentService } = useAgentBuilderServices();
   const { addSuccessToast, addErrorToast } = useToasts();
-  const { navigateToAgentBuilderUrl } = useNavigation();
   const queryClient = useQueryClient();
 
   const { agent, isLoading: agentLoading } = useAgentBuilderAgentById(agentId);
@@ -54,23 +48,12 @@ export const AgentTools: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedToolId, setSelectedToolId] = useState<string | null>(null);
-  const [isAddMenuOpen, setIsAddMenuOpen] = useState(false);
   const [mutatingToolId, setMutatingToolId] = useState<string | null>(null);
   const {
     isOpen: isLibraryOpen,
     openFlyout: openLibrary,
     closeFlyout: closeLibrary,
   } = useFlyoutState();
-
-  const handleOpenLibrary = useCallback(() => {
-    setIsAddMenuOpen(false);
-    openLibrary();
-  }, [openLibrary]);
-
-  const handleCreateNewTool = useCallback(() => {
-    setIsAddMenuOpen(false);
-    navigateToAgentBuilderUrl(appPaths.manage.toolsNew);
-  }, [navigateToAgentBuilderUrl]);
 
   const agentToolSelections = useMemo(
     () => agent?.configuration?.tools ?? [],
@@ -223,42 +206,9 @@ export const AgentTools: React.FC = () => {
             </EuiTitle>
           </EuiFlexItem>
           <EuiFlexItem grow={false}>
-            <EuiPopover
-              aria-label={labels.agentTools.addToolButton}
-              button={
-                <EuiButton
-                  fill
-                  iconType="plusInCircle"
-                  iconSide="left"
-                  onClick={() => setIsAddMenuOpen((prev) => !prev)}
-                >
-                  {labels.agentTools.addToolButton}
-                </EuiButton>
-              }
-              isOpen={isAddMenuOpen}
-              closePopover={() => setIsAddMenuOpen(false)}
-              anchorPosition="downLeft"
-              panelPaddingSize="none"
-            >
-              <EuiContextMenuPanel
-                items={[
-                  <EuiContextMenuItem
-                    key="fromLibrary"
-                    icon="importAction"
-                    onClick={handleOpenLibrary}
-                  >
-                    {labels.agentTools.fromLibraryMenuItem}
-                  </EuiContextMenuItem>,
-                  <EuiContextMenuItem
-                    key="createNew"
-                    icon="plusInCircle"
-                    onClick={handleCreateNewTool}
-                  >
-                    {labels.agentTools.createNewToolMenuItem}
-                  </EuiContextMenuItem>,
-                ]}
-              />
-            </EuiPopover>
+            <EuiButton fill iconType="plusInCircle" iconSide="left" onClick={openLibrary}>
+              {labels.agentTools.addToolButton}
+            </EuiButton>
           </EuiFlexItem>
         </EuiFlexGroup>
 
