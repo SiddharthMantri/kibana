@@ -17,19 +17,9 @@ export interface ActiveItemRowProps {
   onRemove: () => void;
   isRemoving?: boolean;
   removeAriaLabel: string;
-  /**
-   * Optional content rendered in place of the remove button when the item
-   * is selected (e.g. a "Managed" badge for read-only items).
-   * When provided, the remove button is hidden.
-   */
   readOnlyContent?: React.ReactNode;
 }
 
-/**
- * Generic selectable sidebar row used in agent capability pages
- * (skills, plugins). Shows the item name with selection highlight
- * and an optional remove button or custom trailing content.
- */
 export const ActiveItemRow: React.FC<ActiveItemRowProps> = ({
   name,
   isSelected,

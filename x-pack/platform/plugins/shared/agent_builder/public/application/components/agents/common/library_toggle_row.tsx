@@ -29,10 +29,6 @@ export interface LibraryToggleRowProps {
   disabledTooltip?: string;
 }
 
-/**
- * Generic toggle row used in library flyouts (skills, plugins).
- * Shows name, two-line-clamped description, and a compressed switch.
- */
 export const LibraryToggleRow: React.FC<LibraryToggleRowProps> = ({
   name,
   description,

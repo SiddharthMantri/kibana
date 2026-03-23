@@ -28,16 +28,9 @@ import { DetailRow } from '../common/detail_row';
 interface PluginDetailPanelProps {
   pluginId: string;
   onRemove: () => void;
-  /** When true the plugin is auto-included by the Elastic Capabilities flag and cannot be removed. */
   isAuto?: boolean;
 }
 
-/**
- * Detail panel displayed on the right side of the agent plugins page.
- * Shows plugin metadata (ID, name, description, skills, author, source)
- * with a remove action and confirmation modal. The remove action is
- * hidden when `isAuto` is true (plugin managed by Elastic Capabilities).
- */
 export const PluginDetailPanel: React.FC<PluginDetailPanelProps> = ({
   pluginId,
   onRemove,

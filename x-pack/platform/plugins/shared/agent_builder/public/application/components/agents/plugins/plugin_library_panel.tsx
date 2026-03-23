@@ -34,12 +34,6 @@ interface PluginLibraryPanelProps {
   autoPluginIdSet?: Set<string>;
 }
 
-/**
- * Flyout that lists all installed plugins with toggle switches,
- * allowing the user to add or remove plugins from the current agent.
- * Plugins in `autoPluginIdSet` are locked on with a disabled toggle
- * and a tooltip explaining they are managed by Elastic Capabilities.
- */
 export const PluginLibraryPanel: React.FC<PluginLibraryPanelProps> = ({
   onClose,
   allPlugins,

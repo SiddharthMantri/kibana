@@ -15,11 +15,6 @@ export interface DetailRowProps {
   isLast?: boolean;
 }
 
-/**
- * Shared label + value row for detail panels (skills, plugins, etc.).
- * Renders a bold label on the left and arbitrary content on the right,
- * separated by a thin bottom border unless `isLast` is set.
- */
 export const DetailRow: React.FC<DetailRowProps> = ({ label, children, isLast = false }) => {
   const { euiTheme } = useEuiTheme();
 
