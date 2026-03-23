@@ -36,11 +36,6 @@ import { PluginLibraryPanel } from './plugin_library_panel';
 import { PluginDetailPanel } from './plugin_detail_panel';
 import { InstallPluginFlyout } from './install_plugin_flyout';
 
-/**
- * Main component for the `/agents/:agentId/plugins` route.
- * Mirrors the AgentSkills layout: header with install actions,
- * left sidebar with active plugins, and right detail panel.
- */
 export const AgentPlugins: React.FC = () => {
   const { agentId } = useParams<{ agentId: string }>();
   const { euiTheme } = useEuiTheme();
@@ -87,13 +82,11 @@ export const AgentPlugins: React.FC = () => {
     [agentPluginIds]
   );
 
-  /** Plugins currently attached to this agent. */
   const activePlugins = useMemo(() => {
     if (!agentPluginIdSet) return [];
     return allPlugins.filter((p) => agentPluginIdSet.has(p.id));
   }, [allPlugins, agentPluginIdSet]);
 
-  // Auto-select first plugin or follow pending selection after mutation.
   useEffect(() => {
     if (pendingSelectPluginIdRef.current) {
       const pendingInActive = activePlugins.some((p) => p.id === pendingSelectPluginIdRef.current);
@@ -124,7 +117,6 @@ export const AgentPlugins: React.FC = () => {
     );
   }, [activePlugins, searchQuery]);
 
-  /** Mutation that persists the agent's plugin_ids list. */
   const updatePluginsMutation = useMutation({
     mutationFn: (newPluginIds: string[]) => {
       return agentService.update(agentId!, { configuration: { plugin_ids: newPluginIds } });
@@ -137,10 +129,6 @@ export const AgentPlugins: React.FC = () => {
     },
   });
 
-  /**
-   * Adds a plugin to the agent config. Returns a promise so callers (e.g. the
-   * install flyout) can wait for the mutation to settle before proceeding.
-   */
   const handleAddPlugin = useCallback(
     async (
       plugin: PluginDefinition,
@@ -223,7 +211,6 @@ export const AgentPlugins: React.FC = () => {
         overflow: hidden;
       `}
     >
-      {/* Header */}
       <div
         css={css`
           padding: ${euiTheme.size.l};
@@ -282,7 +269,6 @@ export const AgentPlugins: React.FC = () => {
         </EuiText>
       </div>
 
-      {/* Two-column layout: sidebar + detail panel */}
       <EuiFlexGroup
         gutterSize="none"
         responsive={false}
@@ -292,7 +278,6 @@ export const AgentPlugins: React.FC = () => {
           padding: 0px ${euiTheme.size.l};
         `}
       >
-        {/* Left sidebar */}
         <EuiFlexItem
           grow={false}
           css={css`
@@ -349,7 +334,6 @@ export const AgentPlugins: React.FC = () => {
           </div>
         </EuiFlexItem>
 
-        {/* Right detail panel */}
         <EuiFlexItem
           css={css`
             overflow: hidden;
@@ -373,7 +357,6 @@ export const AgentPlugins: React.FC = () => {
         </EuiFlexItem>
       </EuiFlexGroup>
 
-      {/* Library flyout */}
       {isLibraryOpen && (
         <PluginLibraryPanel
           onClose={closeLibrary}
@@ -384,7 +367,6 @@ export const AgentPlugins: React.FC = () => {
         />
       )}
 
-      {/* Install plugin flyout (URL / Upload ZIP tabs) */}
       {isInstallFlyoutOpen && (
         <InstallPluginFlyout onClose={closeInstallFlyout} onPluginInstalled={handleAddPlugin} />
       )}
