@@ -21,6 +21,7 @@ import {
 } from '@elastic/eui';
 import { css } from '@emotion/react';
 import type { ToolDefinition, ToolSelection } from '@kbn/agent-builder-common';
+import { defaultAgentToolIds } from '@kbn/agent-builder-common';
 import { useMutation, useQueryClient } from '@kbn/react-query';
 import { labels } from '../../../utils/i18n';
 import { useToolsService } from '../../../hooks/tools/use_tools';
@@ -62,27 +63,29 @@ export const AgentTools: React.FC = () => {
 
   const enableElasticCapabilities = agent?.configuration?.enable_elastic_capabilities ?? false;
 
-  const builtinTools = useMemo(() => allTools.filter((t) => t.readonly), [allTools]);
-
-  const builtinToolIdSet = useMemo(() => new Set(builtinTools.map((t) => t.id)), [builtinTools]);
+  // The static set of tool IDs managed by the elastic capabilities flag,
+  // matching the exact server-side defaultAgentToolIds list for backward compatibility.
+  const defaultToolIdSet = useMemo(() => new Set<string>(defaultAgentToolIds), []);
 
   const activeTools = useMemo(() => {
     if (!agent) return [];
     const explicitTools = allTools.filter((t) => isToolSelected(t, agentToolSelections));
     if (enableElasticCapabilities) {
       const explicitIdSet = new Set(explicitTools.map((t) => t.id));
-      const builtinNotExplicit = builtinTools.filter((t) => !explicitIdSet.has(t.id));
-      return [...explicitTools, ...builtinNotExplicit];
+      const defaultToolsNotExplicit = allTools.filter(
+        (t) => defaultToolIdSet.has(t.id) && !explicitIdSet.has(t.id)
+      );
+      return [...explicitTools, ...defaultToolsNotExplicit];
     }
     return explicitTools;
-  }, [allTools, agentToolSelections, agent, enableElasticCapabilities, builtinTools]);
+  }, [allTools, agentToolSelections, agent, enableElasticCapabilities, defaultToolIdSet]);
 
   const activeToolIdSet = useMemo(() => new Set(activeTools.map((t) => t.id)), [activeTools]);
 
   const libraryActiveToolIdSet = useMemo(() => {
-    if (enableElasticCapabilities) return new Set([...activeToolIdSet, ...builtinToolIdSet]);
+    if (enableElasticCapabilities) return new Set([...activeToolIdSet, ...defaultToolIdSet]);
     return activeToolIdSet;
-  }, [activeToolIdSet, enableElasticCapabilities, builtinToolIdSet]);
+  }, [activeToolIdSet, enableElasticCapabilities, defaultToolIdSet]);
 
   useEffect(() => {
     if (!selectedToolId) {
@@ -149,24 +152,24 @@ export const AgentTools: React.FC = () => {
 
   const handleToggleTool = useCallback(
     (tool: ToolDefinition, isActive: boolean) => {
-      if (enableElasticCapabilities && tool.readonly) return;
+      if (enableElasticCapabilities && defaultToolIdSet.has(tool.id)) return;
       if (isActive) {
         handleAddTool(tool);
       } else {
         handleRemoveTool(tool);
       }
     },
-    [handleAddTool, handleRemoveTool, enableElasticCapabilities]
+    [handleAddTool, handleRemoveTool, enableElasticCapabilities, defaultToolIdSet]
   );
 
   const handleRemoveSelectedTool = useCallback(() => {
     if (!selectedToolId) return;
     const tool = activeTools.find((t) => t.id === selectedToolId);
     if (tool) {
-      if (enableElasticCapabilities && tool.readonly) return;
+      if (enableElasticCapabilities && defaultToolIdSet.has(tool.id)) return;
       handleRemoveTool(tool);
     }
-  }, [selectedToolId, activeTools, handleRemoveTool, enableElasticCapabilities]);
+  }, [selectedToolId, activeTools, handleRemoveTool, enableElasticCapabilities, defaultToolIdSet]);
 
   const isLoading = agentLoading || toolsLoading;
 
@@ -268,7 +271,7 @@ export const AgentTools: React.FC = () => {
               </EuiText>
             ) : (
               filteredActiveTools.map((tool) => {
-                const isBuiltinManaged = enableElasticCapabilities && tool.readonly;
+                const isBuiltinManaged = enableElasticCapabilities && defaultToolIdSet.has(tool.id);
                 return (
                   <ActiveItemRow
                     key={tool.id}
@@ -302,10 +305,7 @@ export const AgentTools: React.FC = () => {
             <ToolDetailPanel
               toolId={selectedToolId}
               onRemove={handleRemoveSelectedTool}
-              isReadOnly={
-                enableElasticCapabilities &&
-                (activeTools.find((t) => t.id === selectedToolId)?.readonly ?? false)
-              }
+              isReadOnly={enableElasticCapabilities && defaultToolIdSet.has(selectedToolId)}
             />
           ) : (
             <EuiFlexGroup
@@ -331,7 +331,7 @@ export const AgentTools: React.FC = () => {
           onToggleTool={handleToggleTool}
           mutatingToolId={mutatingToolId}
           enableElasticCapabilities={enableElasticCapabilities}
-          builtinToolIdSet={builtinToolIdSet}
+          builtinToolIdSet={defaultToolIdSet}
         />
       )}
     </div>
