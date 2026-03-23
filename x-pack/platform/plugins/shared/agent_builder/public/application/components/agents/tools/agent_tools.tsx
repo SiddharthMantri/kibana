@@ -30,12 +30,75 @@ import { useAgentBuilderServices } from '../../../hooks/use_agent_builder_servic
 import { useToasts } from '../../../hooks/use_toasts';
 import { queryKeys } from '../../../query_keys';
 import { useFlyoutState } from '../../../hooks/use_flyout_state';
-import { isToolSelected, toggleToolSelection } from '../../../utils/tool_selection_utils';
+import {
+  getActiveTools,
+  isToolSelected,
+  toggleToolSelection,
+} from '../../../utils/tool_selection_utils';
 import { ActiveItemRow } from '../common/active_item_row';
 import { ToolLibraryPanel } from './tool_library_panel';
 import { ToolDetailPanel } from './tool_detail_panel';
 
 const FLEX_ITEM_WIDTH = '280px';
+
+const ActiveToolsList: React.FC<{
+  filteredActiveTools: ToolDefinition[];
+  searchQuery: string;
+  selectedToolId: string | null;
+  enableElasticCapabilities: boolean;
+  defaultToolIdSet: Set<string>;
+  isRemoving: boolean;
+  onSelect: (id: string) => void;
+  onRemove: (tool: ToolDefinition) => void;
+}> = ({
+  filteredActiveTools,
+  searchQuery,
+  selectedToolId,
+  enableElasticCapabilities,
+  defaultToolIdSet,
+  isRemoving,
+  onSelect,
+  onRemove,
+}) => {
+  if (filteredActiveTools.length === 0) {
+    return (
+      <EuiText size="s" color="subdued" textAlign="center">
+        <p>
+          {searchQuery.trim()
+            ? labels.agentTools.noActiveToolsMatchMessage
+            : labels.agentTools.noActiveToolsMessage}
+        </p>
+      </EuiText>
+    );
+  }
+
+  return (
+    <>
+      {filteredActiveTools.map((tool) => {
+        const isBuiltinManaged = enableElasticCapabilities && defaultToolIdSet.has(tool.id);
+        return (
+          <ActiveItemRow
+            key={tool.id}
+            id={tool.id}
+            name={tool.id}
+            isSelected={selectedToolId === tool.id}
+            onSelect={() => onSelect(tool.id)}
+            onRemove={() => onRemove(tool)}
+            isRemoving={isRemoving}
+            removeAriaLabel={labels.agentTools.removeToolAriaLabel}
+            readOnlyContent={
+              isBuiltinManaged ? (
+                <EuiBadge color="hollow">
+                  {labels.agentTools.elasticCapabilitiesReadOnlyBadge}
+                </EuiBadge>
+              ) : undefined
+            }
+          />
+        );
+      })}
+    </>
+  );
+};
 
 export const AgentTools: React.FC = () => {
   const { agentId } = useParams<{ agentId: string }>();
@@ -65,18 +128,13 @@ export const AgentTools: React.FC = () => {
 
   const defaultToolIdSet = useMemo(() => new Set<string>(defaultAgentToolIds), []);
 
-  const activeTools = useMemo(() => {
-    if (!agent) return [];
-    const explicitTools = allTools.filter((t) => isToolSelected(t, agentToolSelections));
-    if (enableElasticCapabilities) {
-      const explicitIdSet = new Set(explicitTools.map((t) => t.id));
-      const defaultToolsNotExplicit = allTools.filter(
-        (t) => defaultToolIdSet.has(t.id) && !explicitIdSet.has(t.id)
-      );
-      return [...explicitTools, ...defaultToolsNotExplicit];
-    }
-    return explicitTools;
-  }, [allTools, agentToolSelections, agent, enableElasticCapabilities, defaultToolIdSet]);
+  const activeTools = useMemo(
+    () =>
+      agent
+        ? getActiveTools(allTools, agentToolSelections, enableElasticCapabilities, defaultToolIdSet)
+        : [],
+    [allTools, agentToolSelections, agent, enableElasticCapabilities, defaultToolIdSet]
+  );
 
   const activeToolIdSet = useMemo(() => new Set(activeTools.map((t) => t.id)), [activeTools]);
 
@@ -259,38 +317,16 @@ export const AgentTools: React.FC = () => {
               padding: 0px ${euiTheme.size.m} ${euiTheme.size.s} 0px;
             `}
           >
-            {filteredActiveTools.length === 0 ? (
-              <EuiText size="s" color="subdued" textAlign="center">
-                <p>
-                  {searchQuery.trim()
-                    ? labels.agentTools.noActiveToolsMatchMessage
-                    : labels.agentTools.noActiveToolsMessage}
-                </p>
-              </EuiText>
-            ) : (
-              filteredActiveTools.map((tool) => {
-                const isBuiltinManaged = enableElasticCapabilities && defaultToolIdSet.has(tool.id);
-                return (
-                  <ActiveItemRow
-                    key={tool.id}
-                    id={tool.id}
-                    name={tool.id}
-                    isSelected={selectedToolId === tool.id}
-                    onSelect={() => setSelectedToolId(tool.id)}
-                    onRemove={() => handleRemoveTool(tool)}
-                    isRemoving={updateToolsMutation.isLoading}
-                    removeAriaLabel={labels.agentTools.removeToolAriaLabel}
-                    readOnlyContent={
-                      isBuiltinManaged ? (
-                        <EuiBadge color="hollow">
-                          {labels.agentTools.elasticCapabilitiesReadOnlyBadge}
-                        </EuiBadge>
-                      ) : undefined
-                    }
-                  />
-                );
-              })
-            )}
+            <ActiveToolsList
+              filteredActiveTools={filteredActiveTools}
+              searchQuery={searchQuery}
+              selectedToolId={selectedToolId}
+              enableElasticCapabilities={enableElasticCapabilities}
+              defaultToolIdSet={defaultToolIdSet}
+              isRemoving={updateToolsMutation.isLoading}
+              onSelect={setSelectedToolId}
+              onRemove={handleRemoveTool}
+            />
           </div>
         </EuiFlexItem>
 
