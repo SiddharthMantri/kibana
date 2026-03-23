@@ -7,6 +7,7 @@
 
 import React from 'react';
 import {
+  EuiBadge,
   EuiButton,
   EuiButtonEmpty,
   EuiCallOut,
@@ -26,7 +27,12 @@ import {
   EuiTitle,
 } from '@elastic/eui';
 import { i18n } from '@kbn/i18n';
-import type { AgentDefinition, AgentVisibility } from '@kbn/agent-builder-common';
+import {
+  AgentVisibility,
+  VISIBILITY_ICON,
+  VISIBILITY_BADGE_COLOR,
+  type AgentDefinition,
+} from '@kbn/agent-builder-common';
 import { Controller, useForm } from 'react-hook-form';
 import { useMutation, useQueryClient } from '@kbn/react-query';
 import { useAgentBuilderServices } from '../../../hooks/use_agent_builder_service';
@@ -101,7 +107,7 @@ export const EditDetailsFlyout: React.FC<EditDetailsFlyoutProps> = ({ agent, onC
     },
   });
 
-  const isShared = (agent.visibility as AgentVisibility) === 'shared';
+  const isShared = (agent.visibility as AgentVisibility) === AgentVisibility.Shared;
 
   return (
     <EuiFlyout onClose={onClose} size={FLYOUT_WIDTH} data-test-subj="editDetailsFlyout">
@@ -121,9 +127,24 @@ export const EditDetailsFlyout: React.FC<EditDetailsFlyoutProps> = ({ agent, onC
             <EuiCallOut
               color="warning"
               size="s"
-              title={i18n.translate('xpack.agentBuilder.overview.editDetails.sharedWarning', {
-                defaultMessage: "You're editing a Shared agent. Changes will affect all users.",
-              })}
+              title={
+                <span>
+                  {i18n.translate('xpack.agentBuilder.overview.editDetails.sharedWarningPrefix', {
+                    defaultMessage: "You're editing a ",
+                  })}
+                  <EuiBadge
+                    iconType={VISIBILITY_ICON[AgentVisibility.Shared]}
+                    color={VISIBILITY_BADGE_COLOR[AgentVisibility.Shared]}
+                  >
+                    {i18n.translate('xpack.agentBuilder.overview.editDetails.sharedWarningBadge', {
+                      defaultMessage: 'Shared agent',
+                    })}
+                  </EuiBadge>
+                  {i18n.translate('xpack.agentBuilder.overview.editDetails.sharedWarningSuffix', {
+                    defaultMessage: '. Changes will affect all users.',
+                  })}
+                </span>
+              }
               data-test-subj="editDetailsSharedWarning"
             />
             <EuiSpacer size="m" />
