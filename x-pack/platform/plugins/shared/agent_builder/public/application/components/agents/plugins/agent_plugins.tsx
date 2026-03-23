@@ -36,6 +36,8 @@ import { PluginLibraryPanel } from './plugin_library_panel';
 import { PluginDetailPanel } from './plugin_detail_panel';
 import { InstallPluginFlyout } from './install_plugin_flyout';
 
+const FLEX_ITEM_WIDTH = '280px';
+
 export const AgentPlugins: React.FC = () => {
   const { agentId } = useParams<{ agentId: string }>();
   const { euiTheme } = useEuiTheme();
@@ -281,7 +283,7 @@ export const AgentPlugins: React.FC = () => {
         <EuiFlexItem
           grow={false}
           css={css`
-            width: 280px;
+            width: ${FLEX_ITEM_WIDTH};
             display: flex;
             flex-direction: column;
             overflow: hidden;

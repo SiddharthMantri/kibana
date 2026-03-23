@@ -15,6 +15,8 @@ export interface DetailRowProps {
   isLast?: boolean;
 }
 
+const FLEX_ITEM_WIDTH = '180px';
+
 export const DetailRow: React.FC<DetailRowProps> = ({ label, children, isLast = false }) => {
   const { euiTheme } = useEuiTheme();
 
@@ -30,7 +32,7 @@ export const DetailRow: React.FC<DetailRowProps> = ({ label, children, isLast = 
       <EuiFlexItem
         grow={false}
         css={css`
-          width: 180px;
+          width: ${FLEX_ITEM_WIDTH};
           padding-right: ${euiTheme.size.m};
         `}
       >

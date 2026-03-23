@@ -29,6 +29,13 @@ export interface LibraryToggleRowProps {
   disabledTooltip?: string;
 }
 
+const EUI_TEXT_STYLES = css`
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+`;
+
 export const LibraryToggleRow: React.FC<LibraryToggleRowProps> = ({
   name,
   description,
@@ -62,16 +69,7 @@ export const LibraryToggleRow: React.FC<LibraryToggleRowProps> = ({
         >
           {name}
         </EuiText>
-        <EuiText
-          size="xs"
-          color="subdued"
-          css={css`
-            display: -webkit-box;
-            -webkit-line-clamp: 2;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-          `}
-        >
+        <EuiText size="xs" color="subdued" css={EUI_TEXT_STYLES}>
           {description}
         </EuiText>
       </EuiFlexItem>
