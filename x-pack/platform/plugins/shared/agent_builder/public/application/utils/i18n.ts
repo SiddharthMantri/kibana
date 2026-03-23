@@ -995,6 +995,152 @@ export const labels = {
       }
     ),
   },
+  agentTools: {
+    pageDescription: i18n.translate('xpack.agentBuilder.agentTools.pageDescription', {
+      defaultMessage:
+        'Modular, reusable Elasticsearch operations. Agents use them to search, retrieve, and analyze your data.',
+    }),
+    addToolButton: i18n.translate('xpack.agentBuilder.agentTools.addToolButton', {
+      defaultMessage: 'Add tool',
+    }),
+    fromLibraryMenuItem: i18n.translate('xpack.agentBuilder.agentTools.fromLibraryMenuItem', {
+      defaultMessage: 'From library',
+    }),
+    createNewToolMenuItem: i18n.translate('xpack.agentBuilder.agentTools.createNewToolMenuItem', {
+      defaultMessage: 'Create new tool',
+    }),
+    searchActiveToolsPlaceholder: i18n.translate(
+      'xpack.agentBuilder.agentTools.searchActiveToolsPlaceholder',
+      {
+        defaultMessage: 'Search active tools',
+      }
+    ),
+    noActiveToolsMessage: i18n.translate('xpack.agentBuilder.agentTools.noActiveToolsMessage', {
+      defaultMessage:
+        'No tools assigned to this agent yet. Add tools from the library or create a new one.',
+    }),
+    noActiveToolsMatchMessage: i18n.translate(
+      'xpack.agentBuilder.agentTools.noActiveToolsMatchMessage',
+      {
+        defaultMessage: 'No active tools match your search.',
+      }
+    ),
+    removeToolButtonLabel: i18n.translate('xpack.agentBuilder.agentTools.removeToolButtonLabel', {
+      defaultMessage: 'Remove',
+    }),
+    removeToolAriaLabel: i18n.translate('xpack.agentBuilder.agentTools.removeToolAriaLabel', {
+      defaultMessage: 'Remove tool from agent',
+    }),
+    removeToolConfirmTitle: (toolId: string) =>
+      i18n.translate('xpack.agentBuilder.agentTools.removeToolConfirmTitle', {
+        defaultMessage: 'Remove "{toolId}" from agent?',
+        values: { toolId },
+      }),
+    removeToolConfirmBody: i18n.translate('xpack.agentBuilder.agentTools.removeToolConfirmBody', {
+      defaultMessage: 'The tool will no longer be available to this agent.',
+    }),
+    removeToolConfirmButton: i18n.translate(
+      'xpack.agentBuilder.agentTools.removeToolConfirmButton',
+      {
+        defaultMessage: 'Remove',
+      }
+    ),
+    removeToolCancelButton: i18n.translate('xpack.agentBuilder.agentTools.removeToolCancelButton', {
+      defaultMessage: 'Cancel',
+    }),
+    addToolSuccessToast: (toolId: string) =>
+      i18n.translate('xpack.agentBuilder.agentTools.addToolSuccessToast', {
+        defaultMessage: 'Tool "{toolId}" added to agent',
+        values: { toolId },
+      }),
+    removeToolSuccessToast: (toolId: string) =>
+      i18n.translate('xpack.agentBuilder.agentTools.removeToolSuccessToast', {
+        defaultMessage: 'Tool "{toolId}" removed from agent',
+        values: { toolId },
+      }),
+    updateToolsErrorToast: i18n.translate('xpack.agentBuilder.agentTools.updateToolsErrorToast', {
+      defaultMessage: 'Unable to update agent tools',
+    }),
+    noToolSelectedMessage: i18n.translate('xpack.agentBuilder.agentTools.noToolSelectedMessage', {
+      defaultMessage: 'Select a tool to view details.',
+    }),
+    readOnlyBadge: i18n.translate('xpack.agentBuilder.agentTools.readOnlyBadge', {
+      defaultMessage: 'Read only',
+    }),
+    addToolFromLibraryTitle: i18n.translate(
+      'xpack.agentBuilder.agentTools.addToolFromLibraryTitle',
+      {
+        defaultMessage: 'Add tool from library',
+      }
+    ),
+    manageToolLibraryLink: i18n.translate('xpack.agentBuilder.agentTools.manageToolLibraryLink', {
+      defaultMessage: 'Manage tool library',
+    }),
+    searchAvailableToolsPlaceholder: i18n.translate(
+      'xpack.agentBuilder.agentTools.searchAvailableToolsPlaceholder',
+      {
+        defaultMessage: 'Search available tools',
+      }
+    ),
+    availableToolsSummary: (showing: number, total: number) =>
+      i18n.translate('xpack.agentBuilder.agentTools.availableToolsSummary', {
+        defaultMessage: 'Showing {showing} of {total} {total, plural, one {Tool} other {Tools}}',
+        values: { showing, total },
+      }),
+    noAvailableToolsMatchMessage: i18n.translate(
+      'xpack.agentBuilder.agentTools.noAvailableToolsMatchMessage',
+      {
+        defaultMessage: 'No available tools match your search.',
+      }
+    ),
+    noAvailableToolsMessage: i18n.translate(
+      'xpack.agentBuilder.agentTools.noAvailableToolsMessage',
+      {
+        defaultMessage: 'All tools have been added to this agent.',
+      }
+    ),
+    toolDetailIdLabel: i18n.translate('xpack.agentBuilder.agentTools.toolDetailIdLabel', {
+      defaultMessage: 'ID',
+    }),
+    toolDetailTypeLabel: i18n.translate('xpack.agentBuilder.agentTools.toolDetailTypeLabel', {
+      defaultMessage: 'Type',
+    }),
+    toolDetailDescriptionLabel: i18n.translate(
+      'xpack.agentBuilder.agentTools.toolDetailDescriptionLabel',
+      {
+        defaultMessage: 'Description',
+      }
+    ),
+    toolDetailTagsLabel: i18n.translate('xpack.agentBuilder.agentTools.toolDetailTagsLabel', {
+      defaultMessage: 'Tags',
+    }),
+    noTagsLabel: i18n.translate('xpack.agentBuilder.agentTools.noTagsLabel', {
+      defaultMessage: 'No tags',
+    }),
+    autoIncludedTooltip: i18n.translate('xpack.agentBuilder.agentTools.autoIncludedTooltip', {
+      defaultMessage: 'This tool is automatically included and cannot be removed.',
+    }),
+    elasticCapabilitiesManagedTooltip: i18n.translate(
+      'xpack.agentBuilder.agentTools.elasticCapabilitiesManagedTooltip',
+      {
+        defaultMessage:
+          'This built-in tool is automatically included because Elastic Capabilities is enabled for this agent.',
+      }
+    ),
+    elasticCapabilitiesReadOnlyBadge: i18n.translate(
+      'xpack.agentBuilder.agentTools.elasticCapabilitiesReadOnlyBadge',
+      {
+        defaultMessage: 'Managed',
+      }
+    ),
+    elasticCapabilitiesCallout: i18n.translate(
+      'xpack.agentBuilder.agentTools.elasticCapabilitiesCallout',
+      {
+        defaultMessage:
+          'Built-in tools are automatically included while Elastic Capabilities is enabled.',
+      }
+    ),
+  },
   plugins: {
     title: i18n.translate('xpack.agentBuilder.plugins.title', { defaultMessage: 'Plugins' }),
     pluginsTableCaption: (pluginsCount: number) =>
