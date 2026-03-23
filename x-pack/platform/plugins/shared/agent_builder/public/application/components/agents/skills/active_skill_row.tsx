@@ -6,17 +6,10 @@
  */
 
 import React from 'react';
-import {
-  EuiBadge,
-  EuiButtonIcon,
-  EuiFlexGroup,
-  EuiFlexItem,
-  EuiText,
-  useEuiTheme,
-} from '@elastic/eui';
-import { css } from '@emotion/react';
+import { EuiBadge } from '@elastic/eui';
 import type { PublicSkillSummary } from '@kbn/agent-builder-common';
 import { labels } from '../../../utils/i18n';
+import { ActiveItemRow } from '../common/active_item_row';
 
 export interface ActiveSkillRowProps {
   skill: PublicSkillSummary;
@@ -35,58 +28,20 @@ export const ActiveSkillRow: React.FC<ActiveSkillRowProps> = ({
   isRemoving = false,
   readOnly = false,
 }) => {
-  const { euiTheme } = useEuiTheme();
-
   return (
-    <EuiFlexGroup
-      alignItems="center"
-      gutterSize="none"
-      responsive={false}
-      onClick={() => onSelect(skill)}
-      css={css`
-        padding: ${euiTheme.size.s} ${euiTheme.size.m};
-        cursor: pointer;
-        border-radius: ${euiTheme.border.radius.medium};
-        background-color: ${isSelected
-          ? euiTheme.colors.backgroundBaseInteractiveHover
-          : 'transparent'};
-        &:hover {
-          background-color: ${euiTheme.colors.backgroundBaseInteractiveHover};
-        }
-      `}
-    >
-      <EuiFlexItem>
-        <EuiText
-          size="s"
-          css={css`
-            font-weight: ${isSelected
-              ? euiTheme.font.weight.semiBold
-              : euiTheme.font.weight.regular};
-          `}
-        >
-          {skill.name}
-        </EuiText>
-      </EuiFlexItem>
-      {isSelected && (
-        <EuiFlexItem grow={false}>
-          {readOnly ? (
-            <EuiBadge color="hollow">
-              {labels.agentSkills.elasticCapabilitiesReadOnlyBadge}
-            </EuiBadge>
-          ) : (
-            <EuiButtonIcon
-              iconType="cross"
-              aria-label={labels.agentSkills.removeSkillAriaLabel}
-              disabled={isRemoving}
-              onClick={(event) => {
-                // Prevent row selection when clicking the remove control.
-                event.stopPropagation();
-                onRemove(skill);
-              }}
-            />
-          )}
-        </EuiFlexItem>
-      )}
-    </EuiFlexGroup>
+    <ActiveItemRow
+      id={skill.id}
+      name={skill.name}
+      isSelected={isSelected}
+      onSelect={() => onSelect(skill)}
+      onRemove={() => onRemove(skill)}
+      isRemoving={isRemoving}
+      removeAriaLabel={labels.agentSkills.removeSkillAriaLabel}
+      readOnlyContent={
+        readOnly ? (
+          <EuiBadge color="hollow">{labels.agentSkills.elasticCapabilitiesReadOnlyBadge}</EuiBadge>
+        ) : undefined
+      }
+    />
   );
 };
