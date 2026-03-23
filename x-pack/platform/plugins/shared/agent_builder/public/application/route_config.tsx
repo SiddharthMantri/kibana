@@ -26,6 +26,7 @@ import { AgentBuilderPluginsPage } from './pages/plugins';
 import { AgentBuilderPluginDetailsPage } from './pages/plugin_details';
 import { AgentBuilderConnectorsPage } from './pages/connectors';
 import { AgentPlugins } from './components/agents/plugins/agent_plugins';
+import { AgentTools } from './components/agents/tools/agent_tools';
 
 export type SidebarView = 'conversation' | 'agentSettings' | 'manage';
 
@@ -112,6 +113,14 @@ export const agentRoutes: RouteDefinition[] = [
     navIcon: 'plugs',
     navSection: navSections.capabilities,
     element: <RouteDisplay />,
+  },
+  {
+    path: '/agents/:agentId/tools',
+    sidebarView: 'agentSettings',
+    navLabel: navLabels.tools,
+    navIcon: 'wrench',
+    navSection: navSections.advanced,
+    element: <AgentTools />,
   },
   // Catch-all for agent root - must be last
   {

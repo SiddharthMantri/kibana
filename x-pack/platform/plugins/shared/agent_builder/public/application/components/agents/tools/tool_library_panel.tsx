@@ -19,50 +19,50 @@ import {
   EuiText,
   EuiTitle,
 } from '@elastic/eui';
-import type { PublicSkillSummary } from '@kbn/agent-builder-common';
+import type { ToolDefinition } from '@kbn/agent-builder-common';
 import { labels } from '../../../utils/i18n';
 import { useNavigation } from '../../../hooks/use_navigation';
 import { appPaths } from '../../../utils/app_paths';
 import { LibraryToggleRow } from '../common/library_toggle_row';
 import { FLYOUT_WIDTH } from '../common/constants';
 
-interface SkillLibraryPanelProps {
+interface ToolLibraryPanelProps {
   onClose: () => void;
-  allSkills: PublicSkillSummary[];
-  activeSkillIdSet: Set<string>;
-  onToggleSkill: (skill: PublicSkillSummary, isActive: boolean) => void;
-  mutatingSkillId: string | null;
+  allTools: ToolDefinition[];
+  activeToolIdSet: Set<string>;
+  onToggleTool: (tool: ToolDefinition, isActive: boolean) => void;
+  mutatingToolId: string | null;
   enableElasticCapabilities?: boolean;
-  builtinSkillIdSet?: Set<string>;
+  builtinToolIdSet?: Set<string>;
 }
 
-export const SkillLibraryPanel: React.FC<SkillLibraryPanelProps> = ({
+export const ToolLibraryPanel: React.FC<ToolLibraryPanelProps> = ({
   onClose,
-  allSkills,
-  activeSkillIdSet,
-  onToggleSkill,
-  mutatingSkillId,
+  allTools,
+  activeToolIdSet,
+  onToggleTool,
+  mutatingToolId,
   enableElasticCapabilities = false,
-  builtinSkillIdSet,
+  builtinToolIdSet,
 }) => {
   const { createAgentBuilderUrl } = useNavigation();
-  const manageLibraryUrl = createAgentBuilderUrl(appPaths.manage.skills);
+  const manageLibraryUrl = createAgentBuilderUrl(appPaths.tools.list);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredSkills = useMemo(() => {
-    if (!searchQuery.trim()) return allSkills;
+  const filteredTools = useMemo(() => {
+    if (!searchQuery.trim()) return allTools;
     const lower = searchQuery.toLowerCase();
-    return allSkills.filter(
-      (s) => s.name.toLowerCase().includes(lower) || s.description.toLowerCase().includes(lower)
+    return allTools.filter(
+      (t) => t.id.toLowerCase().includes(lower) || t.description.toLowerCase().includes(lower)
     );
-  }, [allSkills, searchQuery]);
+  }, [allTools, searchQuery]);
 
   return (
     <EuiFlyout
       side="right"
       size={FLYOUT_WIDTH}
       onClose={onClose}
-      aria-labelledby="skillLibraryFlyoutTitle"
+      aria-labelledby="toolLibraryFlyoutTitle"
       pushMinBreakpoint="xs"
       hideCloseButton={false}
     >
@@ -70,19 +70,19 @@ export const SkillLibraryPanel: React.FC<SkillLibraryPanelProps> = ({
         <EuiFlexGroup alignItems="center" justifyContent="spaceBetween" responsive={false}>
           <EuiFlexItem grow={false}>
             <EuiTitle size="xs">
-              <h2 id="skillLibraryFlyoutTitle">{labels.agentSkills.addSkillFromLibraryTitle}</h2>
+              <h2 id="toolLibraryFlyoutTitle">{labels.agentTools.addToolFromLibraryTitle}</h2>
             </EuiTitle>
           </EuiFlexItem>
           <EuiFlexItem grow={false}>
             <EuiLink href={manageLibraryUrl} external>
-              {labels.agentSkills.manageSkillLibraryLink}
+              {labels.agentTools.manageToolLibraryLink}
             </EuiLink>
           </EuiFlexItem>
         </EuiFlexGroup>
       </EuiFlyoutHeader>
       <EuiFlyoutBody>
         <EuiFieldSearch
-          placeholder={labels.agentSkills.searchAvailableSkillsPlaceholder}
+          placeholder={labels.agentTools.searchAvailableToolsPlaceholder}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           incremental
@@ -92,7 +92,7 @@ export const SkillLibraryPanel: React.FC<SkillLibraryPanelProps> = ({
         <EuiSpacer size="m" />
 
         <EuiText size="xs" color="subdued">
-          {labels.agentSkills.availableSkillsSummary(filteredSkills.length, allSkills.length)}
+          {labels.agentTools.availableToolsSummary(filteredTools.length, allTools.length)}
         </EuiText>
 
         <EuiSpacer size="m" />
@@ -102,38 +102,38 @@ export const SkillLibraryPanel: React.FC<SkillLibraryPanelProps> = ({
             <EuiCallOut
               size="s"
               iconType="iInCircle"
-              title={labels.agentSkills.elasticCapabilitiesCallout}
+              title={labels.agentTools.elasticCapabilitiesCallout}
               announceOnMount={false}
             />
             <EuiSpacer size="m" />
           </>
         )}
 
-        {filteredSkills.length === 0 ? (
+        {filteredTools.length === 0 ? (
           <EuiText size="s" color="subdued" textAlign="center">
             {searchQuery.trim()
-              ? labels.agentSkills.noAvailableSkillsMatchMessage
-              : labels.agentSkills.noAvailableSkillsMessage}
+              ? labels.agentTools.noAvailableToolsMatchMessage
+              : labels.agentTools.noAvailableToolsMessage}
           </EuiText>
         ) : (
           <EuiFlexGroup direction="column" gutterSize="m">
-            {filteredSkills.map((skill) => {
+            {filteredTools.map((tool) => {
               const isBuiltinManaged =
-                enableElasticCapabilities && (builtinSkillIdSet?.has(skill.id) ?? false);
+                enableElasticCapabilities && (builtinToolIdSet?.has(tool.id) ?? false);
 
               return (
-                <EuiFlexItem key={skill.id} grow={false}>
+                <EuiFlexItem key={tool.id} grow={false}>
                   <LibraryToggleRow
-                    id={skill.id}
-                    name={skill.name}
-                    description={skill.description}
-                    isActive={activeSkillIdSet.has(skill.id)}
-                    onToggle={(checked) => onToggleSkill(skill, checked)}
-                    isMutating={mutatingSkillId === skill.id}
+                    id={tool.id}
+                    name={tool.id}
+                    description={tool.description}
+                    isActive={activeToolIdSet.has(tool.id)}
+                    onToggle={(checked) => onToggleTool(tool, checked)}
+                    isMutating={mutatingToolId === tool.id}
                     isDisabled={isBuiltinManaged}
                     disabledTooltip={
                       isBuiltinManaged
-                        ? labels.agentSkills.elasticCapabilitiesManagedTooltip
+                        ? labels.agentTools.elasticCapabilitiesManagedTooltip
                         : undefined
                     }
                   />
