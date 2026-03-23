@@ -30,7 +30,6 @@ interface PluginLibraryPanelProps {
   activePluginIdSet: Set<string>;
   onTogglePlugin: (plugin: PluginDefinition, isActive: boolean) => void;
   mutatingPluginId: string | null;
-  /** Plugins auto-included by the Elastic Capabilities flag. Their toggles are locked on. */
   autoPluginIdSet?: Set<string>;
 }
 
