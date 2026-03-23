@@ -41,11 +41,6 @@ interface InstallPluginFlyoutProps {
   onPluginInstalled?: (plugin: PluginDefinition) => void | Promise<void>;
 }
 
-/**
- * Flyout with two tabs (URL / Upload ZIP) for installing a plugin.
- * After a successful install the `onPluginInstalled` callback fires
- * so the parent can auto-enable the plugin on the current agent.
- */
 export const InstallPluginFlyout: React.FC<InstallPluginFlyoutProps> = ({
   onClose,
   onPluginInstalled,
@@ -55,8 +50,6 @@ export const InstallPluginFlyout: React.FC<InstallPluginFlyoutProps> = ({
   const [url, setUrl] = useState('');
   const [file, setFile] = useState<File | null>(null);
 
-  /** Await the install callback (e.g. mutation) before closing the flyout so
-   *  the user sees the plugin added to the agent config first. */
   const handleInstallSuccess = useCallback(
     async (data: PluginDefinition) => {
       await onPluginInstalled?.(data);
