@@ -119,7 +119,7 @@ export const agentRoutes: RouteDefinition[] = [
     sidebarView: 'agentSettings',
     navLabel: navLabels.tools,
     navIcon: 'wrench',
-    navSection: 'Advanced',
+    navSection: navSections.advanced,
     element: <AgentTools />,
   },
   // Catch-all for agent root - must be last
