@@ -1124,6 +1124,9 @@ export const labels = {
     manageToolLibraryLink: i18n.translate('xpack.agentBuilder.agentTools.manageToolLibraryLink', {
       defaultMessage: 'Manage tool library',
     }),
+    editInLibraryLink: i18n.translate('xpack.agentBuilder.agentTools.editInLibraryLink', {
+      defaultMessage: 'Edit in library',
+    }),
     searchAvailableToolsPlaceholder: i18n.translate(
       'xpack.agentBuilder.agentTools.searchAvailableToolsPlaceholder',
       {

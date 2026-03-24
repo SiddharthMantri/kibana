@@ -13,6 +13,7 @@ import {
   EuiFlexGroup,
   EuiFlexItem,
   EuiIcon,
+  EuiLink,
   EuiLoadingSpinner,
   EuiText,
   EuiTitle,
@@ -21,7 +22,8 @@ import {
 import { css } from '@emotion/react';
 import { labels } from '../../../utils/i18n';
 import { useToolService } from '../../../hooks/tools/use_tools';
-import { DetailRow } from '../common/detail_row';
+import { appPaths } from '../../../utils/app_paths';
+import { useNavigation } from '../../../hooks/use_navigation';
 
 interface ToolDetailPanelProps {
   toolId: string;
@@ -45,7 +47,11 @@ export const ToolDetailPanel: React.FC<ToolDetailPanelProps> = ({
 }) => {
   const { euiTheme } = useEuiTheme();
   const { tool, isLoading } = useToolService(toolId);
+  const { createAgentBuilderUrl } = useNavigation();
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+
+  /** URL to the tool's detail/edit page in the manage library, opened in a new tab. */
+  const editInLibraryUrl = createAgentBuilderUrl(appPaths.manage.toolDetails({ toolId }));
 
   if (isLoading) {
     return (
@@ -78,6 +84,7 @@ export const ToolDetailPanel: React.FC<ToolDetailPanelProps> = ({
           border-radius: ${euiTheme.size.base};
         `}
       >
+        {/* Header: tool name, subtitle ID, action links */}
         <div
           css={css`
             padding: ${euiTheme.size.l};
@@ -99,6 +106,15 @@ export const ToolDetailPanel: React.FC<ToolDetailPanelProps> = ({
                   </EuiFlexItem>
                 )}
               </EuiFlexGroup>
+              <EuiText
+                size="xs"
+                color="subdued"
+                css={css`
+                  margin-top: ${euiTheme.size.xs};
+                `}
+              >
+                {tool.id}
+              </EuiText>
             </EuiFlexItem>
             <EuiFlexItem grow={false}>
               <EuiFlexGroup alignItems="center" gutterSize="s" responsive={false}>
@@ -108,6 +124,14 @@ export const ToolDetailPanel: React.FC<ToolDetailPanelProps> = ({
                     <EuiBadge color="hollow" iconType="lock">
                       {labels.agentTools.readOnlyBadge}
                     </EuiBadge>
+                  </EuiFlexItem>
+                )}
+                {/* "Edit in library" link opens the tool detail page in a new window */}
+                {!isReadOnly && !isAutoIncluded && (
+                  <EuiFlexItem grow={false}>
+                    <EuiLink href={editInLibraryUrl} target="_blank" external>
+                      {labels.agentTools.editInLibraryLink}
+                    </EuiLink>
                   </EuiFlexItem>
                 )}
                 {isAutoIncluded ? (
@@ -129,39 +153,23 @@ export const ToolDetailPanel: React.FC<ToolDetailPanelProps> = ({
               </EuiFlexGroup>
             </EuiFlexItem>
           </EuiFlexGroup>
+        </div>
+        <div
+          css={css`
+            padding: ${euiTheme.size.l};
+          `}
+        >
+          <EuiTitle size="xxxs">
+            <h4>{labels.agentTools.toolDetailDescriptionLabel}</h4>
+          </EuiTitle>
           <EuiText
             size="s"
-            color="subdued"
             css={css`
               margin-top: ${euiTheme.size.s};
             `}
           >
             {tool.description || '\u2014'}
           </EuiText>
-        </div>
-
-        <div
-          css={css`
-            padding: ${euiTheme.size.m};
-          `}
-        >
-          {tool.tags.length > 0 && (
-            <DetailRow label={labels.agentTools.toolDetailTagsLabel}>
-              <EuiFlexGroup gutterSize="xs" wrap responsive={false}>
-                {tool.tags.map((tag) => (
-                  <EuiFlexItem key={tag} grow={false}>
-                    <EuiBadge color="hollow">{tag}</EuiBadge>
-                  </EuiFlexItem>
-                ))}
-              </EuiFlexGroup>
-            </DetailRow>
-          )}
-          <DetailRow label={labels.agentTools.toolDetailTypeLabel}>
-            <EuiText size="s">{tool.type}</EuiText>
-          </DetailRow>
-          <DetailRow label={labels.agentTools.toolDetailIdLabel} isLast>
-            <EuiText size="s">{tool.id}</EuiText>
-          </DetailRow>
         </div>
       </div>
 
