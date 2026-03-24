@@ -9,10 +9,6 @@ import React from 'react';
 import { css } from '@emotion/react';
 import { CONTAINER_WIDTH } from './constants';
 
-/**
- * Wraps the children in a div with a fixed width and margin auto to be used in
- * the customize agent pages.
- */
 export const PageWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <div

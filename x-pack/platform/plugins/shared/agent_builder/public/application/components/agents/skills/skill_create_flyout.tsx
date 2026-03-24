@@ -31,6 +31,7 @@ import { useSkillForm } from '../../../hooks/skills/use_skill_form';
 import { useTools } from '../../../hooks/tools/use_tools';
 import { useNavigation } from '../../../hooks/use_navigation';
 import { appPaths } from '../../../utils/app_paths';
+import { FLYOUT_WIDTH } from '../common/constants';
 import { SkillForm } from './skill_form';
 
 interface SkillCreateFlyoutProps {
@@ -88,7 +89,7 @@ export const SkillCreateFlyout: React.FC<SkillCreateFlyoutProps> = ({
   const hasErrors = Object.keys(errors).length > 0;
 
   return (
-    <EuiFlyout onClose={onClose} size="960px" aria-labelledby="skillCreateFlyoutTitle">
+    <EuiFlyout onClose={onClose} size={FLYOUT_WIDTH} aria-labelledby="skillCreateFlyoutTitle">
       <EuiFlyoutHeader hasBorder>
         <EuiFlexGroup alignItems="center" justifyContent="spaceBetween" responsive={false}>
           <EuiFlexItem grow={false}>

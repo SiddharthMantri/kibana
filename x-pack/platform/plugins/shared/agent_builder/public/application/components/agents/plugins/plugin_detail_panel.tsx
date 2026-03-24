@@ -143,7 +143,6 @@ export const PluginDetailPanel: React.FC<PluginDetailPanelProps> = ({
   );
 };
 
-/** Simple read-only flyout that fetches and displays a single skill's details. */
 const SkillDetailFlyout: React.FC<{
   skillId: string;
   pluginName: string;

@@ -31,6 +31,7 @@ import { useSkillForm } from '../../../hooks/skills/use_skill_form';
 import { useTools } from '../../../hooks/tools/use_tools';
 import { useNavigation } from '../../../hooks/use_navigation';
 import { appPaths } from '../../../utils/app_paths';
+import { FLYOUT_WIDTH } from '../common/constants';
 import { SkillForm } from './skill_form';
 
 interface SkillEditFlyoutProps {
@@ -92,7 +93,7 @@ export const SkillEditFlyout: React.FC<SkillEditFlyoutProps> = ({ skillId, onClo
   const hasErrors = Object.keys(errors).length > 0;
 
   return (
-    <EuiFlyout onClose={onClose} size="960px" aria-labelledby="skillEditFlyoutTitle">
+    <EuiFlyout onClose={onClose} size={FLYOUT_WIDTH} aria-labelledby="skillEditFlyoutTitle">
       <EuiFlyoutHeader hasBorder>
         <EuiTitle size="s">
           <h2 id="skillEditFlyoutTitle">{labels.agentSkills.editSkillFlyoutTitle}</h2>

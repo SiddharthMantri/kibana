@@ -15,9 +15,6 @@ export interface DetailRowProps {
   isLast?: boolean;
 }
 
-/**
- * Vertically stacked detail row: bold label on top, content below with spacing.
- */
 export const DetailRow: React.FC<DetailRowProps> = ({ label, children, isLast = false }) => {
   const { euiTheme } = useEuiTheme();
 

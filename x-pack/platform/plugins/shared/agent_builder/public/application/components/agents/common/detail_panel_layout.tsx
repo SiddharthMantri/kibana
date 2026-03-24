@@ -30,20 +30,12 @@ export interface DetailPanelLayoutProps {
   isEmpty: boolean;
   title: string;
   showAutoIcon?: boolean;
-  /** Render prop for the right side of the header; receives a callback to open the confirm-remove modal. */
   headerActions: (openConfirmRemove: () => void) => React.ReactNode;
-  /** Optional content rendered below the title row inside the header (e.g. subtitle, description, badges). */
   headerContent?: React.ReactNode;
   children: React.ReactNode;
-  /** When provided, the layout manages the confirm-remove modal and exposes the trigger via headerActions. */
   confirmRemove?: ConfirmRemoveConfig;
 }
 
-/**
- * Shared layout shell for tool / skill / plugin detail panels.
- * Renders a bordered card with a pinned header and a scrollable body,
- * plus an optional confirm-remove modal.
- */
 export const DetailPanelLayout: React.FC<DetailPanelLayoutProps> = ({
   isLoading,
   isEmpty,
