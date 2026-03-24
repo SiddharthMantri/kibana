@@ -21,9 +21,7 @@ import {
   EuiSpacer,
   EuiText,
   EuiTitle,
-  useEuiTheme,
 } from '@elastic/eui';
-import { css } from '@emotion/react';
 import type { PluginDefinition } from '@kbn/agent-builder-common';
 import { useMutation, useQueryClient } from '@kbn/react-query';
 import { labels } from '../../../utils/i18n';
@@ -40,11 +38,12 @@ import { PluginLibraryPanel } from './plugin_library_panel';
 import { PluginDetailPanel } from './plugin_detail_panel';
 import { InstallPluginFlyout } from './install_plugin_flyout';
 import { PageWrapper } from '../common/page_wrapper';
-import { ICON_DIMENSIONS, SEARCH_LIST_WIDTH } from '../common/constants';
+import { ICON_DIMENSIONS } from '../common/constants';
+import { useListDetailPageStyles } from '../common/styles';
 
 export const AgentPlugins: React.FC = () => {
   const { agentId } = useParams<{ agentId: string }>();
-  const { euiTheme } = useEuiTheme();
+  const styles = useListDetailPageStyles();
   const { createAgentBuilderUrl } = useNavigation();
   const { agentService } = useAgentBuilderServices();
   const { addSuccessToast, addErrorToast } = useToasts();
@@ -197,13 +196,7 @@ export const AgentPlugins: React.FC = () => {
 
   if (isLoading) {
     return (
-      <EuiFlexGroup
-        alignItems="center"
-        justifyContent="center"
-        css={css`
-          padding: ${euiTheme.size.xxl};
-        `}
-      >
+      <EuiFlexGroup alignItems="center" justifyContent="center" css={styles.loadingSpinner}>
         <EuiLoadingSpinner size="xl" />
       </EuiFlexGroup>
     );
@@ -211,12 +204,7 @@ export const AgentPlugins: React.FC = () => {
 
   return (
     <PageWrapper>
-      <div
-        css={css`
-          padding: ${euiTheme.size.l};
-          flex-shrink: 0;
-        `}
-      >
+      <div css={styles.header}>
         <EuiFlexGroup alignItems="center" justifyContent="spaceBetween">
           <EuiFlexItem grow={false}>
             <EuiFlexGroup alignItems="center" gutterSize="s">
@@ -285,30 +273,9 @@ export const AgentPlugins: React.FC = () => {
         </EuiText>
       </div>
 
-      <EuiFlexGroup
-        gutterSize="none"
-        responsive={false}
-        css={css`
-          flex: 1;
-          overflow: hidden;
-          padding: 0px ${euiTheme.size.l};
-        `}
-      >
-        <EuiFlexItem
-          grow={false}
-          css={css`
-            width: ${SEARCH_LIST_WIDTH};
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-          `}
-        >
-          <div
-            css={css`
-              padding: 0px ${euiTheme.size.m} ${euiTheme.size.s} 0px;
-              flex-shrink: 0;
-            `}
-          >
+      <EuiFlexGroup gutterSize="none" responsive={false} css={styles.body}>
+        <EuiFlexItem grow={false} css={styles.searchColumn}>
+          <div css={styles.searchInputWrapper}>
             <EuiFieldSearch
               placeholder={labels.agentPlugins.searchActivePluginsPlaceholder}
               value={searchQuery}
@@ -318,13 +285,7 @@ export const AgentPlugins: React.FC = () => {
             />
           </div>
 
-          <div
-            css={css`
-              flex: 1;
-              overflow-y: auto;
-              padding: 0px ${euiTheme.size.m} ${euiTheme.size.s} 0px;
-            `}
-          >
+          <div css={styles.scrollableList}>
             {filteredActivePlugins.length === 0 ? (
               <EuiText size="s" color="subdued" textAlign="center">
                 <p>
@@ -350,20 +311,14 @@ export const AgentPlugins: React.FC = () => {
           </div>
         </EuiFlexItem>
 
-        <EuiFlexItem
-          css={css`
-            overflow: hidden;
-          `}
-        >
+        <EuiFlexItem css={styles.detailPanelWrapper}>
           {selectedPluginId ? (
             <PluginDetailPanel pluginId={selectedPluginId} onRemove={handleRemoveSelectedPlugin} />
           ) : (
             <EuiFlexGroup
               justifyContent="center"
               alignItems="center"
-              css={css`
-                height: 100%;
-              `}
+              css={styles.noSelectionPlaceholder}
             >
               <EuiText size="s" color="subdued">
                 {labels.agentPlugins.noPluginSelectedMessage}

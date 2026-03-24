@@ -19,9 +19,7 @@ import {
   EuiSpacer,
   EuiText,
   EuiTitle,
-  useEuiTheme,
 } from '@elastic/eui';
-import { css } from '@emotion/react';
 import type { ToolDefinition, ToolSelection } from '@kbn/agent-builder-common';
 import { defaultAgentToolIds } from '@kbn/agent-builder-common';
 import { useMutation, useQueryClient } from '@kbn/react-query';
@@ -43,7 +41,8 @@ import { ActiveItemRow } from '../common/active_item_row';
 import { ToolLibraryPanel } from './tool_library_panel';
 import { ToolDetailPanel } from './tool_detail_panel';
 import { PageWrapper } from '../common/page_wrapper';
-import { ICON_DIMENSIONS, SEARCH_LIST_WIDTH } from '../common/constants';
+import { ICON_DIMENSIONS } from '../common/constants';
+import { useListDetailPageStyles } from '../common/styles';
 
 const ActiveToolsList: React.FC<{
   filteredActiveTools: ToolDefinition[];
@@ -109,7 +108,7 @@ const ActiveToolsList: React.FC<{
 
 export const AgentTools: React.FC = () => {
   const { agentId } = useParams<{ agentId: string }>();
-  const { euiTheme } = useEuiTheme();
+  const styles = useListDetailPageStyles();
   const { createAgentBuilderUrl } = useNavigation();
   const { agentService } = useAgentBuilderServices();
   const { addSuccessToast, addErrorToast } = useToasts();
@@ -240,13 +239,7 @@ export const AgentTools: React.FC = () => {
 
   if (isLoading) {
     return (
-      <EuiFlexGroup
-        alignItems="center"
-        justifyContent="center"
-        css={css`
-          padding: ${euiTheme.size.xxl};
-        `}
-      >
+      <EuiFlexGroup alignItems="center" justifyContent="center" css={styles.loadingSpinner}>
         <EuiLoadingSpinner size="xl" />
       </EuiFlexGroup>
     );
@@ -254,12 +247,7 @@ export const AgentTools: React.FC = () => {
 
   return (
     <PageWrapper>
-      <div
-        css={css`
-          padding: ${euiTheme.size.l};
-          flex-shrink: 0;
-        `}
-      >
+      <div css={styles.header}>
         <EuiFlexGroup alignItems="center" justifyContent="spaceBetween">
           <EuiFlexItem grow={false}>
             <EuiFlexGroup alignItems="center" gutterSize="s">
@@ -295,30 +283,9 @@ export const AgentTools: React.FC = () => {
         </EuiText>
       </div>
 
-      <EuiFlexGroup
-        gutterSize="none"
-        responsive={false}
-        css={css`
-          flex: 1;
-          overflow: hidden;
-          padding: 0px ${euiTheme.size.l};
-        `}
-      >
-        <EuiFlexItem
-          grow={false}
-          css={css`
-            width: ${SEARCH_LIST_WIDTH};
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-          `}
-        >
-          <div
-            css={css`
-              padding: 0px ${euiTheme.size.m} ${euiTheme.size.s} 0px;
-              flex-shrink: 0;
-            `}
-          >
+      <EuiFlexGroup gutterSize="none" responsive={false} css={styles.body}>
+        <EuiFlexItem grow={false} css={styles.searchColumn}>
+          <div css={styles.searchInputWrapper}>
             <EuiFieldSearch
               placeholder={labels.agentTools.searchActiveToolsPlaceholder}
               value={searchQuery}
@@ -328,13 +295,7 @@ export const AgentTools: React.FC = () => {
             />
           </div>
 
-          <div
-            css={css`
-              flex: 1;
-              overflow-y: auto;
-              padding: 0px ${euiTheme.size.m} ${euiTheme.size.s} 0px;
-            `}
-          >
+          <div css={styles.scrollableList}>
             <ActiveToolsList
               filteredActiveTools={filteredActiveTools}
               searchQuery={searchQuery}
@@ -348,11 +309,7 @@ export const AgentTools: React.FC = () => {
           </div>
         </EuiFlexItem>
 
-        <EuiFlexItem
-          css={css`
-            overflow: hidden;
-          `}
-        >
+        <EuiFlexItem css={styles.detailPanelWrapper}>
           {selectedToolId ? (
             <ToolDetailPanel
               toolId={selectedToolId}
@@ -363,9 +320,7 @@ export const AgentTools: React.FC = () => {
             <EuiFlexGroup
               justifyContent="center"
               alignItems="center"
-              css={css`
-                height: 100%;
-              `}
+              css={styles.noSelectionPlaceholder}
             >
               <EuiText size="s" color="subdued">
                 {labels.agentTools.noToolSelectedMessage}
