@@ -57,6 +57,11 @@ export type RunChatAgentFn = (
   context: AgentHandlerContext
 ) => Promise<RunAgentResponse>;
 
+/*
+ * Max number of agent cycles allowed before forcing an answer.
+ */
+const CYCLE_LIMIT = 15;
+
 /**
  * Create the handler function for the default agentBuilder agent.
  */
@@ -183,11 +188,11 @@ export const runDefaultAgentMode: RunChatAgentFn = async (
     }
   );
 
-  const cycleLimit = 10;
-  const graphRecursionLimit = getRecursionLimit(cycleLimit);
+  const graphRecursionLimit = getRecursionLimit(CYCLE_LIMIT);
 
   // Create unified result transformer for tool result optimization
   const resultTransformer = createResultTransformer({
+    processedConversation,
     toolRegistry,
     toolManager,
     filestore,
@@ -256,7 +261,7 @@ export const runDefaultAgentMode: RunChatAgentFn = async (
     createInitializerCommand({
       conversation: processedConversation,
       agentBuilderToLangchainIdMap: reverseMap(toolManager.getToolIdMapping()),
-      cycleLimit,
+      cycleLimit: CYCLE_LIMIT,
     }),
     {
       version: 'v2',
