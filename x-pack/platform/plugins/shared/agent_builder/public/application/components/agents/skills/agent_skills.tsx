@@ -41,6 +41,7 @@ import { SkillDetailPanel } from './skill_detail_panel';
 import { SkillEditFlyout } from './skill_edit_flyout';
 import { SkillCreateFlyout } from './skill_create_flyout';
 import { PageWrapper } from '../common/page_wrapper';
+import { ICON_DIMENSIONS, SEARCH_LIST_WIDTH } from '../common/constants';
 
 export const AgentSkills: React.FC = () => {
   const { agentId } = useParams<{ agentId: string }>();
@@ -228,7 +229,7 @@ export const AgentSkills: React.FC = () => {
           <EuiFlexItem grow={false}>
             <EuiFlexGroup alignItems="center" gutterSize="s">
               <EuiFlexItem grow={false}>
-                <EuiIcon type="bolt" aria-hidden={true} css={{ width: 24, height: 28 }} />
+                <EuiIcon type="bolt" aria-hidden={true} css={ICON_DIMENSIONS} />
               </EuiFlexItem>
               <EuiFlexItem grow={false}>
                 <EuiTitle size="l">
@@ -240,7 +241,7 @@ export const AgentSkills: React.FC = () => {
           <EuiFlexItem grow={false}>
             <EuiFlexGroup alignItems="center" gutterSize="m" responsive={false}>
               <EuiFlexItem grow={false}>
-                <EuiButtonEmpty href={createAgentBuilderUrl(appPaths.manage.skills)} size="s">
+                <EuiButtonEmpty href={createAgentBuilderUrl(appPaths.manage.skills)}>
                   {labels.agentSkills.manageAllSkills}
                 </EuiButtonEmpty>
               </EuiFlexItem>
@@ -304,7 +305,7 @@ export const AgentSkills: React.FC = () => {
         <EuiFlexItem
           grow={false}
           css={css`
-            width: 280px;
+            width: ${SEARCH_LIST_WIDTH};
             display: flex;
             flex-direction: column;
             overflow: hidden;

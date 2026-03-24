@@ -40,8 +40,7 @@ import { PluginLibraryPanel } from './plugin_library_panel';
 import { PluginDetailPanel } from './plugin_detail_panel';
 import { InstallPluginFlyout } from './install_plugin_flyout';
 import { PageWrapper } from '../common/page_wrapper';
-
-const FLEX_ITEM_WIDTH = '280px';
+import { ICON_DIMENSIONS, SEARCH_LIST_WIDTH } from '../common/constants';
 
 export const AgentPlugins: React.FC = () => {
   const { agentId } = useParams<{ agentId: string }>();
@@ -222,7 +221,7 @@ export const AgentPlugins: React.FC = () => {
           <EuiFlexItem grow={false}>
             <EuiFlexGroup alignItems="center" gutterSize="s">
               <EuiFlexItem grow={false}>
-                <EuiIcon type="package" aria-hidden={true} css={{ width: 24, height: 28 }} />
+                <EuiIcon type="package" aria-hidden={true} css={ICON_DIMENSIONS} />
               </EuiFlexItem>
               <EuiFlexItem grow={false}>
                 <EuiTitle size="l">
@@ -234,7 +233,7 @@ export const AgentPlugins: React.FC = () => {
           <EuiFlexItem grow={false}>
             <EuiFlexGroup alignItems="center" gutterSize="m" responsive={false}>
               <EuiFlexItem grow={false}>
-                <EuiButtonEmpty href={createAgentBuilderUrl(appPaths.manage.plugins)} size="s">
+                <EuiButtonEmpty href={createAgentBuilderUrl(appPaths.manage.plugins)}>
                   {labels.agentPlugins.manageAllPlugins}
                 </EuiButtonEmpty>
               </EuiFlexItem>
@@ -298,7 +297,7 @@ export const AgentPlugins: React.FC = () => {
         <EuiFlexItem
           grow={false}
           css={css`
-            width: ${FLEX_ITEM_WIDTH};
+            width: ${SEARCH_LIST_WIDTH};
             display: flex;
             flex-direction: column;
             overflow: hidden;

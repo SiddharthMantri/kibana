@@ -68,7 +68,7 @@ export const SkillDetailPanel: React.FC<SkillDetailPanelProps> = ({
         css={css`
           border: ${euiTheme.border.thin};
           overflow: hidden;
-          border-radius: ${euiTheme.size.base};
+          border-radius: ${euiTheme.size.xs};
         `}
       >
         <div

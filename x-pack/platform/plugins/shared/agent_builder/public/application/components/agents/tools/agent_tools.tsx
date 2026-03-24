@@ -43,8 +43,7 @@ import { ActiveItemRow } from '../common/active_item_row';
 import { ToolLibraryPanel } from './tool_library_panel';
 import { ToolDetailPanel } from './tool_detail_panel';
 import { PageWrapper } from '../common/page_wrapper';
-
-const FLEX_ITEM_WIDTH = '280px';
+import { ICON_DIMENSIONS, SEARCH_LIST_WIDTH } from '../common/constants';
 
 const ActiveToolsList: React.FC<{
   filteredActiveTools: ToolDefinition[];
@@ -227,15 +226,15 @@ export const AgentTools: React.FC = () => {
     [handleAddTool, handleRemoveTool, enableElasticCapabilities, defaultToolIdSet]
   );
 
-  /** Guarded removal: prevents removing any built-in tool from the agent. */
+  /** Guarded removal: only prevents removing auto-included tools from the agent. */
   const handleRemoveSelectedTool = useCallback(() => {
     if (!selectedToolId) return;
+    if (enableElasticCapabilities && defaultToolIdSet.has(selectedToolId)) return;
     const tool = activeTools.find((t) => t.id === selectedToolId);
     if (tool) {
-      if (defaultToolIdSet.has(tool.id)) return;
       handleRemoveTool(tool);
     }
-  }, [selectedToolId, activeTools, handleRemoveTool, defaultToolIdSet]);
+  }, [selectedToolId, activeTools, handleRemoveTool, enableElasticCapabilities, defaultToolIdSet]);
 
   const isLoading = agentLoading || toolsLoading;
 
@@ -265,7 +264,7 @@ export const AgentTools: React.FC = () => {
           <EuiFlexItem grow={false}>
             <EuiFlexGroup alignItems="center" gutterSize="s">
               <EuiFlexItem grow={false}>
-                <EuiIcon type="wrench" aria-hidden={true} css={{ width: 24, height: 28 }} />
+                <EuiIcon type="wrench" aria-hidden={true} css={ICON_DIMENSIONS} />
               </EuiFlexItem>
               <EuiFlexItem grow={false}>
                 <EuiTitle size="l">
@@ -277,7 +276,7 @@ export const AgentTools: React.FC = () => {
           <EuiFlexItem grow={false}>
             <EuiFlexGroup alignItems="center" gutterSize="m" responsive={false}>
               <EuiFlexItem grow={false}>
-                <EuiButtonEmpty href={createAgentBuilderUrl(appPaths.manage.tools)} size="s">
+                <EuiButtonEmpty href={createAgentBuilderUrl(appPaths.manage.tools)}>
                   {labels.agentTools.manageAllTools}
                 </EuiButtonEmpty>
               </EuiFlexItem>
@@ -308,7 +307,7 @@ export const AgentTools: React.FC = () => {
         <EuiFlexItem
           grow={false}
           css={css`
-            width: ${FLEX_ITEM_WIDTH};
+            width: ${SEARCH_LIST_WIDTH};
             display: flex;
             flex-direction: column;
             overflow: hidden;
@@ -358,7 +357,6 @@ export const AgentTools: React.FC = () => {
             <ToolDetailPanel
               toolId={selectedToolId}
               onRemove={handleRemoveSelectedTool}
-              isReadOnly={defaultToolIdSet.has(selectedToolId)}
               isAutoIncluded={enableElasticCapabilities && defaultToolIdSet.has(selectedToolId)}
             />
           ) : (

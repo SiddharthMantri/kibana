@@ -94,18 +94,13 @@ export const SkillEditFlyout: React.FC<SkillEditFlyoutProps> = ({ skillId, onClo
   return (
     <EuiFlyout onClose={onClose} size="960px" aria-labelledby="skillEditFlyoutTitle">
       <EuiFlyoutHeader hasBorder>
-        <EuiFlexGroup alignItems="center" justifyContent="spaceBetween" responsive={false}>
-          <EuiFlexItem grow={false}>
-            <EuiTitle size="s">
-              <h2 id="skillEditFlyoutTitle">{labels.agentSkills.editSkillFlyoutTitle}</h2>
-            </EuiTitle>
-          </EuiFlexItem>
-          <EuiFlexItem grow={false}>
-            <EuiLink href={skillLibraryUrl} external>
-              {labels.agentSkills.viewSkillLibraryLink}
-            </EuiLink>
-          </EuiFlexItem>
-        </EuiFlexGroup>
+        <EuiTitle size="s">
+          <h2 id="skillEditFlyoutTitle">{labels.agentSkills.editSkillFlyoutTitle}</h2>
+        </EuiTitle>
+        <EuiSpacer size="xs" />
+        <EuiLink href={skillLibraryUrl} external>
+          {labels.agentSkills.viewSkillLibraryLink}
+        </EuiLink>
       </EuiFlyoutHeader>
       <EuiCallOut
         color="warning"

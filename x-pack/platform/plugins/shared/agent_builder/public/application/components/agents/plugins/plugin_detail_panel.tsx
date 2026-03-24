@@ -73,7 +73,7 @@ export const PluginDetailPanel: React.FC<PluginDetailPanelProps> = ({
         css={css`
           border: ${euiTheme.border.thin};
           overflow: hidden;
-          border-radius: ${euiTheme.size.base};
+          border-radius: ${euiTheme.size.xs};
         `}
       >
         <div
@@ -113,15 +113,15 @@ export const PluginDetailPanel: React.FC<PluginDetailPanelProps> = ({
               )}
             </EuiFlexItem>
           </EuiFlexGroup>
-          <EuiText
-            size="xs"
-            color="subdued"
+          <div
             css={css`
               margin-top: ${euiTheme.size.xs};
             `}
           >
-            {plugin.id}
-          </EuiText>
+            <EuiBadge color="hollow" iconType="bolt">
+              {labels.agentPlugins.skillsCountBadge(plugin.skill_ids.length)}
+            </EuiBadge>
+          </div>
           <EuiText
             size="s"
             color="subdued"
@@ -138,6 +138,9 @@ export const PluginDetailPanel: React.FC<PluginDetailPanelProps> = ({
             padding: ${euiTheme.size.m};
           `}
         >
+          <DetailRow label={labels.agentPlugins.pluginDetailIdLabel}>
+            <EuiText size="s">{plugin.id}</EuiText>
+          </DetailRow>
           <DetailRow label={labels.agentPlugins.pluginDetailSourceLabel} isLast>
             {plugin.source_url ? (
               <EuiLink href={plugin.source_url} target="_blank" external>

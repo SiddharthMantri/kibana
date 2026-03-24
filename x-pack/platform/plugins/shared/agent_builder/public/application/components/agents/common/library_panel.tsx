@@ -103,7 +103,7 @@ export const LibraryPanel = <T extends LibraryItem>({
       <EuiFlyoutHeader hasBorder>
         <EuiFlexGroup alignItems="center" justifyContent="spaceBetween" responsive={false}>
           <EuiFlexItem grow={false}>
-            <EuiTitle size="xs">
+            <EuiTitle size="m">
               <h2 id={flyoutTitleId}>{libraryLabels.title}</h2>
             </EuiTitle>
             <EuiLink
@@ -111,6 +111,7 @@ export const LibraryPanel = <T extends LibraryItem>({
               external
               css={css`
                 margin-top: ${euiTheme.size.m};
+                font-size: ${euiTheme.size.m};
               `}
             >
               {libraryLabels.manageLibraryLink}

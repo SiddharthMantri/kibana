@@ -28,29 +28,19 @@ import { useNavigation } from '../../../hooks/use_navigation';
 interface ToolDetailPanelProps {
   toolId: string;
   onRemove: () => void;
-  /** When true the tool is built-in and cannot be removed. */
-  isReadOnly?: boolean;
-  /** When true the tool is auto-included via elastic capabilities. Implies isReadOnly. */
   isAutoIncluded?: boolean;
 }
 
-/**
- * Right-side detail panel for the selected tool in the agent tools page.
- * Displays tool metadata (ID, type, description, tags) and a remove action
- * with confirmation modal.
- */
 export const ToolDetailPanel: React.FC<ToolDetailPanelProps> = ({
   toolId,
   onRemove,
-  isReadOnly = false,
   isAutoIncluded = false,
 }) => {
   const { euiTheme } = useEuiTheme();
   const { tool, isLoading } = useToolService(toolId);
   const { createAgentBuilderUrl } = useNavigation();
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-
-  /** URL to the tool's detail/edit page in the manage library, opened in a new tab. */
+  const isReadOnly = tool?.readonly;
   const editInLibraryUrl = createAgentBuilderUrl(appPaths.manage.toolDetails({ toolId }));
 
   if (isLoading) {
@@ -81,7 +71,7 @@ export const ToolDetailPanel: React.FC<ToolDetailPanelProps> = ({
         css={css`
           border: ${euiTheme.border.thin};
           overflow: hidden;
-          border-radius: ${euiTheme.size.base};
+          border-radius: ${euiTheme.size.xs};
         `}
       >
         {/* Header: tool name, subtitle ID, action links */}
@@ -118,37 +108,47 @@ export const ToolDetailPanel: React.FC<ToolDetailPanelProps> = ({
             </EuiFlexItem>
             <EuiFlexItem grow={false}>
               <EuiFlexGroup alignItems="center" gutterSize="s" responsive={false}>
-                {/* Built-in tools that are not auto-included get a read-only lock badge */}
-                {isReadOnly && !isAutoIncluded && (
-                  <EuiFlexItem grow={false}>
-                    <EuiBadge color="hollow" iconType="lock">
-                      {labels.agentTools.readOnlyBadge}
-                    </EuiBadge>
-                  </EuiFlexItem>
-                )}
-                {/* "Edit in library" link opens the tool detail page in a new window */}
-                {!isReadOnly && !isAutoIncluded && (
-                  <EuiFlexItem grow={false}>
-                    <EuiLink href={editInLibraryUrl} target="_blank" external>
-                      {labels.agentTools.editInLibraryLink}
-                    </EuiLink>
-                  </EuiFlexItem>
-                )}
+                {/* Mutually exclusive actions: auto-included badge, read-only badge, or edit+remove */}
                 {isAutoIncluded ? (
                   <EuiFlexItem grow={false}>
                     <EuiBadge color="hollow">{labels.agentTools.autoIncludedBadgeLabel}</EuiBadge>
                   </EuiFlexItem>
-                ) : isReadOnly ? null : (
-                  <EuiFlexItem grow={false}>
-                    <EuiButtonEmpty
-                      iconType="cross"
-                      size="xs"
-                      color="danger"
-                      onClick={() => setIsConfirmOpen(true)}
-                    >
-                      {labels.agentTools.removeToolButtonLabel}
-                    </EuiButtonEmpty>
-                  </EuiFlexItem>
+                ) : isReadOnly ? (
+                  <>
+                    <EuiFlexItem grow={false}>
+                      <EuiBadge color="hollow" iconType="lock">
+                        {labels.agentTools.readOnlyBadge}
+                      </EuiBadge>
+                    </EuiFlexItem>
+                    <EuiFlexItem grow={false}>
+                      <EuiButtonEmpty
+                        iconType="cross"
+                        size="xs"
+                        color="danger"
+                        onClick={() => setIsConfirmOpen(true)}
+                      >
+                        {labels.agentTools.removeToolButtonLabel}
+                      </EuiButtonEmpty>
+                    </EuiFlexItem>
+                  </>
+                ) : (
+                  <>
+                    <EuiFlexItem grow={false}>
+                      <EuiLink href={editInLibraryUrl} target="_blank" external>
+                        {labels.agentTools.editInLibraryLink}
+                      </EuiLink>
+                    </EuiFlexItem>
+                    <EuiFlexItem grow={false}>
+                      <EuiButtonEmpty
+                        iconType="cross"
+                        size="xs"
+                        color="danger"
+                        onClick={() => setIsConfirmOpen(true)}
+                      >
+                        {labels.agentTools.removeToolButtonLabel}
+                      </EuiButtonEmpty>
+                    </EuiFlexItem>
+                  </>
                 )}
               </EuiFlexGroup>
             </EuiFlexItem>
