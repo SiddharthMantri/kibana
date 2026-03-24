@@ -10,9 +10,11 @@ import { useParams } from 'react-router-dom';
 import {
   EuiBadge,
   EuiButton,
+  EuiButtonEmpty,
   EuiFieldSearch,
   EuiFlexGroup,
   EuiFlexItem,
+  EuiIcon,
   EuiLoadingSpinner,
   EuiSpacer,
   EuiText,
@@ -24,6 +26,8 @@ import type { ToolDefinition, ToolSelection } from '@kbn/agent-builder-common';
 import { defaultAgentToolIds } from '@kbn/agent-builder-common';
 import { useMutation, useQueryClient } from '@kbn/react-query';
 import { labels } from '../../../utils/i18n';
+import { appPaths } from '../../../utils/app_paths';
+import { useNavigation } from '../../../hooks/use_navigation';
 import { useToolsService } from '../../../hooks/tools/use_tools';
 import { useAgentBuilderAgentById } from '../../../hooks/agents/use_agent_by_id';
 import { useAgentBuilderServices } from '../../../hooks/use_agent_builder_service';
@@ -38,6 +42,7 @@ import {
 import { ActiveItemRow } from '../common/active_item_row';
 import { ToolLibraryPanel } from './tool_library_panel';
 import { ToolDetailPanel } from './tool_detail_panel';
+import { PageWrapper } from '../common/page_wrapper';
 
 const FLEX_ITEM_WIDTH = '280px';
 
@@ -75,7 +80,8 @@ const ActiveToolsList: React.FC<{
   return (
     <>
       {filteredActiveTools.map((tool) => {
-        const isBuiltinManaged = enableElasticCapabilities && defaultToolIdSet.has(tool.id);
+        const isBuiltIn = defaultToolIdSet.has(tool.id);
+        const isAutoIncluded = enableElasticCapabilities && isBuiltIn;
         return (
           <ActiveItemRow
             key={tool.id}
@@ -87,10 +93,12 @@ const ActiveToolsList: React.FC<{
             isRemoving={isRemoving}
             removeAriaLabel={labels.agentTools.removeToolAriaLabel}
             readOnlyContent={
-              isBuiltinManaged ? (
+              isAutoIncluded ? (
                 <EuiBadge color="hollow">
                   {labels.agentTools.elasticCapabilitiesReadOnlyBadge}
                 </EuiBadge>
+              ) : isBuiltIn ? (
+                <EuiBadge color="hollow">{labels.agentTools.readOnlyBadge}</EuiBadge>
               ) : undefined
             }
           />
@@ -103,6 +111,7 @@ const ActiveToolsList: React.FC<{
 export const AgentTools: React.FC = () => {
   const { agentId } = useParams<{ agentId: string }>();
   const { euiTheme } = useEuiTheme();
+  const { createAgentBuilderUrl } = useNavigation();
   const { agentService } = useAgentBuilderServices();
   const { addSuccessToast, addErrorToast } = useToasts();
   const queryClient = useQueryClient();
@@ -218,14 +227,15 @@ export const AgentTools: React.FC = () => {
     [handleAddTool, handleRemoveTool, enableElasticCapabilities, defaultToolIdSet]
   );
 
+  /** Guarded removal: prevents removing any built-in tool from the agent. */
   const handleRemoveSelectedTool = useCallback(() => {
     if (!selectedToolId) return;
     const tool = activeTools.find((t) => t.id === selectedToolId);
     if (tool) {
-      if (enableElasticCapabilities && defaultToolIdSet.has(tool.id)) return;
+      if (defaultToolIdSet.has(tool.id)) return;
       handleRemoveTool(tool);
     }
-  }, [selectedToolId, activeTools, handleRemoveTool, enableElasticCapabilities, defaultToolIdSet]);
+  }, [selectedToolId, activeTools, handleRemoveTool, defaultToolIdSet]);
 
   const isLoading = agentLoading || toolsLoading;
 
@@ -244,14 +254,7 @@ export const AgentTools: React.FC = () => {
   }
 
   return (
-    <div
-      css={css`
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-      `}
-    >
+    <PageWrapper>
       <div
         css={css`
           padding: ${euiTheme.size.l};
@@ -260,14 +263,30 @@ export const AgentTools: React.FC = () => {
       >
         <EuiFlexGroup alignItems="center" justifyContent="spaceBetween">
           <EuiFlexItem grow={false}>
-            <EuiTitle size="l">
-              <h1>{labels.tools.title}</h1>
-            </EuiTitle>
+            <EuiFlexGroup alignItems="center" gutterSize="s">
+              <EuiFlexItem grow={false}>
+                <EuiIcon type="wrench" aria-hidden={true} css={{ width: 24, height: 28 }} />
+              </EuiFlexItem>
+              <EuiFlexItem grow={false}>
+                <EuiTitle size="l">
+                  <h1>{labels.tools.title}</h1>
+                </EuiTitle>
+              </EuiFlexItem>
+            </EuiFlexGroup>
           </EuiFlexItem>
           <EuiFlexItem grow={false}>
-            <EuiButton fill iconType="plusInCircle" iconSide="left" onClick={openLibrary}>
-              {labels.agentTools.addToolButton}
-            </EuiButton>
+            <EuiFlexGroup alignItems="center" gutterSize="m" responsive={false}>
+              <EuiFlexItem grow={false}>
+                <EuiButtonEmpty href={createAgentBuilderUrl(appPaths.manage.tools)} size="s">
+                  {labels.agentTools.manageAllTools}
+                </EuiButtonEmpty>
+              </EuiFlexItem>
+              <EuiFlexItem grow={false}>
+                <EuiButton fill iconType="plusInCircle" iconSide="left" onClick={openLibrary}>
+                  {labels.agentTools.addToolButton}
+                </EuiButton>
+              </EuiFlexItem>
+            </EuiFlexGroup>
           </EuiFlexItem>
         </EuiFlexGroup>
 
@@ -339,7 +358,8 @@ export const AgentTools: React.FC = () => {
             <ToolDetailPanel
               toolId={selectedToolId}
               onRemove={handleRemoveSelectedTool}
-              isReadOnly={enableElasticCapabilities && defaultToolIdSet.has(selectedToolId)}
+              isReadOnly={defaultToolIdSet.has(selectedToolId)}
+              isAutoIncluded={enableElasticCapabilities && defaultToolIdSet.has(selectedToolId)}
             />
           ) : (
             <EuiFlexGroup
@@ -368,6 +388,6 @@ export const AgentTools: React.FC = () => {
           builtinToolIdSet={defaultToolIdSet}
         />
       )}
-    </div>
+    </PageWrapper>
   );
 };

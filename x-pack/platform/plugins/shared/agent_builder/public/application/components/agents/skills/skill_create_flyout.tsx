@@ -20,7 +20,9 @@ import {
   EuiLink,
   EuiSpacer,
   EuiTitle,
+  useEuiTheme,
 } from '@elastic/eui';
+import { css } from '@emotion/react';
 import { FormProvider } from 'react-hook-form';
 import type { PublicSkillDefinition } from '@kbn/agent-builder-common';
 import { labels } from '../../../utils/i18n';
@@ -43,6 +45,7 @@ export const SkillCreateFlyout: React.FC<SkillCreateFlyoutProps> = ({
   const { createAgentBuilderUrl } = useNavigation();
   const skillLibraryUrl = createAgentBuilderUrl(appPaths.manage.skills);
   const { tools } = useTools();
+  const { euiTheme } = useEuiTheme();
 
   const form = useSkillForm();
   const {
@@ -100,17 +103,16 @@ export const SkillCreateFlyout: React.FC<SkillCreateFlyoutProps> = ({
           </EuiFlexItem>
         </EuiFlexGroup>
       </EuiFlyoutHeader>
-
+      <EuiCallOut
+        color="primary"
+        title={labels.agentSkills.newSkillLibraryInfo}
+        css={css`
+          padding-left: ${euiTheme.size.l};
+        `}
+      />
+      <EuiSpacer size="m" />
       <EuiFlyoutBody>
         <FormProvider {...form}>
-          <EuiCallOut
-            color="primary"
-            iconType="info"
-            title={labels.agentSkills.newSkillLibraryInfo}
-          />
-
-          <EuiSpacer size="m" />
-
           <EuiForm component="form" onSubmit={handleSubmit(onSubmit)}>
             <SkillForm control={control} toolOptions={toolOptions} />
           </EuiForm>

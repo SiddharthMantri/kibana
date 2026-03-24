@@ -12,6 +12,7 @@ import {
   EuiConfirmModal,
   EuiFlexGroup,
   EuiFlexItem,
+  EuiIcon,
   EuiLoadingSpinner,
   EuiText,
   EuiTitle,
@@ -25,8 +26,10 @@ import { DetailRow } from '../common/detail_row';
 interface ToolDetailPanelProps {
   toolId: string;
   onRemove: () => void;
-  /** When true the tool is auto-included and cannot be removed. */
+  /** When true the tool is built-in and cannot be removed. */
   isReadOnly?: boolean;
+  /** When true the tool is auto-included via elastic capabilities. Implies isReadOnly. */
+  isAutoIncluded?: boolean;
 }
 
 /**
@@ -38,6 +41,7 @@ export const ToolDetailPanel: React.FC<ToolDetailPanelProps> = ({
   toolId,
   onRemove,
   isReadOnly = false,
+  isAutoIncluded = false,
 }) => {
   const { euiTheme } = useEuiTheme();
   const { tool, isLoading } = useToolService(toolId);
@@ -71,47 +75,71 @@ export const ToolDetailPanel: React.FC<ToolDetailPanelProps> = ({
         css={css`
           border: ${euiTheme.border.thin};
           overflow: hidden;
+          border-radius: ${euiTheme.size.base};
         `}
       >
-        {/* Header with tool name, badges, and remove button */}
         <div
           css={css`
-            padding: ${euiTheme.size.m};
+            padding: ${euiTheme.size.l};
             border-bottom: ${euiTheme.border.thin};
             background-color: ${euiTheme.colors.backgroundBaseSubdued};
           `}
         >
           <EuiFlexGroup alignItems="center" justifyContent="spaceBetween" responsive={false}>
             <EuiFlexItem grow={false}>
-              <EuiFlexGroup gutterSize="s" alignItems="center" responsive={false}>
+              <EuiFlexGroup alignItems="center" gutterSize="s" responsive={false}>
                 <EuiFlexItem grow={false}>
                   <EuiTitle size="s">
                     <h2>{tool.id}</h2>
                   </EuiTitle>
                 </EuiFlexItem>
-                {tool.readonly && (
+                {isAutoIncluded && (
                   <EuiFlexItem grow={false}>
-                    <EuiBadge color="hollow">{labels.agentTools.readOnlyBadge}</EuiBadge>
+                    <EuiIcon type="logoElastic" size="m" aria-hidden={true} />
                   </EuiFlexItem>
                 )}
               </EuiFlexGroup>
             </EuiFlexItem>
-            {!isReadOnly && (
-              <EuiFlexItem grow={false}>
-                <EuiButtonEmpty
-                  iconType="cross"
-                  size="xs"
-                  color="danger"
-                  onClick={() => setIsConfirmOpen(true)}
-                >
-                  {labels.agentTools.removeToolButtonLabel}
-                </EuiButtonEmpty>
-              </EuiFlexItem>
-            )}
+            <EuiFlexItem grow={false}>
+              <EuiFlexGroup alignItems="center" gutterSize="s" responsive={false}>
+                {/* Built-in tools that are not auto-included get a read-only lock badge */}
+                {isReadOnly && !isAutoIncluded && (
+                  <EuiFlexItem grow={false}>
+                    <EuiBadge color="hollow" iconType="lock">
+                      {labels.agentTools.readOnlyBadge}
+                    </EuiBadge>
+                  </EuiFlexItem>
+                )}
+                {isAutoIncluded ? (
+                  <EuiFlexItem grow={false}>
+                    <EuiBadge color="hollow">{labels.agentTools.autoIncludedBadgeLabel}</EuiBadge>
+                  </EuiFlexItem>
+                ) : isReadOnly ? null : (
+                  <EuiFlexItem grow={false}>
+                    <EuiButtonEmpty
+                      iconType="cross"
+                      size="xs"
+                      color="danger"
+                      onClick={() => setIsConfirmOpen(true)}
+                    >
+                      {labels.agentTools.removeToolButtonLabel}
+                    </EuiButtonEmpty>
+                  </EuiFlexItem>
+                )}
+              </EuiFlexGroup>
+            </EuiFlexItem>
           </EuiFlexGroup>
+          <EuiText
+            size="s"
+            color="subdued"
+            css={css`
+              margin-top: ${euiTheme.size.s};
+            `}
+          >
+            {tool.description || '\u2014'}
+          </EuiText>
         </div>
 
-        {/* Detail rows: tags, description, type, ID */}
         <div
           css={css`
             padding: ${euiTheme.size.m};
@@ -128,9 +156,6 @@ export const ToolDetailPanel: React.FC<ToolDetailPanelProps> = ({
               </EuiFlexGroup>
             </DetailRow>
           )}
-          <DetailRow label={labels.agentTools.toolDetailDescriptionLabel}>
-            <EuiText size="s">{tool.description || '\u2014'}</EuiText>
-          </DetailRow>
           <DetailRow label={labels.agentTools.toolDetailTypeLabel}>
             <EuiText size="s">{tool.type}</EuiText>
           </DetailRow>

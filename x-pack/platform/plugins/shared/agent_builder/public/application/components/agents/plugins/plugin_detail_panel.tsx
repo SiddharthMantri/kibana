@@ -12,8 +12,13 @@ import {
   EuiConfirmModal,
   EuiFlexGroup,
   EuiFlexItem,
+  EuiFlyout,
+  EuiFlyoutBody,
+  EuiFlyoutHeader,
+  EuiIcon,
   EuiLink,
   EuiLoadingSpinner,
+  EuiHorizontalRule,
   EuiText,
   EuiTitle,
   useEuiTheme,
@@ -21,8 +26,7 @@ import {
 import { css } from '@emotion/react';
 import { labels } from '../../../utils/i18n';
 import { usePlugin } from '../../../hooks/plugins/use_plugin';
-import { useNavigation } from '../../../hooks/use_navigation';
-import { appPaths } from '../../../utils/app_paths';
+import { useSkill } from '../../../hooks/skills/use_skills';
 import { DetailRow } from '../common/detail_row';
 
 interface PluginDetailPanelProps {
@@ -38,8 +42,8 @@ export const PluginDetailPanel: React.FC<PluginDetailPanelProps> = ({
 }) => {
   const { euiTheme } = useEuiTheme();
   const { plugin, isLoading } = usePlugin({ pluginId });
-  const { createAgentBuilderUrl } = useNavigation();
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+  const [selectedSkillId, setSelectedSkillId] = useState<string | null>(null);
 
   if (isLoading) {
     return (
@@ -69,32 +73,35 @@ export const PluginDetailPanel: React.FC<PluginDetailPanelProps> = ({
         css={css`
           border: ${euiTheme.border.thin};
           overflow: hidden;
+          border-radius: ${euiTheme.size.base};
         `}
       >
         <div
           css={css`
-            padding: ${euiTheme.size.m};
+            padding: ${euiTheme.size.l};
             border-bottom: ${euiTheme.border.thin};
             background-color: ${euiTheme.colors.backgroundBaseSubdued};
           `}
         >
           <EuiFlexGroup alignItems="center" justifyContent="spaceBetween" responsive={false}>
             <EuiFlexItem grow={false}>
-              <EuiFlexGroup gutterSize="s" alignItems="center" responsive={false}>
+              <EuiFlexGroup alignItems="center" gutterSize="s" responsive={false}>
                 <EuiFlexItem grow={false}>
                   <EuiTitle size="s">
                     <h2>{plugin.name}</h2>
                   </EuiTitle>
                 </EuiFlexItem>
-                <EuiFlexItem grow={false}>
-                  <EuiBadge color="hollow">
-                    {labels.agentPlugins.skillsCountBadge(plugin.skill_ids.length)}
-                  </EuiBadge>
-                </EuiFlexItem>
+                {isAuto && (
+                  <EuiFlexItem grow={false}>
+                    <EuiIcon type="logoElastic" size="m" aria-hidden={true} />
+                  </EuiFlexItem>
+                )}
               </EuiFlexGroup>
             </EuiFlexItem>
-            {!isAuto && (
-              <EuiFlexItem grow={false}>
+            <EuiFlexItem grow={false}>
+              {isAuto ? (
+                <EuiBadge color="hollow">{labels.agentPlugins.autoIncludedBadgeLabel}</EuiBadge>
+              ) : (
                 <EuiButtonEmpty
                   iconType="cross"
                   size="xs"
@@ -103,9 +110,27 @@ export const PluginDetailPanel: React.FC<PluginDetailPanelProps> = ({
                 >
                   {labels.agentPlugins.removePluginButtonLabel}
                 </EuiButtonEmpty>
-              </EuiFlexItem>
-            )}
+              )}
+            </EuiFlexItem>
           </EuiFlexGroup>
+          <EuiText
+            size="xs"
+            color="subdued"
+            css={css`
+              margin-top: ${euiTheme.size.xs};
+            `}
+          >
+            {plugin.id}
+          </EuiText>
+          <EuiText
+            size="s"
+            color="subdued"
+            css={css`
+              margin-top: ${euiTheme.size.s};
+            `}
+          >
+            {plugin.description || '\u2014'}
+          </EuiText>
         </div>
 
         <div
@@ -113,35 +138,6 @@ export const PluginDetailPanel: React.FC<PluginDetailPanelProps> = ({
             padding: ${euiTheme.size.m};
           `}
         >
-          <DetailRow label={labels.agentPlugins.pluginDetailIdLabel}>
-            <EuiText size="s">{plugin.id}</EuiText>
-          </DetailRow>
-          <DetailRow label={labels.agentPlugins.pluginDetailNameLabel}>
-            <EuiText size="s">{plugin.name}</EuiText>
-          </DetailRow>
-          <DetailRow label={labels.agentPlugins.pluginDetailDescriptionLabel}>
-            <EuiText size="s">{plugin.description || '\u2014'}</EuiText>
-          </DetailRow>
-          <DetailRow label={labels.agentPlugins.pluginDetailSkillsLabel}>
-            {plugin.skill_ids.length > 0 ? (
-              <EuiFlexGroup direction="column" gutterSize="xs">
-                {plugin.skill_ids.map((skillId) => (
-                  <EuiFlexItem key={skillId} grow={false}>
-                    <EuiLink href={createAgentBuilderUrl(appPaths.skills.details({ skillId }))}>
-                      {skillId}
-                    </EuiLink>
-                  </EuiFlexItem>
-                ))}
-              </EuiFlexGroup>
-            ) : (
-              <EuiText size="s" color="subdued">
-                {labels.plugins.noSkillsLabel}
-              </EuiText>
-            )}
-          </DetailRow>
-          <DetailRow label={labels.agentPlugins.pluginDetailAuthorLabel}>
-            <EuiText size="s">{plugin.manifest.author?.name || '\u2014'}</EuiText>
-          </DetailRow>
           <DetailRow label={labels.agentPlugins.pluginDetailSourceLabel} isLast>
             {plugin.source_url ? (
               <EuiLink href={plugin.source_url} target="_blank" external>
@@ -150,6 +146,22 @@ export const PluginDetailPanel: React.FC<PluginDetailPanelProps> = ({
             ) : (
               <EuiText size="s" color="subdued">
                 {'\u2014'}
+              </EuiText>
+            )}
+          </DetailRow>
+          <EuiHorizontalRule margin="none" />
+          <DetailRow label={labels.agentPlugins.pluginDetailSkillsLabel}>
+            {plugin.skill_ids.length > 0 ? (
+              <EuiFlexGroup direction="column" gutterSize="xs">
+                {plugin.skill_ids.map((skillId) => (
+                  <EuiFlexItem key={skillId} grow={false}>
+                    <EuiLink onClick={() => setSelectedSkillId(skillId)}>{skillId}</EuiLink>
+                  </EuiFlexItem>
+                ))}
+              </EuiFlexGroup>
+            ) : (
+              <EuiText size="s" color="subdued">
+                {labels.plugins.noSkillsLabel}
               </EuiText>
             )}
           </DetailRow>
@@ -171,6 +183,81 @@ export const PluginDetailPanel: React.FC<PluginDetailPanelProps> = ({
           <p>{labels.agentPlugins.removePluginConfirmBody}</p>
         </EuiConfirmModal>
       )}
+      {selectedSkillId && (
+        <SkillDetailFlyout
+          skillId={selectedSkillId}
+          pluginName={plugin.name}
+          onClose={() => setSelectedSkillId(null)}
+        />
+      )}
     </div>
+  );
+};
+
+/** Simple read-only flyout that fetches and displays a single skill's details. */
+const SkillDetailFlyout: React.FC<{
+  skillId: string;
+  pluginName: string;
+  onClose: () => void;
+}> = ({ skillId, pluginName, onClose }) => {
+  const { skill, isLoading } = useSkill({ skillId });
+
+  return (
+    <EuiFlyout onClose={onClose} size="m" aria-labelledby="pluginSkillDetailFlyoutTitle">
+      <EuiFlyoutHeader hasBorder>
+        <EuiTitle size="s">
+          <h2 id="pluginSkillDetailFlyoutTitle">{skill?.name ?? skillId}</h2>
+        </EuiTitle>
+        <EuiText size="xs" color="subdued">
+          {labels.agentPlugins.skillDetailInstalledVia(pluginName)}
+        </EuiText>
+      </EuiFlyoutHeader>
+      <EuiFlyoutBody>
+        {isLoading ? (
+          <EuiFlexGroup justifyContent="center" alignItems="center">
+            <EuiLoadingSpinner size="l" />
+          </EuiFlexGroup>
+        ) : skill ? (
+          <>
+            <EuiFlexGroup direction="column" gutterSize="l">
+              <EuiFlexItem grow={false}>
+                <EuiTitle size="xxxs">
+                  <h4>{labels.agentPlugins.pluginDetailNameLabel}</h4>
+                </EuiTitle>
+                <EuiText size="s">{skill.name}</EuiText>
+              </EuiFlexItem>
+              <EuiHorizontalRule margin="none" />
+              <EuiFlexItem grow={false}>
+                <EuiTitle size="xxxs">
+                  <h4>{labels.agentPlugins.pluginDetailIdLabel}</h4>
+                </EuiTitle>
+                <EuiText size="s">{skill.id}</EuiText>
+              </EuiFlexItem>
+              <EuiHorizontalRule margin="none" />
+              <EuiFlexItem grow={false}>
+                <EuiTitle size="xxxs">
+                  <h4>{labels.agentPlugins.pluginDetailDescriptionLabel}</h4>
+                </EuiTitle>
+                <EuiText size="s">{skill.description || '\u2014'}</EuiText>
+              </EuiFlexItem>
+              <EuiHorizontalRule margin="none" />
+              <EuiFlexItem grow={false}>
+                <EuiTitle size="xxxs">
+                  <h4>{labels.agentSkills.skillDetailInstructionsLabel}</h4>
+                </EuiTitle>
+                <div
+                  css={css`
+                    white-space: pre-wrap;
+                    word-break: break-word;
+                  `}
+                >
+                  <EuiText size="s">{skill.content || '\u2014'}</EuiText>
+                </div>
+              </EuiFlexItem>
+            </EuiFlexGroup>
+          </>
+        ) : null}
+      </EuiFlyoutBody>
+    </EuiFlyout>
   );
 };

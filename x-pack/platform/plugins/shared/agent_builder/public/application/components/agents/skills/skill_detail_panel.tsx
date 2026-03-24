@@ -7,10 +7,12 @@
 
 import React, { useState } from 'react';
 import {
+  EuiBadge,
   EuiButtonEmpty,
   EuiConfirmModal,
   EuiFlexGroup,
   EuiFlexItem,
+  EuiIcon,
   EuiLoadingSpinner,
   EuiText,
   EuiTitle,
@@ -66,6 +68,7 @@ export const SkillDetailPanel: React.FC<SkillDetailPanelProps> = ({
         css={css`
           border: ${euiTheme.border.thin};
           overflow: hidden;
+          border-radius: ${euiTheme.size.base};
         `}
       >
         <div
@@ -73,24 +76,36 @@ export const SkillDetailPanel: React.FC<SkillDetailPanelProps> = ({
             padding: ${euiTheme.size.m};
             border-bottom: ${euiTheme.border.thin};
             background-color: ${euiTheme.colors.backgroundBaseSubdued};
+            padding: ${euiTheme.size.l};
           `}
         >
           <EuiFlexGroup alignItems="center" justifyContent="spaceBetween" responsive={false}>
             <EuiFlexItem grow={false}>
-              <EuiTitle size="s">
-                <h2>{skill.name}</h2>
-              </EuiTitle>
-            </EuiFlexItem>
-            <EuiFlexItem grow={false}>
-              <EuiFlexGroup gutterSize="s" responsive={false}>
-                {!skill.readonly && (
+              <EuiFlexGroup alignItems="center" gutterSize="s" responsive={false}>
+                <EuiFlexItem grow={false}>
+                  <EuiTitle size="s">
+                    <h2>{skill.name}</h2>
+                  </EuiTitle>
+                </EuiFlexItem>
+                {isReadOnly && (
                   <EuiFlexItem grow={false}>
-                    <EuiButtonEmpty iconType="pencil" size="xs" onClick={onEdit}>
-                      {labels.skills.editSkillButtonLabel}
-                    </EuiButtonEmpty>
+                    <EuiIcon type="logoElastic" size="m" aria-hidden={true} />
                   </EuiFlexItem>
                 )}
-                {!isReadOnly && (
+              </EuiFlexGroup>
+            </EuiFlexItem>
+            <EuiFlexItem grow={false}>
+              {isReadOnly ? (
+                <EuiBadge color="hollow">{labels.agentSkills.autoIncludedBadgeLabel}</EuiBadge>
+              ) : (
+                <EuiFlexGroup gutterSize="s" responsive={false}>
+                  {!skill.readonly && (
+                    <EuiFlexItem grow={false}>
+                      <EuiButtonEmpty iconType="pencil" size="xs" onClick={onEdit}>
+                        {labels.skills.editSkillButtonLabel}
+                      </EuiButtonEmpty>
+                    </EuiFlexItem>
+                  )}
                   <EuiFlexItem grow={false}>
                     <EuiButtonEmpty
                       iconType="cross"
@@ -101,10 +116,28 @@ export const SkillDetailPanel: React.FC<SkillDetailPanelProps> = ({
                       {labels.agentSkills.removeSkillButtonLabel}
                     </EuiButtonEmpty>
                   </EuiFlexItem>
-                )}
-              </EuiFlexGroup>
+                </EuiFlexGroup>
+              )}
             </EuiFlexItem>
           </EuiFlexGroup>
+          <EuiText
+            size="xs"
+            color="subdued"
+            css={css`
+              margin-top: ${euiTheme.size.xs};
+            `}
+          >
+            {skill.id}
+          </EuiText>
+          <EuiText
+            size="s"
+            color="subdued"
+            css={css`
+              margin-top: ${euiTheme.size.s};
+            `}
+          >
+            {skill.description}
+          </EuiText>
         </div>
 
         <div
@@ -112,15 +145,6 @@ export const SkillDetailPanel: React.FC<SkillDetailPanelProps> = ({
             padding: ${euiTheme.size.m};
           `}
         >
-          <DetailRow label={labels.skills.skillIdLabel}>
-            <EuiText size="s">{skill.id}</EuiText>
-          </DetailRow>
-          <DetailRow label={labels.skills.nameLabel}>
-            <EuiText size="s">{skill.name}</EuiText>
-          </DetailRow>
-          <DetailRow label={labels.skills.descriptionLabel}>
-            <EuiText size="s">{skill.description}</EuiText>
-          </DetailRow>
           <DetailRow
             label={labels.agentSkills.skillDetailInstructionsLabel}
             isLast={!skill.tool_ids || skill.tool_ids.length === 0}

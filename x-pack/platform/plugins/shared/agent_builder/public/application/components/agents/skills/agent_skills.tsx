@@ -9,6 +9,7 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import {
   EuiButton,
+  EuiButtonEmpty,
   EuiContextMenuItem,
   EuiContextMenuPanel,
   EuiFieldSearch,
@@ -18,6 +19,7 @@ import {
   EuiPopover,
   EuiSpacer,
   EuiText,
+  EuiIcon,
   EuiTitle,
   useEuiTheme,
 } from '@elastic/eui';
@@ -25,6 +27,8 @@ import { css } from '@emotion/react';
 import type { PublicSkillDefinition, PublicSkillSummary } from '@kbn/agent-builder-common';
 import { useMutation, useQueryClient } from '@kbn/react-query';
 import { labels } from '../../../utils/i18n';
+import { appPaths } from '../../../utils/app_paths';
+import { useNavigation } from '../../../hooks/use_navigation';
 import { useSkillsService } from '../../../hooks/skills/use_skills';
 import { useAgentBuilderAgentById } from '../../../hooks/agents/use_agent_by_id';
 import { useAgentBuilderServices } from '../../../hooks/use_agent_builder_service';
@@ -36,10 +40,12 @@ import { ActiveSkillRow } from './active_skill_row';
 import { SkillDetailPanel } from './skill_detail_panel';
 import { SkillEditFlyout } from './skill_edit_flyout';
 import { SkillCreateFlyout } from './skill_create_flyout';
+import { PageWrapper } from '../common/page_wrapper';
 
 export const AgentSkills: React.FC = () => {
   const { agentId } = useParams<{ agentId: string }>();
   const { euiTheme } = useEuiTheme();
+  const { createAgentBuilderUrl } = useNavigation();
   const { agentService } = useAgentBuilderServices();
   const { addSuccessToast, addErrorToast } = useToasts();
   const queryClient = useQueryClient();
@@ -211,14 +217,7 @@ export const AgentSkills: React.FC = () => {
   }
 
   return (
-    <div
-      css={css`
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-      `}
-    >
+    <PageWrapper>
       <div
         css={css`
           padding: ${euiTheme.size.l};
@@ -227,47 +226,63 @@ export const AgentSkills: React.FC = () => {
       >
         <EuiFlexGroup alignItems="center" justifyContent="spaceBetween">
           <EuiFlexItem grow={false}>
-            <EuiTitle size="l">
-              <h1>{labels.skills.title}</h1>
-            </EuiTitle>
+            <EuiFlexGroup alignItems="center" gutterSize="s">
+              <EuiFlexItem grow={false}>
+                <EuiIcon type="bolt" aria-hidden={true} css={{ width: 24, height: 28 }} />
+              </EuiFlexItem>
+              <EuiFlexItem grow={false}>
+                <EuiTitle size="l">
+                  <h1>{labels.skills.title}</h1>
+                </EuiTitle>
+              </EuiFlexItem>
+            </EuiFlexGroup>
           </EuiFlexItem>
           <EuiFlexItem grow={false}>
-            <EuiPopover
-              aria-label={labels.agentSkills.addSkillButton}
-              button={
-                <EuiButton
-                  fill
-                  iconType="plusInCircle"
-                  iconSide="left"
-                  onClick={() => setIsAddMenuOpen((prev) => !prev)}
+            <EuiFlexGroup alignItems="center" gutterSize="m" responsive={false}>
+              <EuiFlexItem grow={false}>
+                <EuiButtonEmpty href={createAgentBuilderUrl(appPaths.manage.skills)} size="s">
+                  {labels.agentSkills.manageAllSkills}
+                </EuiButtonEmpty>
+              </EuiFlexItem>
+              <EuiFlexItem grow={false}>
+                <EuiPopover
+                  aria-label={labels.agentSkills.addSkillButton}
+                  button={
+                    <EuiButton
+                      fill
+                      iconType="plusInCircle"
+                      iconSide="left"
+                      onClick={() => setIsAddMenuOpen((prev) => !prev)}
+                    >
+                      {labels.agentSkills.addSkillButton}
+                    </EuiButton>
+                  }
+                  isOpen={isAddMenuOpen}
+                  closePopover={() => setIsAddMenuOpen(false)}
+                  anchorPosition="downLeft"
+                  panelPaddingSize="none"
                 >
-                  {labels.agentSkills.addSkillButton}
-                </EuiButton>
-              }
-              isOpen={isAddMenuOpen}
-              closePopover={() => setIsAddMenuOpen(false)}
-              anchorPosition="downLeft"
-              panelPaddingSize="none"
-            >
-              <EuiContextMenuPanel
-                items={[
-                  <EuiContextMenuItem
-                    key="importFromLibrary"
-                    icon="importAction"
-                    onClick={handleImportFromLibrary}
-                  >
-                    {labels.agentSkills.importFromLibraryMenuItem}
-                  </EuiContextMenuItem>,
-                  <EuiContextMenuItem
-                    key="createSkill"
-                    icon="pencil"
-                    onClick={handleOpenCreateFlyout}
-                  >
-                    {labels.agentSkills.createSkillMenuItem}
-                  </EuiContextMenuItem>,
-                ]}
-              />
-            </EuiPopover>
+                  <EuiContextMenuPanel
+                    items={[
+                      <EuiContextMenuItem
+                        key="importFromLibrary"
+                        icon="importAction"
+                        onClick={handleImportFromLibrary}
+                      >
+                        {labels.agentSkills.importFromLibraryMenuItem}
+                      </EuiContextMenuItem>,
+                      <EuiContextMenuItem
+                        key="createSkill"
+                        icon="pencil"
+                        onClick={handleOpenCreateFlyout}
+                      >
+                        {labels.agentSkills.createSkillMenuItem}
+                      </EuiContextMenuItem>,
+                    ]}
+                  />
+                </EuiPopover>
+              </EuiFlexItem>
+            </EuiFlexGroup>
           </EuiFlexItem>
         </EuiFlexGroup>
 
@@ -401,6 +416,6 @@ export const AgentSkills: React.FC = () => {
           onSkillCreated={(skill) => handleAddSkill(skill, { selectOnSuccess: true })}
         />
       )}
-    </div>
+    </PageWrapper>
   );
 };

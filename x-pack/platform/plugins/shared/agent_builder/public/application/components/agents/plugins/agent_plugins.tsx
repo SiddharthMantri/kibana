@@ -9,11 +9,13 @@ import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react'
 import { useParams } from 'react-router-dom';
 import {
   EuiButton,
+  EuiButtonEmpty,
   EuiContextMenuItem,
   EuiContextMenuPanel,
   EuiFieldSearch,
   EuiFlexGroup,
   EuiFlexItem,
+  EuiIcon,
   EuiLoadingSpinner,
   EuiPopover,
   EuiSpacer,
@@ -25,6 +27,8 @@ import { css } from '@emotion/react';
 import type { PluginDefinition } from '@kbn/agent-builder-common';
 import { useMutation, useQueryClient } from '@kbn/react-query';
 import { labels } from '../../../utils/i18n';
+import { appPaths } from '../../../utils/app_paths';
+import { useNavigation } from '../../../hooks/use_navigation';
 import { usePluginsService } from '../../../hooks/plugins/use_plugins';
 import { useAgentBuilderAgentById } from '../../../hooks/agents/use_agent_by_id';
 import { useAgentBuilderServices } from '../../../hooks/use_agent_builder_service';
@@ -35,12 +39,14 @@ import { ActiveItemRow } from '../common/active_item_row';
 import { PluginLibraryPanel } from './plugin_library_panel';
 import { PluginDetailPanel } from './plugin_detail_panel';
 import { InstallPluginFlyout } from './install_plugin_flyout';
+import { PageWrapper } from '../common/page_wrapper';
 
 const FLEX_ITEM_WIDTH = '280px';
 
 export const AgentPlugins: React.FC = () => {
   const { agentId } = useParams<{ agentId: string }>();
   const { euiTheme } = useEuiTheme();
+  const { createAgentBuilderUrl } = useNavigation();
   const { agentService } = useAgentBuilderServices();
   const { addSuccessToast, addErrorToast } = useToasts();
   const queryClient = useQueryClient();
@@ -205,14 +211,7 @@ export const AgentPlugins: React.FC = () => {
   }
 
   return (
-    <div
-      css={css`
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-      `}
-    >
+    <PageWrapper>
       <div
         css={css`
           padding: ${euiTheme.size.l};
@@ -221,47 +220,63 @@ export const AgentPlugins: React.FC = () => {
       >
         <EuiFlexGroup alignItems="center" justifyContent="spaceBetween">
           <EuiFlexItem grow={false}>
-            <EuiTitle size="l">
-              <h1>{labels.plugins.title}</h1>
-            </EuiTitle>
+            <EuiFlexGroup alignItems="center" gutterSize="s">
+              <EuiFlexItem grow={false}>
+                <EuiIcon type="package" aria-hidden={true} css={{ width: 24, height: 28 }} />
+              </EuiFlexItem>
+              <EuiFlexItem grow={false}>
+                <EuiTitle size="l">
+                  <h1>{labels.plugins.title}</h1>
+                </EuiTitle>
+              </EuiFlexItem>
+            </EuiFlexGroup>
           </EuiFlexItem>
           <EuiFlexItem grow={false}>
-            <EuiPopover
-              aria-label={labels.agentPlugins.installPluginButton}
-              button={
-                <EuiButton
-                  fill
-                  iconType="plusInCircle"
-                  iconSide="left"
-                  onClick={() => setIsAddMenuOpen((prev) => !prev)}
+            <EuiFlexGroup alignItems="center" gutterSize="m" responsive={false}>
+              <EuiFlexItem grow={false}>
+                <EuiButtonEmpty href={createAgentBuilderUrl(appPaths.manage.plugins)} size="s">
+                  {labels.agentPlugins.manageAllPlugins}
+                </EuiButtonEmpty>
+              </EuiFlexItem>
+              <EuiFlexItem grow={false}>
+                <EuiPopover
+                  aria-label={labels.agentPlugins.installPluginButton}
+                  button={
+                    <EuiButton
+                      fill
+                      iconType="plusInCircle"
+                      iconSide="left"
+                      onClick={() => setIsAddMenuOpen((prev) => !prev)}
+                    >
+                      {labels.agentPlugins.installPluginButton}
+                    </EuiButton>
+                  }
+                  isOpen={isAddMenuOpen}
+                  closePopover={() => setIsAddMenuOpen(false)}
+                  anchorPosition="downLeft"
+                  panelPaddingSize="none"
                 >
-                  {labels.agentPlugins.installPluginButton}
-                </EuiButton>
-              }
-              isOpen={isAddMenuOpen}
-              closePopover={() => setIsAddMenuOpen(false)}
-              anchorPosition="downLeft"
-              panelPaddingSize="none"
-            >
-              <EuiContextMenuPanel
-                items={[
-                  <EuiContextMenuItem
-                    key="fromUrlOrZip"
-                    icon="link"
-                    onClick={handleOpenInstallFlyout}
-                  >
-                    {labels.agentPlugins.fromUrlOrZipMenuItem}
-                  </EuiContextMenuItem>,
-                  <EuiContextMenuItem
-                    key="fromLibrary"
-                    icon="importAction"
-                    onClick={handleOpenLibrary}
-                  >
-                    {labels.agentPlugins.fromLibraryMenuItem}
-                  </EuiContextMenuItem>,
-                ]}
-              />
-            </EuiPopover>
+                  <EuiContextMenuPanel
+                    items={[
+                      <EuiContextMenuItem
+                        key="fromUrlOrZip"
+                        icon="link"
+                        onClick={handleOpenInstallFlyout}
+                      >
+                        {labels.agentPlugins.fromUrlOrZipMenuItem}
+                      </EuiContextMenuItem>,
+                      <EuiContextMenuItem
+                        key="fromLibrary"
+                        icon="importAction"
+                        onClick={handleOpenLibrary}
+                      >
+                        {labels.agentPlugins.fromLibraryMenuItem}
+                      </EuiContextMenuItem>,
+                    ]}
+                  />
+                </EuiPopover>
+              </EuiFlexItem>
+            </EuiFlexGroup>
           </EuiFlexItem>
         </EuiFlexGroup>
 
@@ -372,6 +387,6 @@ export const AgentPlugins: React.FC = () => {
       {isInstallFlyoutOpen && (
         <InstallPluginFlyout onClose={closeInstallFlyout} onPluginInstalled={handleAddPlugin} />
       )}
-    </div>
+    </PageWrapper>
   );
 };

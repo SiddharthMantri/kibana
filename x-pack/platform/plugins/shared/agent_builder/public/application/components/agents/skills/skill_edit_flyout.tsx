@@ -21,7 +21,9 @@ import {
   EuiLoadingSpinner,
   EuiSpacer,
   EuiTitle,
+  useEuiTheme,
 } from '@elastic/eui';
+import { css } from '@emotion/react';
 import { FormProvider } from 'react-hook-form';
 import { labels } from '../../../utils/i18n';
 import { useEditSkill } from '../../../hooks/skills/use_edit_skill';
@@ -41,7 +43,7 @@ export const SkillEditFlyout: React.FC<SkillEditFlyoutProps> = ({ skillId, onClo
   const { createAgentBuilderUrl } = useNavigation();
   const skillLibraryUrl = createAgentBuilderUrl(appPaths.manage.skills);
   const { tools } = useTools();
-
+  const { euiTheme } = useEuiTheme();
   const form = useSkillForm();
   const {
     control,
@@ -105,7 +107,14 @@ export const SkillEditFlyout: React.FC<SkillEditFlyoutProps> = ({ skillId, onClo
           </EuiFlexItem>
         </EuiFlexGroup>
       </EuiFlyoutHeader>
-
+      <EuiCallOut
+        color="warning"
+        title={labels.agentSkills.sharedSkillWarning}
+        css={css`
+          padding-left: ${euiTheme.size.l};
+        `}
+      />
+      <EuiSpacer size="m" />
       <EuiFlyoutBody>
         {isLoading ? (
           <EuiFlexGroup justifyContent="center" alignItems="center">

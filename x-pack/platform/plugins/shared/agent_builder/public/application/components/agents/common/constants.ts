@@ -6,3 +6,5 @@
  */
 
 export const FLYOUT_WIDTH = '960px';
+
+export const CONTAINER_WIDTH = '1200px';
