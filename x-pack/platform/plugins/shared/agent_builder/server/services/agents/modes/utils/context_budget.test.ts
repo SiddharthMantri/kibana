@@ -19,6 +19,7 @@ import {
 const createMockConnector = (contextWindowSize?: number): InferenceConnector => ({
   type: InferenceConnectorType.OpenAI,
   isInferenceEndpoint: false,
+  isPreconfigured: false,
   name: 'test-connector',
   connectorId: 'test-id',
   config: {
