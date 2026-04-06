@@ -6,8 +6,6 @@
  */
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { useQueryState } from '../../../hooks/use_query_state';
-import { searchParamNames } from '../../../search_param_names';
 import { useParams } from 'react-router-dom';
 import {
   EuiButton,
@@ -26,6 +24,8 @@ import {
 } from '@elastic/eui';
 import type { PublicSkillDefinition, PublicSkillSummary } from '@kbn/agent-builder-common';
 import { useMutation, useQueryClient } from '@kbn/react-query';
+import { searchParamNames } from '../../../search_param_names';
+import { useQueryState } from '../../../hooks/use_query_state';
 import { labels } from '../../../utils/i18n';
 import { appPaths } from '../../../utils/app_paths';
 import { useNavigation } from '../../../hooks/use_navigation';
