@@ -6,6 +6,8 @@
  */
 
 import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { useQueryState } from '../../../hooks/use_query_state';
+import { searchParamNames } from '../../../search_param_names';
 import { useParams } from 'react-router-dom';
 import {
   EuiButton,
@@ -54,7 +56,7 @@ export const AgentSkills: React.FC = () => {
   const { skills: allSkills, isLoading: skillsLoading } = useSkillsService();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedSkillId, setSelectedSkillId] = useState<string | null>(null);
+  const [selectedSkillId, setSelectedSkillId] = useQueryState<string>(searchParamNames.skillId);
   const pendingSelectSkillIdRef = useRef<string | null>(null);
   const [editingSkillId, setEditingSkillId] = useState<string | null>(null);
   const [isCreateFlyoutOpen, setIsCreateFlyoutOpen] = useState(false);
@@ -103,6 +105,8 @@ export const AgentSkills: React.FC = () => {
   }, [allSkills, agentSkillIdSet, enableElasticCapabilities, builtinSkills]);
 
   useEffect(() => {
+    if (agentLoading || skillsLoading) return;
+
     if (pendingSelectSkillIdRef.current) {
       const pendingInActive = activeSkills.some((s) => s.id === pendingSelectSkillIdRef.current);
       if (pendingInActive) {
@@ -122,7 +126,7 @@ export const AgentSkills: React.FC = () => {
         setSelectedSkillId(activeSkills[0]?.id ?? null);
       }
     }
-  }, [activeSkills, selectedSkillId]);
+  }, [activeSkills, selectedSkillId, setSelectedSkillId, agentLoading, skillsLoading]);
 
   const filteredActiveSkills = useMemo(() => {
     if (!searchQuery.trim()) return activeSkills;
