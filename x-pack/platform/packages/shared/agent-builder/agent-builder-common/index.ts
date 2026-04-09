@@ -111,6 +111,7 @@ export {
   canChangeAgentVisibility,
   hasAgentReadAccess,
   hasAgentWriteAccess,
+  canCurrentUserEditAgent,
   type AgentDefinition,
   type AgentConfiguration,
   type AgentConfigurationOverrides,
@@ -211,6 +212,14 @@ export {
   skillIdRegexp,
   skillNameRegexp,
   maxToolsPerSkill,
+  maxReferencedContentItems,
+  normalizeRelativePathSegments,
+  isRootRelativePath,
+  canComputeReferencedContentUniquenessKey,
+  REFERENCED_CONTENT_REFINE_ISSUE_CODE,
+  type ReferencedContentRefineIssueCode,
+  type ReferencedContentRefineIssue,
+  collectReferencedContentRefineIssues,
 } from './skills';
 export * from './telemetry';
 export {
