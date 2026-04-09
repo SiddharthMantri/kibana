@@ -34,7 +34,9 @@ jest.mock('@kbn/agent-builder-genai-utils/langchain', () => ({
   extractTextContent: jest.fn(),
   hasTag: jest.fn(),
   matchEvent: jest.fn((event: any, expected: string) => event.event === expected),
-  matchGraphName: jest.fn((event: any, graphName: string) => event.metadata?.graphName === graphName),
+  matchGraphName: jest.fn(
+    (event: any, graphName: string) => event.metadata?.graphName === graphName
+  ),
   matchName: jest.fn((event: any, expected: string) => event.name === expected),
   toolIdentifierFromToolCall: jest.fn(() => 'inline.dynamic'),
 }));
