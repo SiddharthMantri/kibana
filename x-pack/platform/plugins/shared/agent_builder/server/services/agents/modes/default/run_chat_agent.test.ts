@@ -7,6 +7,7 @@
 
 import type { BrowserApiToolMetadata } from '@kbn/agent-builder-common';
 import type { ExecutableTool } from '@kbn/agent-builder-server';
+import { ToolOrigin } from '@kbn/agent-builder-common';
 import { ToolManagerToolType } from '@kbn/agent-builder-server/runner';
 
 import { createAgentHandlerContextMock } from '../../../../test_utils/runner';
@@ -68,10 +69,15 @@ describe('runDefaultAgentMode', () => {
 
     const staticTools = [{ id: 'static-tool-1' } as ExecutableTool];
     const dynamicTools = [{ id: 'dynamic-tool-1' } as ExecutableTool];
+    const toolOrigins = new Map([
+      ['static-tool-1', ToolOrigin.registry],
+      ['dynamic-tool-1', ToolOrigin.inline],
+    ]);
 
     selectToolsMock.mockResolvedValue({
       staticTools,
       dynamicTools,
+      toolOrigins,
     } as any);
 
     prepareConversationMock.mockResolvedValue({
@@ -110,6 +116,7 @@ describe('runDefaultAgentMode', () => {
     );
 
     expect(context.toolManager.addTools).toHaveBeenCalledTimes(3);
+    expect(context.toolManager.setToolOrigins).toHaveBeenCalledWith(toolOrigins);
 
     // Static tools are added first (executable tools + browser API tools)
     expect(context.toolManager.addTools).toHaveBeenNthCalledWith(1, {

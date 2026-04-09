@@ -147,7 +147,7 @@ export const runDefaultAgentMode: RunChatAgentFn = async (
   });
   processedConversation.nextInput = beforeHookResult.nextInput ?? processedConversation.nextInput;
 
-  const { staticTools, dynamicTools } = await selectTools({
+  const { staticTools, dynamicTools, toolOrigins } = await selectTools({
     conversation: processedConversation,
     previousDynamicToolIds: conversation?.state?.dynamic_tool_ids ?? [],
     filteredSkills,
@@ -161,6 +161,8 @@ export const runDefaultAgentMode: RunChatAgentFn = async (
     spaceId: context.spaceId,
     runner: context.runner,
   });
+
+  toolManager.setToolOrigins(toolOrigins);
 
   // First add static tools
   await Promise.all([

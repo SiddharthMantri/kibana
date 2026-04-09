@@ -7,6 +7,7 @@
 
 import type { AfterToolCallHookContext, ToolProvider } from '@kbn/agent-builder-server';
 import { filestoreTools } from '@kbn/agent-builder-common/tools';
+import { ToolOrigin } from '@kbn/agent-builder-common';
 import type { SkillsService, ToolManager } from '@kbn/agent-builder-server/runner';
 import { ToolManagerToolType } from '@kbn/agent-builder-server/runner';
 import type { KibanaRequest } from '@kbn/core/server';
@@ -80,6 +81,13 @@ const loadSkillTools = async ({
     registryToolIds.length > 0
       ? await pickTools({ toolProvider, selection: [{ tool_ids: registryToolIds }], request })
       : [];
+
+  toolManager.setToolOrigins(
+    new Map([
+      ...inlineExecutableTools.map((tool) => [tool.id, ToolOrigin.inline] as const),
+      ...registryExecutableTools.map((tool) => [tool.id, ToolOrigin.registry] as const),
+    ])
+  );
 
   await toolManager.addTools(
     {

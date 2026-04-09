@@ -7,7 +7,7 @@
 
 import type { KibanaRequest } from '@kbn/core-http-server';
 import { defaultAgentToolIds } from '@kbn/agent-builder-common';
-import { ToolType, filterToolsBySelection } from '@kbn/agent-builder-common';
+import { ToolOrigin, ToolType, filterToolsBySelection } from '@kbn/agent-builder-common';
 import type {
   ToolProvider,
   ExecutableTool,
@@ -101,6 +101,12 @@ export const selectTools = async ({
     ...filestoreTools,
   ];
 
+  const toolOrigins = new Map<string, ToolOrigin>();
+  setToolOrigins(versionedAttachmentBoundTools, ToolOrigin.inline, toolOrigins);
+  setToolOrigins(versionedAttachmentTools, ToolOrigin.internal, toolOrigins);
+  setToolOrigins(staticRegistryTools, ToolOrigin.registry, toolOrigins);
+  setToolOrigins(filestoreTools, ToolOrigin.internal, toolOrigins);
+
   const dedupedStaticTools = new Map<string, ExecutableTool>();
   for (const tool of staticTools) {
     dedupedStaticTools.set(tool.id, tool);
@@ -125,10 +131,24 @@ export const selectTools = async ({
     .filter((tool) => previousDynamicToolIds.includes(tool.id))
     .map((tool) => skills.convertSkillTool(tool));
 
+  setToolOrigins(dynamicRegistryTools, ToolOrigin.registry, toolOrigins);
+  setToolOrigins(dynamicInlineTools, ToolOrigin.inline, toolOrigins);
+
   return {
     staticTools: [...dedupedStaticTools.values()],
     dynamicTools: [...dynamicRegistryTools, ...dynamicInlineTools],
+    toolOrigins,
   };
+};
+
+const setToolOrigins = (
+  tools: ExecutableTool[],
+  origin: ToolOrigin,
+  target: Map<string, ToolOrigin>
+): void => {
+  for (const tool of tools) {
+    target.set(tool.id, origin);
+  }
 };
 
 /**

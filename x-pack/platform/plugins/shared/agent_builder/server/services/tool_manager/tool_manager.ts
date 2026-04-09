@@ -9,6 +9,7 @@ import type { StructuredTool } from '@langchain/core/tools';
 import { createToolIdMappings, toolToLangchain } from '@kbn/agent-builder-genai-utils/langchain';
 import { reverseMap } from '@kbn/agent-builder-genai-utils/langchain/tools';
 import { LRUCache } from 'lru-cache';
+import type { ToolOrigin } from '@kbn/agent-builder-common';
 import type { AgentEventEmitterFn, ExecutableTool } from '@kbn/agent-builder-server';
 import type { ToolReturnSummarizerFn } from '@kbn/agent-builder-server/tools/builtin';
 import type {
@@ -37,6 +38,7 @@ export class ToolManager implements IToolManager {
   private staticTools: Map<ToolName, StructuredTool> = new Map<ToolName, StructuredTool>();
   private dynamicTools: LRUCache<ToolName, StructuredTool>;
   private toolIdMappings: Map<string, string>;
+  private toolOrigins: Map<string, ToolOrigin>;
   private executableTools: Map<string, ExecutableTool> = new Map<string, ExecutableTool>();
   private eventEmitter?: AgentEventEmitterFn;
 
@@ -45,6 +47,7 @@ export class ToolManager implements IToolManager {
       max: params.dynamicToolCapacity,
     });
     this.toolIdMappings = new Map<string, string>();
+    this.toolOrigins = new Map<string, ToolOrigin>();
   }
 
   public setEventEmitter(eventEmitter: AgentEventEmitterFn): void {
@@ -136,6 +139,20 @@ export class ToolManager implements IToolManager {
    */
   public getToolIdMapping(): Map<string, string> {
     return this.toolIdMappings;
+  }
+
+  /**
+   * Persists tool origin metadata keyed by internal tool ID.
+   */
+  public setToolOrigins(origins: Map<string, ToolOrigin>): void {
+    this.toolOrigins = new Map([...this.toolOrigins, ...origins]);
+  }
+
+  /**
+   * Returns the origin metadata for a given internal tool ID.
+   */
+  public getToolOrigin(toolId: string): ToolOrigin | undefined {
+    return this.toolOrigins.get(toolId);
   }
 
   /**

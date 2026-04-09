@@ -16,7 +16,7 @@ import type {
 import type { InternalSkillDefinition } from '@kbn/agent-builder-server/skills';
 import { ToolManagerToolType } from '@kbn/agent-builder-server/runner';
 import type { SkillBoundedTool } from '@kbn/agent-builder-server/skills';
-import { ToolType } from '@kbn/agent-builder-common';
+import { ToolOrigin, ToolType } from '@kbn/agent-builder-common';
 import { createToolHandlerContextMock, type ToolHandlerContextMock } from '../../test_utils/runner';
 import { loadSkillToolsAfterRead } from './load_skill_tools_after_read';
 
@@ -180,6 +180,9 @@ describe('loadSkillToolsAfterRead', () => {
 
       expect(skill.getInlineTools).toHaveBeenCalled();
       expect(toolHandlerContext.skills.convertSkillTool).toHaveBeenCalledWith(inlineTool);
+      expect(toolHandlerContext.toolManager.setToolOrigins).toHaveBeenCalledWith(
+        new Map([['inline-1-converted', ToolOrigin.inline]])
+      );
       expect(toolHandlerContext.toolManager.addTools).toHaveBeenCalledWith(
         {
           type: ToolManagerToolType.executable,
@@ -206,6 +209,9 @@ describe('loadSkillToolsAfterRead', () => {
       await loadSkillToolsAfterRead(context);
 
       expect(skill.getRegistryTools).toHaveBeenCalled();
+      expect(toolHandlerContext.toolManager.setToolOrigins).toHaveBeenCalledWith(
+        new Map([['registry-tool-1', ToolOrigin.registry]])
+      );
       expect(toolHandlerContext.toolManager.addTools).toHaveBeenCalledWith(
         expect.objectContaining({
           type: ToolManagerToolType.executable,
@@ -234,6 +240,12 @@ describe('loadSkillToolsAfterRead', () => {
 
       await loadSkillToolsAfterRead(context);
 
+      expect(toolHandlerContext.toolManager.setToolOrigins).toHaveBeenCalledWith(
+        new Map([
+          ['inline-1-converted', ToolOrigin.inline],
+          ['registry-1', ToolOrigin.registry],
+        ])
+      );
       expect(toolHandlerContext.toolManager.addTools).toHaveBeenCalledWith(
         {
           type: ToolManagerToolType.executable,
@@ -257,6 +269,7 @@ describe('loadSkillToolsAfterRead', () => {
 
       await loadSkillToolsAfterRead(context);
 
+      expect(toolHandlerContext.toolManager.setToolOrigins).toHaveBeenCalledWith(new Map());
       expect(toolHandlerContext.toolManager.addTools).toHaveBeenCalledWith(
         {
           type: ToolManagerToolType.executable,

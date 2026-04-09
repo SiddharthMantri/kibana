@@ -9,7 +9,7 @@ import { ToolManager, createToolManager } from './tool_manager';
 import type { StructuredTool } from '@langchain/core/tools';
 import { ToolManagerToolType } from '@kbn/agent-builder-server/runner/tool_manager';
 import type { ExecutableTool } from '@kbn/agent-builder-server';
-import type { BrowserApiToolMetadata } from '@kbn/agent-builder-common';
+import { ToolOrigin, type BrowserApiToolMetadata } from '@kbn/agent-builder-common';
 import { loggerMock } from '@kbn/logging-mocks';
 import { z } from '@kbn/zod/v4';
 
@@ -636,6 +636,28 @@ describe('ToolManager', () => {
       const dynamicIds = manager.getDynamicToolIds();
       // Should only have capacity number of tools
       expect(dynamicIds.length).toBeLessThanOrEqual(capacity + 2);
+    });
+  });
+
+  describe('tool origin metadata', () => {
+    it('stores and retrieves origin entries by internal tool id', () => {
+      toolManager.setToolOrigins(
+        new Map([
+          ['registry.tool', ToolOrigin.registry],
+          ['inline.tool', ToolOrigin.inline],
+        ])
+      );
+
+      expect(toolManager.getToolOrigin('registry.tool')).toBe(ToolOrigin.registry);
+      expect(toolManager.getToolOrigin('inline.tool')).toBe(ToolOrigin.inline);
+      expect(toolManager.getToolOrigin('missing.tool')).toBeUndefined();
+    });
+
+    it('overwrites existing entries when a newer origin is provided', () => {
+      toolManager.setToolOrigins(new Map([['tool.id', ToolOrigin.inline]]));
+      toolManager.setToolOrigins(new Map([['tool.id', ToolOrigin.registry]]));
+
+      expect(toolManager.getToolOrigin('tool.id')).toBe(ToolOrigin.registry);
     });
   });
 

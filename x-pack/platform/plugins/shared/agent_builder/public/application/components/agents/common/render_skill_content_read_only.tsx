@@ -39,7 +39,7 @@ export const RenderSkillContentReadOnly: React.FC<RenderSkillContentReadOnlyProp
   const [showRaw, setShowRaw] = useState(false);
 
   return (
-    <EuiFlexItem borderRadius="m" paddingSize="m">
+    <EuiPanel borderRadius="m" hasBorder paddingSize="m">
       <EuiFlexGroup direction="column" gutterSize="m">
         <EuiFlexItem grow={false}>
           <EuiFlexGroup justifyContent="flexEnd" responsive={false} gutterSize="none">
@@ -65,6 +65,6 @@ export const RenderSkillContentReadOnly: React.FC<RenderSkillContentReadOnlyProp
           )}
         </EuiFlexItem>
       </EuiFlexGroup>
-    </EuiFlexItem>
+    </EuiPanel>
   );
 };
