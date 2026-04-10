@@ -21,7 +21,7 @@ import {
 import { workflowTools } from '../../../common/agent_builder/constants';
 import { parseYamlToJSONWithoutValidation } from '../../../common/lib/yaml';
 import type { WorkflowsManagementApi } from '../../api/workflows_management_api';
-import type { AgentBuilderPluginSetupContract } from '../../types';
+import type { AgentBuilderPluginSetup } from '../../types';
 
 const extractStepTypes = (yaml: string): string[] => {
   const parsed = parseYamlToJSONWithoutValidation(yaml);
@@ -84,7 +84,7 @@ const lookupStepDefinitions = async (
 };
 
 export function registerValidateWorkflowTool(
-  agentBuilder: AgentBuilderPluginSetupContract,
+  agentBuilder: AgentBuilderPluginSetup,
   api: WorkflowsManagementApi
 ): void {
   agentBuilder.tools.register({

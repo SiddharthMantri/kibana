@@ -47,7 +47,7 @@ import {
   type TriggerEventsDataStreamClient,
 } from './trigger_events_log';
 import type {
-  AgentBuilderPluginSetupContract,
+  AgentBuilderPluginSetup,
   WorkflowsRequestHandlerContext,
   WorkflowsServerPluginSetup,
   WorkflowsServerPluginSetupDeps,
@@ -265,7 +265,7 @@ export class WorkflowsPlugin
     aiTelemetryClient: WorkflowsAiTelemetryClient
   ): void {
     void core.plugins
-      .onSetup<{ agentBuilder: AgentBuilderPluginSetupContract }>('agentBuilder')
+      .onSetup<{ agentBuilder: AgentBuilderPluginSetup }>('agentBuilder')
       .then(({ agentBuilder }) => {
         if (agentBuilder.found) {
           this.logger.debug(

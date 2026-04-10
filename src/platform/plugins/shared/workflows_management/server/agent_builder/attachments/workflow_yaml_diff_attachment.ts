@@ -10,7 +10,7 @@
 import { diffLines } from 'diff';
 import { z } from '@kbn/zod/v4';
 import { WORKFLOW_YAML_DIFF_ATTACHMENT_TYPE } from '../../../common/agent_builder/constants';
-import type { AgentBuilderPluginSetupContract } from '../../types';
+import type { AgentBuilderPluginSetup } from '../../types';
 
 const workflowYamlDiffStatusSchema = z.enum(['pending', 'accepted', 'declined']);
 
@@ -81,7 +81,7 @@ If the proposal is pending, user can accept or decline it from the workflow YAML
 };
 
 export function registerWorkflowYamlDiffAttachment(
-  agentBuilder: AgentBuilderPluginSetupContract
+  agentBuilder: AgentBuilderPluginSetup
 ): void {
   agentBuilder.attachments.registerType(
     workflowYamlDiffAttachmentType as Parameters<typeof agentBuilder.attachments.registerType>[0]

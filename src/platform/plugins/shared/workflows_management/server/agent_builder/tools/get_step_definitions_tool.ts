@@ -27,7 +27,7 @@ import {
   getCachedAllConnectorsMap,
 } from '../../../common/schema';
 import type { WorkflowsManagementApi } from '../../api/workflows_management_api';
-import type { AgentBuilderPluginSetupContract } from '../../types';
+import type { AgentBuilderPluginSetup } from '../../types';
 
 interface StepDefinitionForAgent {
   id: string;
@@ -134,7 +134,7 @@ function matchesSearch(search: string, ...fields: Array<string | undefined | nul
 }
 
 export function registerGetStepDefinitionsTool(
-  agentBuilder: AgentBuilderPluginSetupContract,
+  agentBuilder: AgentBuilderPluginSetup,
   api: WorkflowsManagementApi
 ): void {
   agentBuilder.tools.register({

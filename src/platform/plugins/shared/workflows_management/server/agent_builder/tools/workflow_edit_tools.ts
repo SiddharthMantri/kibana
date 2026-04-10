@@ -29,7 +29,7 @@ import {
 import { parseYamlToJSONWithoutValidation } from '../../../common/lib/yaml';
 import type { WorkflowsManagementApi } from '../../api/workflows_management_api';
 import type { WorkflowsAiTelemetryClient } from '../../telemetry/workflows_ai_telemetry_client';
-import type { AgentBuilderPluginSetupContract } from '../../types';
+import type { AgentBuilderPluginSetup } from '../../types';
 
 const workflowEditAvailability = {
   handler: async ({ uiSettings }: { uiSettings: { get: <T>(id: string) => Promise<T> } }) => {
@@ -258,7 +258,7 @@ const handleEditResult = async (
 };
 
 export function registerWorkflowEditTools(
-  agentBuilder: AgentBuilderPluginSetupContract,
+  agentBuilder: AgentBuilderPluginSetup,
   api: WorkflowsManagementApi,
   aiTelemetryClient: WorkflowsAiTelemetryClient
 ): void {

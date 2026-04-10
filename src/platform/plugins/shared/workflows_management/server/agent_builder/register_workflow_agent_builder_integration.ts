@@ -20,10 +20,10 @@ import { registerValidateWorkflowTool } from './tools/validate_workflow_tool';
 import { registerWorkflowEditTools } from './tools/workflow_edit_tools';
 import type { WorkflowsManagementApi } from '../api/workflows_management_api';
 import type { WorkflowsAiTelemetryClient } from '../telemetry/workflows_ai_telemetry_client';
-import type { AgentBuilderPluginSetupContract } from '../types';
+import type { AgentBuilderPluginSetup } from '../types';
 
 interface RegisterWorkflowAgentBuilderIntegrationParams {
-  agentBuilder: AgentBuilderPluginSetupContract;
+  agentBuilder: AgentBuilderPluginSetup;
   logger: Logger;
   api: WorkflowsManagementApi;
   aiTelemetryClient: WorkflowsAiTelemetryClient;

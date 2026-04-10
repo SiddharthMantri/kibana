@@ -8,6 +8,7 @@
  */
 
 import { filter, first, Subject, type Subscription } from 'rxjs';
+import type { AgentBuilderPluginStart } from '@kbn/agent-builder-browser';
 import {
   type AppDeepLinkLocations,
   type AppMountParameters,
@@ -24,7 +25,6 @@ import { WORKFLOWS_UI_SETTING_ID } from '@kbn/workflows/common/constants';
 import { TelemetryService } from './common/lib/telemetry/telemetry_service';
 import { triggerSchemas } from './trigger_schemas';
 import type {
-  AgentBuilderPluginStartContract,
   WorkflowsPublicPluginSetup,
   WorkflowsPublicPluginSetupDependencies,
   WorkflowsPublicPluginStart,
@@ -48,7 +48,7 @@ export class WorkflowsPlugin
 {
   private appUpdater$: Subject<AppUpdater>;
   private telemetryService: TelemetryService;
-  private agentBuilderPromise: Promise<AgentBuilderPluginStartContract | undefined> | undefined;
+  private agentBuilderPromise: Promise<AgentBuilderPluginStart | undefined> | undefined;
   private settingsSubscription?: Subscription;
 
   constructor() {
@@ -166,7 +166,7 @@ export class WorkflowsPlugin
       const aiIntegrationModule = import('./features/ai_integration');
 
       this.agentBuilderPromise = core.plugins
-        .onStart<{ agentBuilder: AgentBuilderPluginStartContract }>('agentBuilder')
+        .onStart<{ agentBuilder: AgentBuilderPluginStart }>('agentBuilder')
         .then(async ({ agentBuilder }) => {
           if (agentBuilder.found) {
             const [coreStart] = await core.getStartServices();
