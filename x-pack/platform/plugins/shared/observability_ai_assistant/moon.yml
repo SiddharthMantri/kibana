@@ -67,7 +67,7 @@ dependsOn:
   - '@kbn/spaces-utils'
   - '@kbn/usage-collection-plugin'
   - '@kbn/ai-assistant-management-plugin'
-  - '@kbn/agent-builder-plugin'
+  - '@kbn/agent-builder-browser'
   - '@kbn/zod'
   - '@kbn/search-inference-endpoints'
   - '@kbn/shared-ux-ai-components'

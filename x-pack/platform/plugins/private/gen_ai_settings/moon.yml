@@ -53,7 +53,6 @@ dependsOn:
   - '@kbn/scout'
   - '@kbn/workflows'
   - '@kbn/agent-builder-browser'
-  - '@kbn/agent-builder-plugin'
   - '@kbn/zod'
   - '@kbn/shared-ux-ai-components'
 tags:
