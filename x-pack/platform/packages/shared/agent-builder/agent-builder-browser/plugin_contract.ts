@@ -5,14 +5,14 @@
  * 2.0.
  */
 
-import type { BrowserApiToolDefinition } from './tools/browser_api_tool';
 import type { AttachmentInput, UpdateOriginResponse } from '@kbn/agent-builder-common/attachments';
+import type { BrowserApiToolDefinition } from './tools/browser_api_tool';
 import type {
   AgentsServiceStartContract,
   AttachmentServiceStartContract,
   EventsServiceStartContract,
   ToolServiceStartContract,
-} from './index';
+} from '.';
 
 /**
  * Props for the embeddable conversation component.

@@ -96,7 +96,13 @@ export {
   applyAfterToolCallResult,
 } from './hooks/apply_result';
 export { chatSystemIndex, chatSystemIndexPrefix } from './indices';
-export type { BuiltInPluginDefinition, PluginCreateRequest, PluginUpdateRequest, PersistedPluginManifestMetadata, PluginRegistry } from './plugins';
+export type {
+  BuiltInPluginDefinition,
+  PluginCreateRequest,
+  PluginUpdateRequest,
+  PersistedPluginManifestMetadata,
+  PluginRegistry,
+} from './plugins';
 export type {
   SmlChunk,
   SmlData,
@@ -120,7 +126,11 @@ export {
   type FindExecutionsOptions,
   type AgentExecutionService,
 } from './execution';
-export type { InternalAgentDefinition, InternalAgentDefinitionAvailabilityHandler, AgentRegistry } from './agents';
+export type {
+  InternalAgentDefinition,
+  InternalAgentDefinitionAvailabilityHandler,
+  AgentRegistry,
+} from './agents';
 export type { SkillRegistry } from './skills';
 export type {
   AgentBuilderPluginSetup,

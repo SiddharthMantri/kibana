@@ -89,10 +89,7 @@ export interface AgentExecutionService {
   executeAgent(params: ExecuteAgentParams): Promise<ExecuteAgentResult>;
   getExecution(executionId: string): Promise<AgentExecution | undefined>;
   abortExecution(executionId: string): Promise<void>;
-  followExecution(
-    executionId: string,
-    options?: { since?: number }
-  ): Observable<ChatEvent>;
+  followExecution(executionId: string, options?: { since?: number }): Observable<ChatEvent>;
   findExecutions(
     request: KibanaRequest,
     options?: FindExecutionsOptions
