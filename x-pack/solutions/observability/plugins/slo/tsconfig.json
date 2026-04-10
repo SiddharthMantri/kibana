@@ -123,7 +123,6 @@
     "@kbn/content-management-utils",
     "@kbn/observability-agent-builder-plugin",
     "@kbn/agent-builder-browser",
-    "@kbn/agent-builder-plugin",
     "@kbn/core-analytics-browser"
   ]
 }

@@ -134,7 +134,6 @@
     "@kbn/inspector-plugin",
     "@kbn/css-utils",
     "@kbn/agent-builder-browser",
-    "@kbn/agent-builder-plugin",
     "@kbn/controls-constants",
     "@kbn/es-query-constants"
   ],

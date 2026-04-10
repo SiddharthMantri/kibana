@@ -46,7 +46,6 @@
     "@kbn/data-views-plugin",
     "@kbn/cloud",
     "@kbn/agent-builder-browser",
-    "@kbn/agent-builder-plugin",
     "@kbn/scout-search",
   ],
   "exclude": [
