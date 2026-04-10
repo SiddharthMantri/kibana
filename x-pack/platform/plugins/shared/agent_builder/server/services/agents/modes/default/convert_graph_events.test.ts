@@ -91,8 +91,12 @@ describe('convertGraphEvents', () => {
 
     const events = await lastValueFrom(converted$);
 
-    // Tool origin is propagated so the client can render non-registry tools as plain text.
+    // Reasoning is emitted before the tool call because convertGraphEvents
+    // processes the action message text first, then iterates over tool_calls.
     expect(events).toEqual([
+      expect.objectContaining({
+        type: 'reasoning',
+      }),
       expect.objectContaining({
         type: 'tool_call',
         data: expect.objectContaining({
@@ -100,9 +104,6 @@ describe('convertGraphEvents', () => {
           tool_id: 'inline.dynamic',
           tool_origin: ToolOrigin.inline,
         }),
-      }),
-      expect.objectContaining({
-        type: 'reasoning',
       }),
     ]);
   });
