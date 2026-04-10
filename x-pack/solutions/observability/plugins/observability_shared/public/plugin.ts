@@ -13,7 +13,7 @@ import type {
   SharePluginStart,
 } from '@kbn/share-plugin/public';
 import type { SpacesPluginStart } from '@kbn/spaces-plugin/public';
-import type { AgentBuilderPluginStart } from '@kbn/agent-builder-plugin/public';
+import type { AgentBuilderPluginStart } from '@kbn/agent-builder-browser';
 import { BehaviorSubject, combineLatest, type Subscription } from 'rxjs';
 import { DEFAULT_APP_CATEGORIES } from '@kbn/core-application-common';
 import { createLazyObservabilityPageTemplate } from './components/page_template';

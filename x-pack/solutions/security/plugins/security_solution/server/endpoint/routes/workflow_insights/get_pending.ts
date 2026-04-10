@@ -6,7 +6,7 @@
  */
 
 import type { IKibanaResponse, RequestHandler } from '@kbn/core/server';
-import { ExecutionStatus } from '@kbn/agent-builder-plugin/server';
+import { ExecutionStatus } from '@kbn/agent-builder-server';
 import type { GetPendingInsightsRequestQueryParams } from '../../../../common/api/endpoint/workflow_insights/workflow_insights';
 import { GetPendingInsightsRequestSchema } from '../../../../common/api/endpoint/workflow_insights/workflow_insights';
 import { errorHandler } from '../error_handler';

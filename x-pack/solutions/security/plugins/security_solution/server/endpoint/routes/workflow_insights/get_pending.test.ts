@@ -6,7 +6,7 @@
  */
 
 import { httpServerMock, httpServiceMock } from '@kbn/core/server/mocks';
-import { ExecutionStatus } from '@kbn/agent-builder-plugin/server';
+import { ExecutionStatus } from '@kbn/agent-builder-server';
 import { createMockEndpointAppContext, getRegisteredVersionedRouteMock } from '../../mocks';
 import { registerGetPendingRoute } from './get_pending';
 import { WORKFLOW_INSIGHTS_PENDING_ROUTE } from '../../../../common/endpoint/constants';

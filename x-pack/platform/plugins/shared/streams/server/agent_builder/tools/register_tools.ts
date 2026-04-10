@@ -6,7 +6,7 @@
  */
 
 import type { Logger } from '@kbn/core/server';
-import type { AgentBuilderPluginSetup } from '@kbn/agent-builder-plugin/server/types';
+import type { AgentBuilderPluginSetup } from '@kbn/agent-builder-server';
 import type { StreamsServer } from '../../types';
 import type { GetScopedClients } from '../../routes/types';
 import { createListStreamsTool } from './list_streams';

@@ -8,7 +8,7 @@
 import { filter, type Subscription } from 'rxjs';
 import { isRoundCompleteEvent } from '@kbn/agent-builder-common';
 import { ATTACHMENT_REF_OPERATION, getLatestVersion } from '@kbn/agent-builder-common/attachments';
-import type { AgentBuilderPluginStart } from '@kbn/agent-builder-plugin/public';
+import type { AgentBuilderPluginStart } from '@kbn/agent-builder-browser';
 import { attachmentDataToDashboardState, isDashboardAttachment } from '@kbn/dashboard-agent-common';
 import type { DashboardApi } from '@kbn/dashboard-plugin/public';
 

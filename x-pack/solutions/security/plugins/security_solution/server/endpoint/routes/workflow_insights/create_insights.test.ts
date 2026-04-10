@@ -7,7 +7,7 @@
 
 import { httpServerMock, httpServiceMock } from '@kbn/core/server/mocks';
 import { EMPTY } from 'rxjs';
-import { ExecutionStatus } from '@kbn/agent-builder-plugin/server';
+import { ExecutionStatus } from '@kbn/agent-builder-server';
 import { createMockEndpointAppContext, getRegisteredVersionedRouteMock } from '../../mocks';
 import { registerCreateInsightsRoute } from './create_insights';
 import { WORKFLOW_INSIGHTS_ROUTE } from '../../../../common/endpoint/constants';

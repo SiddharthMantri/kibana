@@ -18,7 +18,7 @@ import type {
   DashboardStart,
 } from '@kbn/dashboard-plugin/public';
 import type { UnifiedSearchPublicPluginStart } from '@kbn/unified-search-plugin/public';
-import type { AgentBuilderPluginStart } from '@kbn/agent-builder-plugin/public';
+import type { AgentBuilderPluginStart } from '@kbn/agent-builder-browser';
 import { DashboardCanvasContent } from './canvas_integration/dashboard_canvas_content';
 import { createDashboardAppIntegration$ } from './dashboard_integration/dashboard_app_integration';
 import { previewAttachmentInDashboard } from './dashboard_integration/preview_attachment';

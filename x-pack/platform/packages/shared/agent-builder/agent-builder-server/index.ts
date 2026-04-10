@@ -96,5 +96,50 @@ export {
   applyAfterToolCallResult,
 } from './hooks/apply_result';
 export { chatSystemIndex, chatSystemIndexPrefix } from './indices';
-export type { BuiltInPluginDefinition } from './plugins';
+export type { BuiltInPluginDefinition, PluginCreateRequest, PluginUpdateRequest, PersistedPluginManifestMetadata, PluginRegistry } from './plugins';
+export type {
+  SmlChunk,
+  SmlData,
+  SmlContext,
+  SmlToAttachmentContext,
+  SmlListItem,
+  SmlDocument,
+  SmlSearchResult,
+  SmlTypeDefinition,
+  SmlIndexAction,
+  SmlIndexAttachmentParams,
+} from './sml';
+export {
+  ExecutionStatus,
+  type AgentExecutionParams,
+  type SerializedExecutionError,
+  type AgentExecution,
+  type ExecuteAgentParams,
+  type ExecuteAgentResult,
+  type FindExecutionsFilter,
+  type FindExecutionsOptions,
+  type AgentExecutionService,
+} from './execution';
+export type { InternalAgentDefinition, InternalAgentDefinitionAvailabilityHandler, AgentRegistry } from './agents';
+export type { SkillRegistry } from './skills';
+export type {
+  AgentBuilderPluginSetup,
+  AgentBuilderPluginStart,
+  TopSnippetsConfig,
+  ToolsSetup,
+  ToolsStart,
+  AttachmentsSetup,
+  SkillsSetup,
+  SkillsStart,
+  AgentsSetup,
+  AgentsStart,
+  ExecutionStart,
+  SmlSetup,
+  SmlStart,
+  PluginsSetup,
+  PluginsStart,
+  RuntimeStart,
+  ReadOnlyConversationClient,
+  ConversationsStart,
+} from './plugin_contract';
 export { describeZodSchema, formatSchemaForLlm } from './tools';

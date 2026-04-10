@@ -7,7 +7,7 @@
 
 import { BehaviorSubject, Subject } from 'rxjs';
 import type { ChatEvent } from '@kbn/agent-builder-common';
-import type { AgentBuilderPluginStart } from '@kbn/agent-builder-plugin/public';
+import type { AgentBuilderPluginStart } from '@kbn/agent-builder-browser';
 import type { DashboardAttachment } from '@kbn/dashboard-agent-common/types';
 import { DASHBOARD_ATTACHMENT_TYPE } from '@kbn/dashboard-agent-common';
 import type { DashboardApi, DashboardSaveEvent } from '@kbn/dashboard-plugin/public';

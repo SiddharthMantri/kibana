@@ -89,3 +89,4 @@ export {
   isCompactionCompletedEvent,
 } from './events';
 export type { RoundState } from './round_state';
+export type { ConversationListOptions } from './conversation_list';

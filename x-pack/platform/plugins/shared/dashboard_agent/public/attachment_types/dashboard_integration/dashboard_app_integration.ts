@@ -6,7 +6,7 @@
  */
 
 import { Observable } from 'rxjs';
-import type { AgentBuilderPluginStart } from '@kbn/agent-builder-plugin/public';
+import type { AgentBuilderPluginStart } from '@kbn/agent-builder-browser';
 import type { DashboardAttachment } from '@kbn/dashboard-agent-common/types';
 import type { DashboardApi } from '@kbn/dashboard-plugin/public';
 import { createAgentLiveUpdatesSubscription } from './agent_live_updates_subscription';

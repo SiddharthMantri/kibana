@@ -120,6 +120,10 @@ export {
   type AgentAnswerStepConfiguration,
   type AgentResearchStepConfiguration,
   agentIdRegexp,
+  type AgentListOptions,
+  type AgentCreateRequest,
+  type AgentUpdateRequest,
+  type AgentDeleteRequest,
 } from './agents';
 export {
   type RoundInput,
@@ -196,6 +200,7 @@ export {
   type CompactionCompletedEventData,
   isCompactionStartedEvent,
   isCompactionCompletedEvent,
+  type ConversationListOptions,
 } from './chat';
 export {
   type PublicSkillDefinition,

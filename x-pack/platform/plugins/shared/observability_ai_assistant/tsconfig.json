@@ -63,6 +63,7 @@
     "@kbn/spaces-utils",
     "@kbn/usage-collection-plugin",
     "@kbn/ai-assistant-management-plugin",
+    "@kbn/agent-builder-browser",
     "@kbn/agent-builder-plugin",
     "@kbn/zod",
     "@kbn/search-inference-endpoints",

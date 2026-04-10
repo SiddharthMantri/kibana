@@ -10,7 +10,7 @@ import { coreMock } from '@kbn/core/public/mocks';
 import { sharePluginMock } from '@kbn/share-plugin/public/mocks';
 import { DEFAULT_APP_CATEGORIES } from '@kbn/core-application-common';
 import type { PublicAppInfo } from '@kbn/core-application-browser';
-import type { AgentBuilderPluginStart } from '@kbn/agent-builder-plugin/public';
+import type { AgentBuilderPluginStart } from '@kbn/agent-builder-browser';
 import {
   ObservabilitySharedPlugin,
   OBSERVABILITY_AGENT_ID,

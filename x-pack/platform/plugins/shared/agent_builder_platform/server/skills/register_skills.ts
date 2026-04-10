@@ -5,7 +5,7 @@
  * 2.0.
  */
 
-import type { AgentBuilderPluginSetup } from '@kbn/agent-builder-plugin/server';
+import type { AgentBuilderPluginSetup } from '@kbn/agent-builder-server';
 import { dataExplorationSkill } from './data_exploration_skill';
 import { graphCreationSkill } from './graph_creation_skill';
 import { visualizationCreationSkill } from './visualization_creation_skill';
