@@ -10,17 +10,21 @@ import { ToolOrigin, ToolType } from '@kbn/agent-builder-common';
 import type { ExecutableTool } from '@kbn/agent-builder-server';
 import { selectTools } from './select_tools';
 
-jest.mock('../../../tools/builtin/attachments', () => ({
-  createAttachmentTools: jest.fn(() => [
-    {
-      id: 'attachments.read',
-      description: 'attachment read',
-      tags: [],
-      schema: z.object({}),
-      handler: jest.fn(),
-    },
-  ]),
-}));
+jest.mock('../../../tools/builtin/attachments', () => {
+  // Keep mock dependencies local to the factory to satisfy Jest hoisting rules.
+  const { z: mockZ } = jest.requireActual('@kbn/zod/v4');
+  return {
+    createAttachmentTools: jest.fn(() => [
+      {
+        id: 'attachments.read',
+        description: 'attachment read',
+        tags: [],
+        schema: mockZ.object({}),
+        handler: jest.fn(),
+      },
+    ]),
+  };
+});
 
 jest.mock('../../../runner/store', () => ({
   getStoreTools: jest.fn(() => []),
