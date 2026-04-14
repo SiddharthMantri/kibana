@@ -27,3 +27,5 @@ export type {
   ConversationSidebarRef,
   OpenConversationSidebarReturn,
 } from './plugin_contract';
+export { AgentBuilderAnnouncementModal } from './announcement_modal/agent_builder_announcement_modal';
+export type { AgentBuilderAnnouncementModalProps } from './announcement_modal/agent_builder_announcement_modal';
