@@ -6,7 +6,7 @@
  */
 
 import type { Observable } from 'rxjs';
-import { defer } from 'rxjs';
+import { defer, tap, finalize } from 'rxjs';
 import type { HttpSetup } from '@kbn/core-http-browser';
 import { httpResponseIntoObservable } from '@kbn/sse-utils-client';
 import type { ChatEvent, AgentCapabilities } from '@kbn/agent-builder-common';
@@ -21,6 +21,7 @@ import type { ChatRequestBodyPayload } from '../../../common/http_api/chat';
 import { unwrapAgentBuilderErrors } from '../utils/errors';
 import type { EventsService } from '../events';
 import { propagateEvents } from './propagate_events';
+import { pendingExecutions } from '../background_execution';
 
 interface BaseConverseParams {
   signal?: AbortSignal;
@@ -29,6 +30,11 @@ interface BaseConverseParams {
   conversationId?: string;
   browserApiTools?: BrowserApiToolMetadata[];
   capabilities?: AgentCapabilities;
+  /**
+   * When true, the server keeps the execution running even if this client
+   * disconnects (tab close, logout, network drop).
+   */
+  continueOnDisconnect?: boolean;
 }
 
 export type ChatParams = BaseConverseParams & {
@@ -63,6 +69,7 @@ export class ChatService {
       capabilities: params.capabilities ?? getKibanaDefaultAgentCapabilities(),
       attachments: params.attachments,
       browser_api_tools: params.browserApiTools ?? [],
+      continue_on_disconnect: params.continueOnDisconnect,
     });
   }
 
@@ -77,6 +84,7 @@ export class ChatService {
       capabilities: params.capabilities ?? getKibanaDefaultAgentCapabilities(),
       prompts: params.prompts,
       browser_api_tools: params.browserApiTools ?? [],
+      continue_on_disconnect: params.continueOnDisconnect,
     });
   }
 
@@ -88,10 +96,14 @@ export class ChatService {
       capabilities: params.capabilities ?? getKibanaDefaultAgentCapabilities(),
       browser_api_tools: params.browserApiTools ?? [],
       action: 'regenerate',
+      continue_on_disconnect: params.continueOnDisconnect,
     });
   }
 
   private converse(signal: AbortSignal | undefined, payload: ChatRequestBodyPayload) {
+    const isBgRun = Boolean(payload.continue_on_disconnect);
+    let capturedExecId: string | undefined;
+
     return defer(() => {
       return this.http.post(`${publicApiPath}/converse/async`, {
         signal,
@@ -100,10 +112,31 @@ export class ChatService {
         body: JSON.stringify(payload),
       });
     }).pipe(
+      // When running in background mode, capture the execution ID from the
+      // response header and store it in localStorage so the return-notifier
+      // can poll for completion even if this tab closes.
+      tap((httpResponse: any) => {
+        if (isBgRun) {
+          const execId =
+            httpResponse?.response?.headers?.get?.('x-execution-id') ??
+            httpResponse?.response?.headers?.['x-execution-id'];
+          if (execId) {
+            capturedExecId = execId;
+            pendingExecutions.add(execId);
+          }
+        }
+      }),
       // @ts-expect-error SseEvent mixin issue
       httpResponseIntoObservable<ChatEvent>(),
       unwrapAgentBuilderErrors(),
-      propagateEvents({ eventsService: this.events })
+      propagateEvents({ eventsService: this.events }),
+      // If the stream completes normally while the tab is still open, remove
+      // from pending storage so the return-notifier does not double-toast.
+      finalize(() => {
+        if (capturedExecId) {
+          pendingExecutions.remove(capturedExecId);
+        }
+      })
     );
   }
 }

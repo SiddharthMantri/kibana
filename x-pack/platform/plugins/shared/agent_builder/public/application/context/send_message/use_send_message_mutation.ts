@@ -33,6 +33,7 @@ import { BrowserToolExecutor } from '../../services/browser_tool_executor';
 
 interface UseSendMessageMutationProps {
   connectorId?: string;
+  continueOnDisconnect?: boolean;
 }
 
 interface SendMessageParams {
@@ -98,7 +99,10 @@ const withScreenContextAttachment = async ({
   ];
 };
 
-export const useSendMessageMutation = ({ connectorId }: UseSendMessageMutationProps = {}) => {
+export const useSendMessageMutation = ({
+  connectorId,
+  continueOnDisconnect,
+}: UseSendMessageMutationProps = {}) => {
   const { chatService } = useAgentBuilderServices();
   const { services } = useKibana();
   const { conversationActions, attachments, resetAttachments, browserApiTools } =
@@ -159,6 +163,7 @@ export const useSendMessageMutation = ({ connectorId }: UseSendMessageMutationPr
         agentId,
         connectorId,
         browserApiTools: browserApiToolsMetadata,
+        continueOnDisconnect,
       });
 
       return subscribeToChatEvents(events$);
@@ -182,6 +187,7 @@ export const useSendMessageMutation = ({ connectorId }: UseSendMessageMutationPr
       connectorId,
       attachments: [...(attachments || []), ...contextAttachments],
       browserApiTools: browserApiToolsMetadata,
+      continueOnDisconnect,
     });
 
     return subscribeToChatEvents(events$);

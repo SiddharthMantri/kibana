@@ -32,6 +32,7 @@ export interface ChatRequestBodyPayload {
   action?: ConversationAction;
   /** Force a specific execution mode. When omitted, the server auto-detects. */
   _execution_mode?: 'local' | 'task_manager';
+  continue_on_disconnect?: boolean;
 }
 
 export type ChatResponse = Omit<

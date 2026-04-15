@@ -111,6 +111,7 @@ export interface ExecuteAgentParams {
   executionId?: string;
   /** Optional abort signal. When aborted, the execution will be cancelled. */
   abortSignal?: AbortSignal;
+  continueOnDisconnect?: boolean;
   /**
    * Controls whether execution runs on a Task Manager node.
    * - `true`: schedule on TM.

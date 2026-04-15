@@ -5,7 +5,7 @@
  * 2.0.
  */
 
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useState, useCallback } from 'react';
 import type { ConversationRoundStep } from '@kbn/agent-builder-common';
 import { useSendMessageMutation } from './use_send_message_mutation';
 import { useResumeRoundMutation } from './use_resume_round_mutation';
@@ -32,12 +32,21 @@ interface SendMessageState {
     selectConnector: (connectorId: string) => void;
     defaultConnectorId?: string;
   };
+  /** When true, the server keeps the execution alive after client disconnect. */
+  continueOnDisconnect: boolean;
+  /** Toggle the continue-on-disconnect preference. */
+  setContinueOnDisconnect: (enabled: boolean) => void;
 }
 
 const SendMessageContext = createContext<SendMessageState | null>(null);
 
 export const SendMessageProvider = ({ children }: { children: React.ReactNode }) => {
   const connectorSelection = useConnectorSelection();
+  const [continueOnDisconnect, setContinueOnDisconnect] = useState(false);
+
+  const toggleContinueOnDisconnect = useCallback((enabled: boolean) => {
+    setContinueOnDisconnect(enabled);
+  }, []);
 
   const {
     sendMessage,
@@ -53,7 +62,10 @@ export const SendMessageProvider = ({ children }: { children: React.ReactNode })
     removeError,
     regenerate,
     isRegenerating,
-  } = useSendMessageMutation({ connectorId: connectorSelection.selectedConnector });
+  } = useSendMessageMutation({
+    connectorId: connectorSelection.selectedConnector,
+    continueOnDisconnect,
+  });
 
   const {
     resumeRound,
@@ -89,6 +101,8 @@ export const SendMessageProvider = ({ children }: { children: React.ReactNode })
           selectConnector: connectorSelection.selectConnector,
           defaultConnectorId: connectorSelection.defaultConnectorId,
         },
+        continueOnDisconnect,
+        setContinueOnDisconnect: toggleContinueOnDisconnect,
       }}
     >
       {children}

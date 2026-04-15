@@ -88,6 +88,7 @@ class AgentExecutionServiceImpl implements AgentExecutionService {
     executionId: providedExecutionId,
     useTaskManager,
     abortSignal,
+    continueOnDisconnect,
     metadata,
   }: ExecuteAgentParams): Promise<ExecuteAgentResult> {
     const executionId = providedExecutionId ?? uuidv4();
@@ -120,7 +121,7 @@ class AgentExecutionServiceImpl implements AgentExecutionService {
     });
 
     // Wire up external abort signal to execution abort
-    if (abortSignal) {
+    if (abortSignal && !continueOnDisconnect) {
       const onAbort = () => {
         this.abortExecution(executionId).catch(noop);
       };

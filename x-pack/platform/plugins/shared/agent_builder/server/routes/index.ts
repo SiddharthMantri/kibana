@@ -10,6 +10,7 @@ import { registerToolsRoutes } from './tools';
 import { registerInternalToolsRoutes } from './internal/tools';
 import { registerInternalSkillsRoutes } from './internal/skills';
 import { registerInternalConversationRoutes } from './internal/conversations';
+import { registerInternalExecutionRoutes } from './internal/executions';
 import { registerConsumptionRoutes } from './consumption';
 import { registerInternalUserPromptsRoutes } from './internal/user_prompts';
 import { registerInternalSmlRoutes } from './internal/sml';
@@ -27,6 +28,7 @@ export const registerRoutes = (dependencies: RouteDependencies) => {
   registerInternalToolsRoutes(dependencies);
   registerInternalSkillsRoutes(dependencies);
   registerInternalConversationRoutes(dependencies);
+  registerInternalExecutionRoutes(dependencies);
   registerConsumptionRoutes(dependencies);
   registerInternalUserPromptsRoutes(dependencies);
   registerInternalSmlRoutes(dependencies);

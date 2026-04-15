@@ -10,6 +10,7 @@ import { css } from '@emotion/react';
 import React from 'react';
 import { ConversationActionButton } from './conversation_action_button';
 import { ConnectorSelector } from './connector_selector';
+import { ContinueOnDisconnectToggle } from './continue_on_disconnect_toggle';
 
 const connectorFlexItemStyles = css`
   flex-shrink: 1;
@@ -38,7 +39,14 @@ export const InputActions: React.FC<InputActionsProps> = ({
       justifyContent="spaceBetween"
     >
       <EuiFlexItem grow={false} css={connectorFlexItemStyles}>
-        <ConnectorSelector />
+        <EuiFlexGroup gutterSize="s" responsive={false} alignItems="center">
+          <EuiFlexItem grow={false}>
+            <ConnectorSelector />
+          </EuiFlexItem>
+          <EuiFlexItem grow={false}>
+            <ContinueOnDisconnectToggle />
+          </EuiFlexItem>
+        </EuiFlexGroup>
       </EuiFlexItem>
       <EuiFlexItem grow={false}>
         <EuiFlexGroup gutterSize="m" responsive={false} alignItems="center">

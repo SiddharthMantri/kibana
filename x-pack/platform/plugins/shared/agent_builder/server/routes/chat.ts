@@ -202,6 +202,15 @@ export function registerChatRoutes({
         },
       })
     ),
+    continue_on_disconnect: schema.maybe(
+      schema.boolean({
+        defaultValue: false,
+        meta: {
+          description:
+            'When true, agent execution continues on the server after the client disconnects. Defaults to false.',
+        },
+      })
+    ),
   });
 
   const validateAction = (payload: ChatRequestBodyPayload) => {
@@ -254,15 +263,17 @@ export function registerChatRoutes({
       configuration_overrides: configurationOverrides,
       action,
       _execution_mode: executionMode,
+      continue_on_disconnect: continueOnDisconnect,
     } = payload;
 
     const useTaskManager =
       executionMode === 'task_manager' ? true : executionMode === 'local' ? false : undefined;
 
-    const { events$ } = await executionService.executeAgent({
+    const { executionId, events$ } = await executionService.executeAgent({
       request,
       abortSignal,
       useTaskManager,
+      continueOnDisconnect: continueOnDisconnect ?? false,
       params: {
         agentId,
         connectorId,
@@ -279,7 +290,7 @@ export function registerChatRoutes({
       },
     });
 
-    return events$;
+    return { executionId, events$ };
   };
 
   router.versioned
@@ -320,11 +331,13 @@ export function registerChatRoutes({
         validateAction(payload);
 
         const abortController = new AbortController();
-        request.events.aborted$.subscribe(() => {
-          abortController.abort();
-        });
+        if (!payload.continue_on_disconnect) {
+          request.events.aborted$.subscribe(() => {
+            abortController.abort();
+          });
+        }
 
-        const chatEvents$ = await executeAgent({
+        const { events$: chatEvents$ } = await executeAgent({
           payload,
           request,
           abortSignal: abortController.signal,
@@ -391,13 +404,14 @@ export function registerChatRoutes({
 
         await validateConfigurationOverrides({ payload, request });
         validateAction(payload);
-
         const abortController = new AbortController();
-        request.events.aborted$.subscribe(() => {
-          abortController.abort();
-        });
+        if (!payload.continue_on_disconnect) {
+          request.events.aborted$.subscribe(() => {
+            abortController.abort();
+          });
+        }
 
-        const chatEvents$ = await executeAgent({
+        const { executionId, events$: chatEvents$ } = await executeAgent({
           payload,
           request,
           abortSignal: abortController.signal,
@@ -418,6 +432,7 @@ export function registerChatRoutes({
             'X-Content-Type-Options': 'nosniff',
             // This disables response buffering on proxy servers
             'X-Accel-Buffering': 'no',
+            'X-Execution-Id': executionId,
           },
           body: observableIntoEventSourceStream(
             chatEvents$ as unknown as Observable<ServerSentEvent>,

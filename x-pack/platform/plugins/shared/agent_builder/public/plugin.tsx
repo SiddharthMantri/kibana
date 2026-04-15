@@ -14,7 +14,7 @@ import {
 } from '@kbn/core/public';
 import type { Logger } from '@kbn/logging';
 import type { AttachmentInput } from '@kbn/agent-builder-common/attachments';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Subject } from 'rxjs';
 import React from 'react';
 import ReactDOM from 'react-dom';
 import type { UsageCollectionSetup } from '@kbn/usage-collection-plugin/public';
@@ -36,6 +36,7 @@ import {
   EventsService,
   type AgentBuilderInternalService,
 } from './services';
+import { BackgroundExecutionNotifier } from './services/background_execution';
 import { createPublicAttachmentContract } from './services/attachments';
 import { createPublicToolContract } from './services/tools';
 import { createPublicAgentsContract } from './services/agents';
@@ -81,6 +82,7 @@ export class AgentBuilderPlugin
     addAttachment: (attachment: AttachmentInput) => void;
   } | null = null;
   private appUpdater$ = new BehaviorSubject<AppUpdater>(() => ({}));
+  private stop$ = new Subject<void>();
 
   constructor(context: PluginInitializerContext<ConfigSchema>) {
     this.logger = context.logger.get();
@@ -286,8 +288,16 @@ export class AgentBuilderPlugin
         // right before the user profile
         order: 1001,
       });
+
+      const bgNotifier = new BackgroundExecutionNotifier(http, core.notifications);
+      bgNotifier.startPolling(15_000, this.stop$.asObservable());
     }
 
     return agentBuilderService;
+  }
+
+  stop() {
+    this.stop$.next();
+    this.stop$.complete();
   }
 }
