@@ -38,11 +38,7 @@ export const InputActions: React.FC<InputActionsProps> = ({
       justifyContent="spaceBetween"
     >
       <EuiFlexItem grow={false} css={connectorFlexItemStyles}>
-        <EuiFlexGroup gutterSize="s" responsive={false} alignItems="center">
-          <EuiFlexItem grow={false}>
-            <ConnectorSelector />
-          </EuiFlexItem>
-        </EuiFlexGroup>
+        <ConnectorSelector />
       </EuiFlexItem>
       <EuiFlexItem grow={false}>
         <EuiFlexGroup gutterSize="m" responsive={false} alignItems="center">
