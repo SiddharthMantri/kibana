@@ -204,10 +204,10 @@ export function registerChatRoutes({
     ),
     continue_on_disconnect: schema.maybe(
       schema.boolean({
-        defaultValue: false,
+        defaultValue: true,
         meta: {
           description:
-            'When true, agent execution continues on the server after the client disconnects. Defaults to false.',
+            'When true, agent execution continues on the server after the client disconnects. Defaults to true.',
         },
       })
     ),
@@ -273,7 +273,7 @@ export function registerChatRoutes({
       request,
       abortSignal,
       useTaskManager,
-      continueOnDisconnect: continueOnDisconnect ?? false,
+      continueOnDisconnect: continueOnDisconnect ?? true,
       params: {
         agentId,
         connectorId,

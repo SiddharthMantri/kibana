@@ -33,14 +33,12 @@ import { BrowserToolExecutor } from '../../services/browser_tool_executor';
 
 interface UseSendMessageMutationProps {
   connectorId?: string;
-  continueOnDisconnect?: boolean;
 }
 
 interface SendMessageParams {
   message?: string;
   action?: ConversationAction;
 }
-
 const SCREEN_CONTEXT_ATTACHMENT_ID = 'screen-context';
 
 const buildScreenContextData = async ({
@@ -99,10 +97,7 @@ const withScreenContextAttachment = async ({
   ];
 };
 
-export const useSendMessageMutation = ({
-  connectorId,
-  continueOnDisconnect,
-}: UseSendMessageMutationProps = {}) => {
+export const useSendMessageMutation = ({ connectorId }: UseSendMessageMutationProps = {}) => {
   const { chatService } = useAgentBuilderServices();
   const { services } = useKibana();
   const { conversationActions, attachments, resetAttachments, browserApiTools } =
@@ -163,7 +158,6 @@ export const useSendMessageMutation = ({
         agentId,
         connectorId,
         browserApiTools: browserApiToolsMetadata,
-        continueOnDisconnect,
       });
 
       return subscribeToChatEvents(events$);
@@ -187,7 +181,6 @@ export const useSendMessageMutation = ({
       connectorId,
       attachments: [...(attachments || []), ...contextAttachments],
       browserApiTools: browserApiToolsMetadata,
-      continueOnDisconnect,
     });
 
     return subscribeToChatEvents(events$);

@@ -32,6 +32,10 @@ export interface ChatRequestBodyPayload {
   action?: ConversationAction;
   /** Force a specific execution mode. When omitted, the server auto-detects. */
   _execution_mode?: 'local' | 'task_manager';
+  /**
+   * Controls whether execution keeps running after client disconnect.
+   * Server-side default is `true`.
+   */
   continue_on_disconnect?: boolean;
 }
 

@@ -16,12 +16,13 @@ import {
 } from '@kbn/agent-builder-common/agents';
 import type { AttachmentInput } from '@kbn/agent-builder-common/attachments';
 import type { BrowserApiToolMetadata } from '@kbn/agent-builder-common';
-import { publicApiPath } from '../../../common/constants';
 import type { ChatRequestBodyPayload } from '../../../common/http_api/chat';
 import { unwrapAgentBuilderErrors } from '../utils/errors';
 import type { EventsService } from '../events';
 import { propagateEvents } from './propagate_events';
 import { pendingExecutions } from '../background_execution';
+
+const converseAsyncPath = '/api/agent_builder/converse/async';
 
 interface BaseConverseParams {
   signal?: AbortSignal;
@@ -30,11 +31,6 @@ interface BaseConverseParams {
   conversationId?: string;
   browserApiTools?: BrowserApiToolMetadata[];
   capabilities?: AgentCapabilities;
-  /**
-   * When true, the server keeps the execution running even if this client
-   * disconnects (tab close, logout, network drop).
-   */
-  continueOnDisconnect?: boolean;
 }
 
 export type ChatParams = BaseConverseParams & {
@@ -69,7 +65,6 @@ export class ChatService {
       capabilities: params.capabilities ?? getKibanaDefaultAgentCapabilities(),
       attachments: params.attachments,
       browser_api_tools: params.browserApiTools ?? [],
-      continue_on_disconnect: params.continueOnDisconnect,
     });
   }
 
@@ -84,7 +79,6 @@ export class ChatService {
       capabilities: params.capabilities ?? getKibanaDefaultAgentCapabilities(),
       prompts: params.prompts,
       browser_api_tools: params.browserApiTools ?? [],
-      continue_on_disconnect: params.continueOnDisconnect,
     });
   }
 
@@ -96,16 +90,17 @@ export class ChatService {
       capabilities: params.capabilities ?? getKibanaDefaultAgentCapabilities(),
       browser_api_tools: params.browserApiTools ?? [],
       action: 'regenerate',
-      continue_on_disconnect: params.continueOnDisconnect,
     });
   }
 
   private converse(signal: AbortSignal | undefined, payload: ChatRequestBodyPayload) {
-    const isBgRun = Boolean(payload.continue_on_disconnect);
+    // We always track returned execution IDs for notification polling; server-side
+    // defaults continue_on_disconnect to true unless explicitly overridden.
+    const isBgRun = payload.continue_on_disconnect !== false;
     let capturedExecId: string | undefined;
 
     return defer(() => {
-      return this.http.post(`${publicApiPath}/converse/async`, {
+      return this.http.post(converseAsyncPath, {
         signal,
         asResponse: true,
         rawResponse: true,
