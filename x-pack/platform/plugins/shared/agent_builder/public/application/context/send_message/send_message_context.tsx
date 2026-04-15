@@ -53,9 +53,7 @@ export const SendMessageProvider = ({ children }: { children: React.ReactNode })
     removeError,
     regenerate,
     isRegenerating,
-  } = useSendMessageMutation({
-    connectorId: connectorSelection.selectedConnector,
-  });
+  } = useSendMessageMutation({ connectorId: connectorSelection.selectedConnector });
 
   const {
     resumeRound,
