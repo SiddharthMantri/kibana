@@ -39,6 +39,7 @@ interface SendMessageParams {
   message?: string;
   action?: ConversationAction;
 }
+
 const SCREEN_CONTEXT_ATTACHMENT_ID = 'screen-context';
 
 const buildScreenContextData = async ({
