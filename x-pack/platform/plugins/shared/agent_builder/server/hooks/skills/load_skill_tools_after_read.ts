@@ -69,7 +69,10 @@ const loadSkillTools = async ({
   }
 
   const inlineTools = (await skill.getInlineTools?.()) ?? [];
-  const inlineExecutableTools = inlineTools.map((tool) => skillsService.convertSkillTool(tool));
+  const inlineExecutableTools = inlineTools.map((tool) => ({
+    ...skillsService.convertSkillTool(tool),
+    origin: ToolOrigin.inline,
+  }));
 
   const registryToolIds = await skill.getRegistryTools();
   if (registryToolIds.length > MAX_SKILL_REGISTRY_TOOLS) {
@@ -79,15 +82,10 @@ const loadSkillTools = async ({
   }
   const registryExecutableTools =
     registryToolIds.length > 0
-      ? await pickTools({ toolProvider, selection: [{ tool_ids: registryToolIds }], request })
+      ? (
+          await pickTools({ toolProvider, selection: [{ tool_ids: registryToolIds }], request })
+        ).map((tool) => ({ ...tool, origin: ToolOrigin.registry }))
       : [];
-
-  toolManager.setToolOrigins(
-    new Map([
-      ...inlineExecutableTools.map((tool) => [tool.id, ToolOrigin.inline] as const),
-      ...registryExecutableTools.map((tool) => [tool.id, ToolOrigin.registry] as const),
-    ])
-  );
 
   await toolManager.addTools(
     {

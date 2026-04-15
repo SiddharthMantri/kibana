@@ -14,6 +14,7 @@ import {
   type ToolIdMapping,
 } from '@kbn/agent-builder-genai-utils/langchain';
 import type { BrowserApiToolMetadata, ChatAgentEvent, RoundInput } from '@kbn/agent-builder-common';
+import { ToolOrigin } from '@kbn/agent-builder-common';
 import { ConversationRoundStatus } from '@kbn/agent-builder-common';
 import type { AgentEventEmitterFn, AgentHandlerContext } from '@kbn/agent-builder-server';
 import { HookLifecycle } from '@kbn/agent-builder-server';
@@ -147,7 +148,7 @@ export const runDefaultAgentMode: RunChatAgentFn = async (
   });
   processedConversation.nextInput = beforeHookResult.nextInput ?? processedConversation.nextInput;
 
-  const { staticTools, dynamicTools, toolOrigins } = await selectTools({
+  const { staticTools, dynamicTools } = await selectTools({
     conversation: processedConversation,
     previousDynamicToolIds: conversation?.state?.dynamic_tool_ids ?? [],
     filteredSkills,
@@ -162,8 +163,6 @@ export const runDefaultAgentMode: RunChatAgentFn = async (
     runner: context.runner,
   });
 
-  toolManager.setToolOrigins(toolOrigins);
-
   // First add static tools
   await Promise.all([
     toolManager.addTools({
@@ -173,7 +172,7 @@ export const runDefaultAgentMode: RunChatAgentFn = async (
     }),
     toolManager.addTools({
       type: ToolManagerToolType.browser,
-      tools: browserApiTools ?? [],
+      tools: (browserApiTools ?? []).map((tool) => ({ ...tool, origin: ToolOrigin.internal })),
     }),
   ]);
 

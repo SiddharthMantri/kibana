@@ -232,7 +232,7 @@ describe('conversation model converters', () => {
               data: { someData: 'someValue' },
             },
           ],
-          tool_origin: ToolOrigin.inline,
+          tool_origin: undefined,
         },
         {
           type: ConversationRoundStepType.reasoning,
@@ -352,7 +352,7 @@ describe('conversation model converters', () => {
       expect(step.tool_origin).toBe(ToolOrigin.internal);
     });
 
-    it('infers tool_origin as inline for unknown tools missing the field', () => {
+    it('leaves tool_origin undefined for unknown tools missing the field', () => {
       const serialized = documentBase();
       serialized._source!.conversation_rounds[0].steps = [
         {
@@ -367,7 +367,7 @@ describe('conversation model converters', () => {
       const deserialized = fromEs(serialized);
 
       const step = deserialized.rounds[0].steps.filter(isToolCallStep)[0];
-      expect(step.tool_origin).toBe(ToolOrigin.inline);
+      expect(step.tool_origin).toBeUndefined();
     });
 
     it('preserves existing tool_origin when already set', () => {

@@ -17,6 +17,7 @@ import type {
 import type { AgentConfiguration, ToolSelection } from '@kbn/agent-builder-common';
 import type { InternalSkillDefinition } from '@kbn/agent-builder-server/skills';
 import type { AttachmentsService, SkillsService } from '@kbn/agent-builder-server/runner';
+import type { ExecutableToolWithOrigin } from '@kbn/agent-builder-server/runner/tool_manager';
 import type { IFileStore } from '@kbn/agent-builder-server/runner/filestore';
 import type { AttachmentStateManager } from '@kbn/agent-builder-server/attachments';
 import type { Attachment } from '@kbn/agent-builder-common/attachments';
@@ -26,6 +27,11 @@ import type { ExperimentalFeatures } from '@kbn/agent-builder-server';
 import { createAttachmentTools } from '../../../tools/builtin/attachments';
 import { getStoreTools } from '../../runner/store';
 import type { ProcessedConversation } from './prepare_conversation';
+
+export interface SelectToolsResult {
+  staticTools: ExecutableToolWithOrigin[];
+  dynamicTools: ExecutableToolWithOrigin[];
+}
 
 export const selectTools = async ({
   conversation,
@@ -53,7 +59,7 @@ export const selectTools = async ({
   spaceId: string;
   runner: ScopedRunner;
   experimentalFeatures: ExperimentalFeatures;
-}) => {
+}): Promise<SelectToolsResult> => {
   const formatContext: AttachmentFormatContext = { request, spaceId };
 
   // create tool selection for attachments types
@@ -95,19 +101,13 @@ export const selectTools = async ({
   });
 
   const staticTools = [
-    ...versionedAttachmentBoundTools,
-    ...versionedAttachmentTools,
-    ...staticRegistryTools,
-    ...filestoreTools,
+    ...withOrigin(versionedAttachmentBoundTools, ToolOrigin.inline),
+    ...withOrigin(versionedAttachmentTools, ToolOrigin.internal),
+    ...withOrigin(staticRegistryTools, ToolOrigin.registry),
+    ...withOrigin(filestoreTools, ToolOrigin.internal),
   ];
 
-  const toolOrigins = new Map<string, ToolOrigin>();
-  setToolOrigins(versionedAttachmentBoundTools, ToolOrigin.inline, toolOrigins);
-  setToolOrigins(versionedAttachmentTools, ToolOrigin.internal, toolOrigins);
-  setToolOrigins(staticRegistryTools, ToolOrigin.registry, toolOrigins);
-  setToolOrigins(filestoreTools, ToolOrigin.internal, toolOrigins);
-
-  const dedupedStaticTools = new Map<string, ExecutableTool>();
+  const dedupedStaticTools = new Map<string, ExecutableToolWithOrigin>();
   for (const tool of staticTools) {
     dedupedStaticTools.set(tool.id, tool);
   }
@@ -131,25 +131,17 @@ export const selectTools = async ({
     .filter((tool) => previousDynamicToolIds.includes(tool.id))
     .map((tool) => skills.convertSkillTool(tool));
 
-  setToolOrigins(dynamicRegistryTools, ToolOrigin.registry, toolOrigins);
-  setToolOrigins(dynamicInlineTools, ToolOrigin.inline, toolOrigins);
-
   return {
     staticTools: [...dedupedStaticTools.values()],
-    dynamicTools: [...dynamicRegistryTools, ...dynamicInlineTools],
-    toolOrigins,
+    dynamicTools: [
+      ...withOrigin(dynamicRegistryTools, ToolOrigin.registry),
+      ...withOrigin(dynamicInlineTools, ToolOrigin.inline),
+    ],
   };
 };
 
-const setToolOrigins = (
-  tools: ExecutableTool[],
-  origin: ToolOrigin,
-  target: Map<string, ToolOrigin>
-): void => {
-  for (const tool of tools) {
-    target.set(tool.id, origin);
-  }
-};
+const withOrigin = (tools: ExecutableTool[], origin: ToolOrigin): ExecutableToolWithOrigin[] =>
+  tools.map((tool) => ({ ...tool, origin }));
 
 /**
  * Creates executable tools for managing versioned conversation attachments.

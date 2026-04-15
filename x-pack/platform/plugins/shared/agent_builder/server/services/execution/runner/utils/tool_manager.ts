@@ -67,10 +67,12 @@ export class ToolManager implements IToolManager {
     let idMappings: Map<string, string>;
 
     if (input.type === 'executable') {
-      const tools = Array.isArray(input.tools) ? input.tools : [input.tools];
-      for (const tool of tools) {
+      const toolsWithOrigin = Array.isArray(input.tools) ? input.tools : [input.tools];
+      const tools: ExecutableTool[] = toolsWithOrigin.map(({ origin, ...tool }) => {
+        this.toolOrigins.set(tool.id, origin);
         this.executableTools.set(tool.id, tool);
-      }
+        return tool;
+      });
 
       const toolIdMapping = createToolIdMappings(tools);
       langchainTools = await Promise.all(
@@ -86,7 +88,12 @@ export class ToolManager implements IToolManager {
 
       idMappings = reverseMap(toolIdMapping);
     } else {
-      const browserApiTools = Array.isArray(input.tools) ? input.tools : [input.tools];
+      const browserToolsWithOrigin = Array.isArray(input.tools) ? input.tools : [input.tools];
+      const browserApiTools = browserToolsWithOrigin.map(({ origin, ...tool }) => {
+        // Browser tools now carry the same origin metadata contract as executable tools.
+        this.toolOrigins.set(tool.id, origin);
+        return tool;
+      });
       const browserLangchainTools = browserToolsToLangchain({ browserApiTools });
 
       langchainTools = browserLangchainTools.tools;
@@ -139,13 +146,6 @@ export class ToolManager implements IToolManager {
    */
   public getToolIdMapping(): Map<string, string> {
     return this.toolIdMappings;
-  }
-
-  /**
-   * Persists tool origin metadata keyed by internal tool ID.
-   */
-  public setToolOrigins(origins: Map<string, ToolOrigin>): void {
-    this.toolOrigins = new Map([...this.toolOrigins, ...origins]);
   }
 
   /**

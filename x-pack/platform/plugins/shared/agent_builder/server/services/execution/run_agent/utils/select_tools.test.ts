@@ -95,11 +95,19 @@ describe('selectTools', () => {
       } as any,
     });
 
-    // We map origins server-side so UI can decide if a tool link should be shown.
-    expect(result.toolOrigins.get('attachments.read')).toBe(ToolOrigin.internal);
-    expect(result.toolOrigins.get('registry.static')).toBe(ToolOrigin.registry);
-    expect(result.toolOrigins.get('registry.dynamic')).toBe(ToolOrigin.registry);
-    expect(result.toolOrigins.get('inline.dynamic')).toBe(ToolOrigin.inline);
+    // Origins are now included in each selected tool payload passed to ToolManager.addTools.
+    expect(result.staticTools.find((tool) => tool.id === 'attachments.read')?.origin).toBe(
+      ToolOrigin.internal
+    );
+    expect(result.staticTools.find((tool) => tool.id === 'registry.static')?.origin).toBe(
+      ToolOrigin.registry
+    );
+    expect(result.dynamicTools.find((tool) => tool.id === 'registry.dynamic')?.origin).toBe(
+      ToolOrigin.registry
+    );
+    expect(result.dynamicTools.find((tool) => tool.id === 'inline.dynamic')?.origin).toBe(
+      ToolOrigin.inline
+    );
     expect(skills.convertSkillTool).toHaveBeenCalled();
   });
 
@@ -151,6 +159,8 @@ describe('selectTools', () => {
     });
 
     // Attachment-scoped bounded tools are treated as inline because they are not registry entries.
-    expect(result.toolOrigins.get('attachment.inline')).toBe(ToolOrigin.inline);
+    expect(result.staticTools.find((tool) => tool.id === 'attachment.inline')?.origin).toBe(
+      ToolOrigin.inline
+    );
   });
 });

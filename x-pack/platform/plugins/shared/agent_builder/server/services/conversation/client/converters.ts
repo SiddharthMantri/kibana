@@ -156,11 +156,13 @@ function migrateRoundState(state: RoundState & { agent: LegacyAgentStateFields }
   return state;
 }
 
-const inferToolOrigin = (toolId: string): ToolOrigin => {
+const inferToolOrigin = (toolId: string): ToolOrigin | undefined => {
+  // Legacy rounds do not reliably differentiate registry vs inline tools.
+  // Only infer internal tools; leave others undefined for UI-side fallback.
   if (isInternalTool(toolId)) {
     return ToolOrigin.internal;
   }
-  return ToolOrigin.inline;
+  return undefined;
 };
 
 export const fromEs = (document: Document): Conversation => {

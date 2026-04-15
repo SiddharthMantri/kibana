@@ -67,17 +67,12 @@ describe('runDefaultAgentMode', () => {
 
     getPendingRoundMock.mockReturnValue(undefined);
 
-    const staticTools = [{ id: 'static-tool-1' } as ExecutableTool];
-    const dynamicTools = [{ id: 'dynamic-tool-1' } as ExecutableTool];
-    const toolOrigins = new Map([
-      ['static-tool-1', ToolOrigin.registry],
-      ['dynamic-tool-1', ToolOrigin.inline],
-    ]);
+    const staticTools = [{ id: 'static-tool-1', origin: ToolOrigin.registry } as ExecutableTool];
+    const dynamicTools = [{ id: 'dynamic-tool-1', origin: ToolOrigin.inline } as ExecutableTool];
 
     selectToolsMock.mockResolvedValue({
       staticTools,
       dynamicTools,
-      toolOrigins,
     } as any);
 
     prepareConversationMock.mockResolvedValue({
@@ -116,7 +111,6 @@ describe('runDefaultAgentMode', () => {
     );
 
     expect(context.toolManager.addTools).toHaveBeenCalledTimes(3);
-    expect(context.toolManager.setToolOrigins).toHaveBeenCalledWith(toolOrigins);
 
     // Static tools are added first (executable tools + browser API tools)
     expect(context.toolManager.addTools).toHaveBeenNthCalledWith(1, {
@@ -126,7 +120,7 @@ describe('runDefaultAgentMode', () => {
     });
     expect(context.toolManager.addTools).toHaveBeenNthCalledWith(2, {
       type: ToolManagerToolType.browser,
-      tools: browserApiTools,
+      tools: [{ ...browserApiTools[0], origin: ToolOrigin.internal }],
     });
 
     // Dynamic tools are added afterwards with the dynamic flag

@@ -122,7 +122,6 @@ export const createMockToolContext = (): ToolHandlerContext => {
     } as unknown as ToolHandlerContext['skills'],
     toolManager: {
       setEventEmitter: jest.fn(),
-      setToolOrigins: jest.fn(),
       addTools: jest.fn(),
       list: jest.fn(),
       recordToolUse: jest.fn(),

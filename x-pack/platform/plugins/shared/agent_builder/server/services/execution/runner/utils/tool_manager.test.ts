@@ -7,9 +7,12 @@
 
 import { ToolManager, createToolManager } from './tool_manager';
 import type { StructuredTool } from '@langchain/core/tools';
-import { ToolManagerToolType } from '@kbn/agent-builder-server/runner/tool_manager';
-import type { ExecutableTool } from '@kbn/agent-builder-server';
-import { ToolOrigin, type BrowserApiToolMetadata } from '@kbn/agent-builder-common';
+import {
+  ToolManagerToolType,
+  type BrowserToolWithOrigin,
+  type ExecutableToolWithOrigin,
+} from '@kbn/agent-builder-server/runner/tool_manager';
+import { ToolOrigin } from '@kbn/agent-builder-common';
 import { loggerMock } from '@kbn/logging-mocks';
 import { z } from '@kbn/zod/v4';
 
@@ -71,8 +74,9 @@ describe('ToolManager', () => {
 
   const createMockExecutableTool = (
     id: string,
-    description: string = 'Test tool'
-  ): ExecutableTool => ({
+    description: string = 'Test tool',
+    origin: ToolOrigin = ToolOrigin.registry
+  ): ExecutableToolWithOrigin => ({
     id,
     type: 'builtin' as any,
     description,
@@ -81,18 +85,21 @@ describe('ToolManager', () => {
     configuration: {},
     getSchema: async () => z.object({}),
     execute: jest.fn(),
+    origin,
   });
 
   const createMockBrowserTool = (
     id: string,
-    description: string = 'Browser tool'
-  ): BrowserApiToolMetadata => ({
+    description: string = 'Browser tool',
+    origin: ToolOrigin = ToolOrigin.internal
+  ): BrowserToolWithOrigin => ({
     id,
     description,
     schema: {
       type: 'object',
       properties: {},
     },
+    origin,
   });
 
   describe('constructor', () => {
@@ -640,22 +647,32 @@ describe('ToolManager', () => {
   });
 
   describe('tool origin metadata', () => {
-    it('stores and retrieves origin entries by internal tool id', () => {
-      toolManager.setToolOrigins(
-        new Map([
-          ['registry.tool', ToolOrigin.registry],
-          ['inline.tool', ToolOrigin.inline],
-        ])
-      );
+    it('stores and retrieves origin entries by internal tool id', async () => {
+      await toolManager.addTools({
+        type: ToolManagerToolType.executable,
+        tools: [
+          createMockExecutableTool('registry.tool', 'registry tool', ToolOrigin.registry),
+          createMockExecutableTool('inline.tool', 'inline tool', ToolOrigin.inline),
+        ],
+        logger: mockLogger,
+      });
 
       expect(toolManager.getToolOrigin('registry.tool')).toBe(ToolOrigin.registry);
       expect(toolManager.getToolOrigin('inline.tool')).toBe(ToolOrigin.inline);
       expect(toolManager.getToolOrigin('missing.tool')).toBeUndefined();
     });
 
-    it('overwrites existing entries when a newer origin is provided', () => {
-      toolManager.setToolOrigins(new Map([['tool.id', ToolOrigin.inline]]));
-      toolManager.setToolOrigins(new Map([['tool.id', ToolOrigin.registry]]));
+    it('overwrites existing entries when a newer origin is provided', async () => {
+      await toolManager.addTools({
+        type: ToolManagerToolType.executable,
+        tools: createMockExecutableTool('tool.id', 'tool', ToolOrigin.inline),
+        logger: mockLogger,
+      });
+      await toolManager.addTools({
+        type: ToolManagerToolType.executable,
+        tools: createMockExecutableTool('tool.id', 'tool', ToolOrigin.registry),
+        logger: mockLogger,
+      });
 
       expect(toolManager.getToolOrigin('tool.id')).toBe(ToolOrigin.registry);
     });

@@ -21,6 +21,9 @@ export interface AddToolOptions {
   dynamic?: boolean;
 }
 
+export type ExecutableToolWithOrigin = ExecutableTool & { origin: ToolOrigin };
+export type BrowserToolWithOrigin = BrowserApiToolMetadata & { origin: ToolOrigin };
+
 export enum ToolManagerToolType {
   executable = 'executable',
   browser = 'browser',
@@ -28,13 +31,13 @@ export enum ToolManagerToolType {
 
 export interface ExecutableToolInput {
   type: ToolManagerToolType.executable;
-  tools: ExecutableTool | ExecutableTool[];
+  tools: ExecutableToolWithOrigin | ExecutableToolWithOrigin[];
   logger: Logger;
 }
 
 export interface BrowserToolInput {
   type: ToolManagerToolType.browser;
-  tools: BrowserApiToolMetadata | BrowserApiToolMetadata[];
+  tools: BrowserToolWithOrigin | BrowserToolWithOrigin[];
 }
 
 export type AddToolInput = ExecutableToolInput | BrowserToolInput;
@@ -77,12 +80,6 @@ export interface ToolManager {
    * @returns the tool id mapping
    */
   getToolIdMapping(): Map<string, string>;
-
-  /**
-   * Registers tool origin metadata by internal tool ID.
-   * Later updates overwrite existing entries for the same tool ID.
-   */
-  setToolOrigins(origins: Map<string, ToolOrigin>): void;
 
   /**
    * Returns the origin for an internal tool ID, if known.

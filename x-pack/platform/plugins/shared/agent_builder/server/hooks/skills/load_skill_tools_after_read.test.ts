@@ -180,13 +180,10 @@ describe('loadSkillToolsAfterRead', () => {
 
       expect(skill.getInlineTools).toHaveBeenCalled();
       expect(toolHandlerContext.skills.convertSkillTool).toHaveBeenCalledWith(inlineTool);
-      expect(toolHandlerContext.toolManager.setToolOrigins).toHaveBeenCalledWith(
-        new Map([['inline-1-converted', ToolOrigin.inline]])
-      );
       expect(toolHandlerContext.toolManager.addTools).toHaveBeenCalledWith(
         {
           type: ToolManagerToolType.executable,
-          tools: [convertedTool],
+          tools: [{ ...convertedTool, origin: ToolOrigin.inline }],
           logger: toolHandlerContext.logger,
         },
         { dynamic: true }
@@ -209,13 +206,10 @@ describe('loadSkillToolsAfterRead', () => {
       await loadSkillToolsAfterRead(context);
 
       expect(skill.getRegistryTools).toHaveBeenCalled();
-      expect(toolHandlerContext.toolManager.setToolOrigins).toHaveBeenCalledWith(
-        new Map([['registry-tool-1', ToolOrigin.registry]])
-      );
       expect(toolHandlerContext.toolManager.addTools).toHaveBeenCalledWith(
         expect.objectContaining({
           type: ToolManagerToolType.executable,
-          tools: expect.arrayContaining([registryTool]),
+          tools: expect.arrayContaining([{ ...registryTool, origin: ToolOrigin.registry }]),
         }),
         { dynamic: true }
       );
@@ -240,16 +234,13 @@ describe('loadSkillToolsAfterRead', () => {
 
       await loadSkillToolsAfterRead(context);
 
-      expect(toolHandlerContext.toolManager.setToolOrigins).toHaveBeenCalledWith(
-        new Map([
-          ['inline-1-converted', ToolOrigin.inline],
-          ['registry-1', ToolOrigin.registry],
-        ])
-      );
       expect(toolHandlerContext.toolManager.addTools).toHaveBeenCalledWith(
         {
           type: ToolManagerToolType.executable,
-          tools: [convertedInline, registryTool],
+          tools: [
+            { ...convertedInline, origin: ToolOrigin.inline },
+            { ...registryTool, origin: ToolOrigin.registry },
+          ],
           logger: toolHandlerContext.logger,
         },
         { dynamic: true }
@@ -269,7 +260,6 @@ describe('loadSkillToolsAfterRead', () => {
 
       await loadSkillToolsAfterRead(context);
 
-      expect(toolHandlerContext.toolManager.setToolOrigins).toHaveBeenCalledWith(new Map());
       expect(toolHandlerContext.toolManager.addTools).toHaveBeenCalledWith(
         {
           type: ToolManagerToolType.executable,

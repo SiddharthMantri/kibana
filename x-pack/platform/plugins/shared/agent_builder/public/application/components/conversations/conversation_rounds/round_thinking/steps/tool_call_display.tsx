@@ -70,5 +70,7 @@ export const ToolCallDisplay: React.FC<ToolCallDisplayProps> = ({ step, icon, te
 };
 
 const isRegistryTool = (step: ToolCallStep): boolean => {
-  return step.tool_origin === ToolOrigin.registry;
+  // For legacy conversations, missing origin means we cannot distinguish
+  // registry vs inline; treat it as registry to keep tool details linkable.
+  return step.tool_origin === undefined || step.tool_origin === ToolOrigin.registry;
 };

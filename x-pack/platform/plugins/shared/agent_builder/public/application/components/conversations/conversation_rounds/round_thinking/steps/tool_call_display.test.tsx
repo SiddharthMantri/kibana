@@ -71,7 +71,7 @@ describe('ToolCallDisplay', () => {
     expect(screen.queryByRole('link', { name: /attachments\.read/i })).not.toBeInTheDocument();
   });
 
-  it('does not link when tool_origin is missing', () => {
+  it('renders a link when tool_origin is missing (legacy fallback)', () => {
     renderWithIntl(
       createStep({
         tool_id: 'some.custom.tool',
@@ -79,7 +79,7 @@ describe('ToolCallDisplay', () => {
       })
     );
 
-    expect(screen.getByText('some.custom.tool')).toBeInTheDocument();
-    expect(screen.queryByRole('link', { name: /some\.custom\.tool/i })).not.toBeInTheDocument();
+    const link = screen.getByRole('link', { name: /view tool details some\.custom\.tool/i });
+    expect(link).toHaveAttribute('href', 'https://kibana.local/manage/tools/some.custom.tool');
   });
 });
