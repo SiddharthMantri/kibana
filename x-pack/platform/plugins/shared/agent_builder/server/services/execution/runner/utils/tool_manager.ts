@@ -58,7 +58,7 @@ export class ToolManager implements IToolManager {
    * Adds tools to the tool manager.
    * Supports both executable tools and browser API tools.
    * @param input - The tool input configuration (executable or browser)
-   * @param options - Optional configuration for tool storage (static vs dynamic)
+   * @param options - Optionaƒl configuration for tool storage (static vs dynamic)
    */
   public async addTools(input: AddToolInput, options: AddToolOptions = {}): Promise<void> {
     const { dynamic = false } = options;

@@ -816,7 +816,7 @@ describe('ToolManager', () => {
 
     it('returns the summarizer for a tool with summarizeToolReturn', async () => {
       const summarizer = jest.fn();
-      const tool: ExecutableTool = {
+      const tool: ExecutableToolWithOrigin = {
         ...createMockExecutableTool('tool-with-summarizer'),
         summarizeToolReturn: summarizer,
       };
@@ -844,11 +844,11 @@ describe('ToolManager', () => {
     it('returns the latest summarizer when a tool is re-added', async () => {
       const summarizer1 = jest.fn();
       const summarizer2 = jest.fn();
-      const tool1: ExecutableTool = {
+      const tool1: ExecutableToolWithOrigin = {
         ...createMockExecutableTool('tool-1'),
         summarizeToolReturn: summarizer1,
       };
-      const tool2: ExecutableTool = {
+      const tool2: ExecutableToolWithOrigin = {
         ...createMockExecutableTool('tool-1'),
         summarizeToolReturn: summarizer2,
       };
