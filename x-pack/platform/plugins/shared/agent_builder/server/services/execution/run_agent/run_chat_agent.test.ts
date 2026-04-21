@@ -6,12 +6,13 @@
  */
 
 import type { BrowserApiToolMetadata } from '@kbn/agent-builder-common';
-import type { ExecutableTool } from '@kbn/agent-builder-server';
 import { ToolOrigin } from '@kbn/agent-builder-common';
 import { ToolManagerToolType } from '@kbn/agent-builder-server/runner';
+import type { ExecutableToolWithOrigin } from '@kbn/agent-builder-server/runner/tool_manager';
 
 import { createAgentHandlerContextMock } from '../../../test_utils/runner';
 import { createRound } from '../../../test_utils/conversations';
+import { createMockedExecutableTool } from '../../../test_utils/tools';
 
 import { runDefaultAgentMode } from './run_chat_agent';
 import { prepareConversation, selectTools, extractRound, getPendingRound } from './utils';
@@ -67,8 +68,12 @@ describe('runDefaultAgentMode', () => {
 
     getPendingRoundMock.mockReturnValue(undefined);
 
-    const staticTools = [{ id: 'static-tool-1', origin: ToolOrigin.registry } as ExecutableTool];
-    const dynamicTools = [{ id: 'dynamic-tool-1', origin: ToolOrigin.inline } as ExecutableTool];
+    const staticTools: ExecutableToolWithOrigin[] = [
+      { ...createMockedExecutableTool({ id: 'static-tool-1' }), origin: ToolOrigin.registry },
+    ];
+    const dynamicTools: ExecutableToolWithOrigin[] = [
+      { ...createMockedExecutableTool({ id: 'dynamic-tool-1' }), origin: ToolOrigin.inline },
+    ];
 
     selectToolsMock.mockResolvedValue({
       staticTools,
