@@ -42,7 +42,6 @@ dependsOn:
   - '@kbn/cloud'
   - '@kbn/agent-builder-browser'
   - '@kbn/agent-builder-server'
-  - '@kbn/deeplinks-search'
   - '@kbn/scout-search'
   - '@kbn/search-agent'
   - '@kbn/shared-ux-ai-components'
