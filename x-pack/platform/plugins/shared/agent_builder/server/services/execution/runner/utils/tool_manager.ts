@@ -6,7 +6,11 @@
  */
 
 import type { StructuredTool } from '@langchain/core/tools';
-import { createToolIdMappings, toolToLangchain } from '@kbn/agent-builder-genai-utils/langchain';
+import {
+  createToolIdMappings,
+  sanitizeToolId,
+  toolToLangchain,
+} from '@kbn/agent-builder-genai-utils/langchain';
 import { reverseMap } from '@kbn/agent-builder-genai-utils/langchain/tools';
 import { LRUCache } from 'lru-cache';
 import type { ToolOrigin } from '@kbn/agent-builder-common';
@@ -90,8 +94,7 @@ export class ToolManager implements IToolManager {
     } else {
       const browserToolsWithOrigin = Array.isArray(input.tools) ? input.tools : [input.tools];
       const browserApiTools = browserToolsWithOrigin.map(({ origin, ...tool }) => {
-        // Browser tools now carry the same origin metadata contract as executable tools.
-        this.toolOrigins.set(tool.id, origin);
+        this.toolOrigins.set(sanitizeToolId(`browser_${tool.id}`), origin);
         return tool;
       });
       const browserLangchainTools = browserToolsToLangchain({ browserApiTools });
