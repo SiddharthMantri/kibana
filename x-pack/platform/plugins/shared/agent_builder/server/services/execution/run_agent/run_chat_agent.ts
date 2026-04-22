@@ -208,8 +208,14 @@ export const runDefaultAgentMode: RunChatAgentFn = async (
     await toolManager.addTools({
       type: ToolManagerToolType.executable,
       tools: [
-        builtinToolToExecutable({ tool: subagentTool, runner: context.runner }),
-        builtinToolToExecutable({ tool: sleepTool, runner: context.runner }),
+        {
+          ...builtinToolToExecutable({ tool: subagentTool, runner: context.runner }),
+          origin: ToolOrigin.internal,
+        },
+        {
+          ...builtinToolToExecutable({ tool: sleepTool, runner: context.runner }),
+          origin: ToolOrigin.internal,
+        },
       ],
       logger,
     });
