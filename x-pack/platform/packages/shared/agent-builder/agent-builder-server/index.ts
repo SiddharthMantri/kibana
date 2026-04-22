@@ -117,16 +117,14 @@ export type {
   SmlIndexAction,
   SmlIndexAttachmentParams,
 } from './sml';
-export {
-  ExecutionStatus,
-  type AgentExecutionParams,
-  type SerializedExecutionError,
-  type AgentExecution,
-  type ExecuteAgentParams,
-  type ExecuteAgentResult,
-  type FindExecutionsFilter,
-  type FindExecutionsOptions,
-  type AgentExecutionService,
+export type {
+  AgentExecutionParams,
+  AgentExecution,
+  ExecuteAgentParams,
+  ExecuteAgentResult,
+  FindExecutionsFilter,
+  FindExecutionsOptions,
+  AgentExecutionService,
 } from './execution';
 export type {
   InternalAgentDefinition,
