@@ -44,7 +44,6 @@ dependsOn:
   - '@kbn/react-query'
   - '@kbn/product-doc-base-plugin'
   - '@kbn/ai-assistant-common'
-  - '@kbn/ai-agent-confirmation-modal'
   - '@kbn/anonymization-common'
   - '@kbn/anonymization-ui'
   - '@kbn/product-doc-common'
@@ -54,7 +53,6 @@ dependsOn:
   - '@kbn/workflows'
   - '@kbn/agent-builder-browser'
   - '@kbn/zod'
-  - '@kbn/shared-ux-ai-components'
 tags:
   - plugin
   - prod

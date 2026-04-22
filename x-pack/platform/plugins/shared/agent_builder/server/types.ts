@@ -9,7 +9,10 @@ import type { FeaturesPluginSetup } from '@kbn/features-plugin/server';
 import type { LicensingPluginStart } from '@kbn/licensing-plugin/server';
 import type { CloudStart, CloudSetup } from '@kbn/cloud-plugin/server';
 import type { UsageApiSetup, UsageApiStart } from '@kbn/usage-api-plugin/server';
-import type { SearchInferenceEndpointsPluginSetup } from '@kbn/search-inference-endpoints/server';
+import type {
+  SearchInferenceEndpointsPluginSetup,
+  SearchInferenceEndpointsPluginStart,
+} from '@kbn/search-inference-endpoints/server';
 import type {
   TaskManagerSetupContract,
   TaskManagerStartContract,
@@ -59,7 +62,7 @@ export interface AgentBuilderSetupDependencies {
   taskManager: TaskManagerSetupContract;
   actions: ActionsPluginSetup;
   home: HomeServerPluginSetup;
-  searchInferenceEndpoints?: SearchInferenceEndpointsPluginSetup;
+  searchInferenceEndpoints: SearchInferenceEndpointsPluginSetup;
 }
 
 export interface AgentBuilderStartDependencies {
@@ -71,4 +74,5 @@ export interface AgentBuilderStartDependencies {
   actions: ActionsPluginStart;
   taskManager: TaskManagerStartContract;
   security?: SecurityPluginStart;
+  searchInferenceEndpoints: SearchInferenceEndpointsPluginStart;
 }

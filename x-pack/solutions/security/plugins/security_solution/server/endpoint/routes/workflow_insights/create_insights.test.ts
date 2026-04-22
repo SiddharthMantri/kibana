@@ -7,7 +7,7 @@
 
 import { httpServerMock, httpServiceMock } from '@kbn/core/server/mocks';
 import { EMPTY } from 'rxjs';
-import { ExecutionStatus } from '@kbn/agent-builder-server';
+import { AgentExecutionMode, ExecutionStatus } from '@kbn/agent-builder-common';
 import { createMockEndpointAppContext, getRegisteredVersionedRouteMock } from '../../mocks';
 import { registerCreateInsightsRoute } from './create_insights';
 import { WORKFLOW_INSIGHTS_ROUTE } from '../../../../common/endpoint/constants';
@@ -107,6 +107,7 @@ describe('Create Insights Route Handler', () => {
           },
           '@timestamp': '2024-01-01T00:00:00Z',
           agentId: 'agent-1',
+          executionMode: AgentExecutionMode.conversation,
           spaceId: 'default',
           agentParams: { conversationId: 'existing-conv-id' },
           eventCount: 0,
@@ -147,6 +148,7 @@ describe('Create Insights Route Handler', () => {
           },
           '@timestamp': '2024-01-01T00:00:00Z',
           agentId: 'agent-1',
+          executionMode: AgentExecutionMode.conversation,
           spaceId: 'default',
           agentParams: { conversationId: 'existing-conv-id' },
           eventCount: 0,

@@ -8,7 +8,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import pMap from 'p-map';
 import type { IKibanaResponse, RequestHandler } from '@kbn/core/server';
-import { ExecutionStatus } from '@kbn/agent-builder-server';
+import { AgentExecutionMode, ExecutionStatus } from '@kbn/agent-builder-common';
 import type { CreateWorkflowInsightRequestBody } from '../../../../common/api/endpoint/workflow_insights';
 import { CreateWorkflowInsightRequestSchema } from '../../../../common/api/endpoint/workflow_insights/workflow_insights';
 import type { WorkflowInsightType } from '../../../../common/endpoint/types/workflow_insights';
@@ -133,7 +133,10 @@ const createInsightsRouteHandler = (
             if (existing) {
               alreadyRunning.push({
                 executionId: existing.executionId,
-                conversationId: existing.agentParams.conversationId,
+                conversationId:
+                  existing.executionMode === AgentExecutionMode.conversation
+                    ? existing.agentParams.conversationId
+                    : undefined,
                 insightType,
                 endpointId,
                 '@timestamp': existing['@timestamp'],
@@ -167,6 +170,7 @@ const createInsightsRouteHandler = (
 
             const createdAt = new Date().toISOString();
             const { executionId } = await agentBuilder.execution.executeAgent({
+              mode: AgentExecutionMode.conversation,
               request,
               metadata,
               params: {

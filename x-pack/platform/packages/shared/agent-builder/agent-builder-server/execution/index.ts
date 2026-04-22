@@ -5,14 +5,20 @@
  * 2.0.
  */
 
-export {
-  ExecutionStatus,
-  type AgentExecutionParams,
-  type SerializedExecutionError,
-  type AgentExecution,
-  type ExecuteAgentParams,
-  type ExecuteAgentResult,
-  type FindExecutionsFilter,
-  type FindExecutionsOptions,
-  type AgentExecutionService,
+export type {
+  BaseExecutionParams,
+  ConversationExecutionParams,
+  StandaloneExecutionParams,
+  AgentExecutionParams,
+  ConversationAgentExecution,
+  StandaloneAgentExecution,
+  AgentExecution,
+  ExecuteAgentResult,
+  ExecuteConversationAgentParams,
+  ExecuteStandaloneAgentParams,
+  ExecuteAgentParams,
+  FollowExecutionOptions,
+  FindExecutionsFilter,
+  FindExecutionsOptions,
+  AgentExecutionService,
 } from './types';
