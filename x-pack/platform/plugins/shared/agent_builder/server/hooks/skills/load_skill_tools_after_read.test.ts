@@ -17,7 +17,6 @@ import type { InternalSkillDefinition } from '@kbn/agent-builder-server/skills';
 import { ToolManagerToolType } from '@kbn/agent-builder-server/runner';
 import type { SkillBoundedTool } from '@kbn/agent-builder-server/skills';
 import { ToolOrigin, ToolType } from '@kbn/agent-builder-common';
-import { ToolType } from '@kbn/agent-builder-common';
 import type { AnalyticsService, TrackingService } from '../../telemetry';
 import { createToolHandlerContextMock, type ToolHandlerContextMock } from '../../test_utils/runner';
 import { createLoadSkillToolsAfterRead } from './load_skill_tools_after_read';
