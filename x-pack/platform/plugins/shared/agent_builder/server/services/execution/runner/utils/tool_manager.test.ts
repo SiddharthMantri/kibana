@@ -32,6 +32,9 @@ jest.mock('@kbn/agent-builder-genai-utils/langchain', () => ({
       invoke: jest.fn(),
     } as unknown as StructuredTool;
   }),
+  sanitizeToolId: jest.fn((toolId: string) =>
+    toolId.replaceAll('.', '_').replace(/[^a-zA-Z0-9_-]/g, '')
+  ),
 }));
 
 jest.mock('@kbn/agent-builder-genai-utils/langchain/tools', () => ({
