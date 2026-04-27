@@ -59,7 +59,7 @@ describe('listSearchSources', () => {
 
     expect(esClient.indices.resolveIndex).toHaveBeenCalledTimes(1);
     expect(esClient.indices.resolveIndex).toHaveBeenCalledWith({
-      name: ['*', '-.*'],
+      name: ['*'],
       allow_no_indices: true,
       expand_wildcards: ['open'],
     });
@@ -262,6 +262,154 @@ describe('listSearchSources', () => {
       'index-4',
     ]);
     expect(results.aliases.map((item) => item.name)).toEqual(['alias-1', 'alias-2']);
+  });
+
+  it('filters out dot-prefixed indices not on the allow-list by default', async () => {
+    esClient.indices.resolveIndex.mockResolvedValue({
+      indices: [
+        indexItem('regular-index-1'),
+        indexItem('.kibana_8.0.0_001'),
+        indexItem('.fleet-actions'),
+        indexItem('.siem-signals-default'),
+        indexItem('regular-index-2'),
+      ],
+      aliases: [],
+      data_streams: [],
+    });
+
+    const results = await listSearchSources({
+      pattern: '*',
+      esClient,
+    });
+
+    expect(results.indices.map((item) => item.name)).toEqual([
+      'regular-index-1',
+      '.siem-signals-default',
+      'regular-index-2',
+    ]);
+  });
+
+  it('keeps all dot-prefixed indices when `includeSystemIndices` is true', async () => {
+    esClient.indices.resolveIndex.mockResolvedValue({
+      indices: [
+        indexItem('regular-index-1'),
+        indexItem('.kibana_8.0.0_001'),
+        indexItem('.fleet-actions'),
+        indexItem('.siem-signals-default'),
+      ],
+      aliases: [],
+      data_streams: [],
+    });
+
+    const results = await listSearchSources({
+      pattern: '*',
+      includeSystemIndices: true,
+      esClient,
+    });
+
+    expect(results.indices.map((item) => item.name)).toEqual([
+      'regular-index-1',
+      '.kibana_8.0.0_001',
+      '.fleet-actions',
+      '.siem-signals-default',
+    ]);
+  });
+
+  it('returns on-list dot-prefixed aliases (e.g. `.alerts-*`) when `includeSystemIndices` is false', async () => {
+    // `.alerts-security.alerts-default` is on the curated allow-list, so it must
+    // surface even when the caller has not opted into the full system-inclusive
+    // listing.
+    esClient.indices.resolveIndex.mockResolvedValue({
+      indices: [],
+      aliases: [
+        aliasItem('.alerts-security.alerts-default', [
+          '.internal.alerts-security.alerts-default-000001',
+        ]),
+      ],
+      data_streams: [],
+    });
+
+    const results = await listSearchSources({
+      pattern: '.alerts-*',
+      esClient,
+    });
+
+    expect(results.aliases.map((item) => item.name)).toEqual(['.alerts-security.alerts-default']);
+  });
+
+  it('filters off-list dot-prefixed aliases and data streams', async () => {
+    esClient.indices.resolveIndex.mockResolvedValue({
+      indices: [],
+      aliases: [
+        aliasItem('.fleet-actions', ['.fleet-actions-7']),
+        aliasItem('.alerts-observability.logs.alerts-default', ['logs-backing-1']),
+      ],
+      data_streams: [
+        datastreamItem('.chat-conversations', ['.ds-chat-conversations-1']),
+        datastreamItem('.ml-anomalies-shared', ['ml-backing-1']),
+      ],
+    });
+
+    const results = await listSearchSources({
+      pattern: '.*',
+      esClient,
+    });
+
+    expect(results.aliases.map((item) => item.name)).toEqual([
+      '.alerts-observability.logs.alerts-default',
+    ]);
+    expect(results.data_streams.map((item) => item.name)).toEqual(['.ml-anomalies-shared']);
+  });
+
+  it('applies the allow-list uniformly across indices, aliases, and data streams', async () => {
+    // Mixed bag: confirm each bucket honors the same policy so off-list names
+    // can't sneak in through any result type.
+    esClient.indices.resolveIndex.mockResolvedValue({
+      indices: [indexItem('.kibana_8.0.0_001'), indexItem('.monitoring-es-8-mb-2024.01.01')],
+      aliases: [
+        aliasItem('.fleet-actions', ['some-index']),
+        aliasItem('.alerts-security.alerts-default', ['some-index']),
+      ],
+      data_streams: [
+        datastreamItem('.chat-conversations', ['chat-backing-1']),
+        datastreamItem('.ml-anomalies-shared', ['ml-backing-1']),
+      ],
+    });
+
+    const results = await listSearchSources({
+      pattern: '.*',
+      esClient,
+    });
+
+    expect(results.indices.map((item) => item.name)).toEqual(['.monitoring-es-8-mb-2024.01.01']);
+    expect(results.aliases.map((item) => item.name)).toEqual(['.alerts-security.alerts-default']);
+    expect(results.data_streams.map((item) => item.name)).toEqual(['.ml-anomalies-shared']);
+  });
+
+  it('still dedupes backing indices of a hidden alias (alias filter ignores visibility)', async () => {
+    // The "represented as alias" dedupe is computed from the unfiltered ES
+    // response: even though `.fleet-actions` is filtered out as an alias, its
+    // backing index `.fleet-actions-7` should still be considered represented
+    // and therefore dropped from the indices list (regardless of the visibility
+    // filter). We check that by opting into `includeSystemIndices: true` but
+    // keeping the default `excludeIndicesRepresentedAsAlias: true`.
+    esClient.indices.resolveIndex.mockResolvedValue({
+      indices: [
+        indexItem('.fleet-actions-7', { aliases: ['.fleet-actions'] }),
+        indexItem('regular-index'),
+      ],
+      aliases: [aliasItem('.fleet-actions', ['.fleet-actions-7'])],
+      data_streams: [],
+    });
+
+    const results = await listSearchSources({
+      pattern: '*',
+      includeSystemIndices: true,
+      esClient,
+    });
+
+    expect(results.indices.map((item) => item.name)).toEqual(['regular-index']);
+    expect(results.aliases.map((item) => item.name)).toEqual(['.fleet-actions']);
   });
 
   it('truncates per-type results to max `perTypeLimit`', async () => {

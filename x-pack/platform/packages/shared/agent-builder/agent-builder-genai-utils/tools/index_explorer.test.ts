@@ -126,7 +126,7 @@ describe('indexExplorer', () => {
     });
   });
 
-  it('passes includeKibanaIndices as false when indexPattern is "*"', async () => {
+  it('passes includeSystemIndices as false when indexPattern is "*"', async () => {
     await indexExplorer({
       nlQuery: 'test query',
       indexPattern: '*',
@@ -139,11 +139,11 @@ describe('indexExplorer', () => {
       excludeIndicesRepresentedAsDatastream: true,
       excludeIndicesRepresentedAsAlias: false,
       esClient,
-      includeKibanaIndices: false,
+      includeSystemIndices: false,
     });
   });
 
-  it('passes includeKibanaIndices as true when indexPattern is not "*"', async () => {
+  it('passes includeSystemIndices as true when indexPattern is not "*"', async () => {
     await indexExplorer({
       nlQuery: 'test query',
       indexPattern: 'logs-*',
@@ -156,7 +156,7 @@ describe('indexExplorer', () => {
       excludeIndicesRepresentedAsDatastream: true,
       excludeIndicesRepresentedAsAlias: false,
       esClient,
-      includeKibanaIndices: true,
+      includeSystemIndices: true,
     });
   });
 });

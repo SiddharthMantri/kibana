@@ -141,7 +141,7 @@ const resolveLocalTarget = async ({
   const res = await listSearchSources({
     pattern: input,
     esClient,
-    includeKibanaIndices: true,
+    includeSystemIndices: true,
     includeHidden: true,
     excludeIndicesRepresentedAsAlias: true,
     excludeIndicesRepresentedAsDatastream: true,

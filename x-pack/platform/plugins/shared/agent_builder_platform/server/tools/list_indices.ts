@@ -43,7 +43,7 @@ e.g. if the user provided one. Otherwise, do not try to invent or guess a patter
       } = await listSearchSources({
         pattern,
         includeHidden: false,
-        includeKibanaIndices: false,
+        includeSystemIndices: false,
         excludeIndicesRepresentedAsAlias: false,
         excludeIndicesRepresentedAsDatastream: true,
         esClient: esClient.asCurrentUser,

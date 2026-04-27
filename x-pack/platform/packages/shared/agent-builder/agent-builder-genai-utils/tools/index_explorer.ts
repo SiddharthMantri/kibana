@@ -161,7 +161,7 @@ export const indexExplorer = async ({
     excludeIndicesRepresentedAsDatastream: true,
     excludeIndicesRepresentedAsAlias: false,
     esClient,
-    includeKibanaIndices: indexPattern !== '*',
+    includeSystemIndices: indexPattern !== '*',
   });
 
   const indexCount = sources.indices.length;
