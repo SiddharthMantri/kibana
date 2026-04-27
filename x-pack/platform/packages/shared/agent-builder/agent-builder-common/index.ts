@@ -14,6 +14,7 @@ export {
 export { DOT_INDEX_ALLOW_LIST_PATTERNS, isAllowedDotIndex } from './base/dot_index_allow_list';
 export {
   ToolType,
+  ToolOrigin,
   type ToolDefinition,
   type ToolDefinitionWithSchema,
   platformCoreTools,
