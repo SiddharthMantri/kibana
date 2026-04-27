@@ -289,36 +289,9 @@ describe('listSearchSources', () => {
     ]);
   });
 
-  it('keeps all dot-prefixed indices when `includeSystemIndices` is true', async () => {
-    esClient.indices.resolveIndex.mockResolvedValue({
-      indices: [
-        indexItem('regular-index-1'),
-        indexItem('.kibana_8.0.0_001'),
-        indexItem('.fleet-actions'),
-        indexItem('.siem-signals-default'),
-      ],
-      aliases: [],
-      data_streams: [],
-    });
-
-    const results = await listSearchSources({
-      pattern: '*',
-      includeSystemIndices: true,
-      esClient,
-    });
-
-    expect(results.indices.map((item) => item.name)).toEqual([
-      'regular-index-1',
-      '.kibana_8.0.0_001',
-      '.fleet-actions',
-      '.siem-signals-default',
-    ]);
-  });
-
-  it('returns on-list dot-prefixed aliases (e.g. `.alerts-*`) when `includeSystemIndices` is false', async () => {
+  it('returns on-list dot-prefixed aliases (e.g. `.alerts-*`)', async () => {
     // `.alerts-security.alerts-default` is on the curated allow-list, so it must
-    // surface even when the caller has not opted into the full system-inclusive
-    // listing.
+    // surface even though it's dot-prefixed.
     esClient.indices.resolveIndex.mockResolvedValue({
       indices: [],
       aliases: [
@@ -386,30 +359,23 @@ describe('listSearchSources', () => {
     expect(results.data_streams.map((item) => item.name)).toEqual(['.ml-anomalies-shared']);
   });
 
-  it('still dedupes backing indices of a hidden alias (alias filter ignores visibility)', async () => {
-    // The "represented as alias" dedupe is computed from the unfiltered ES
-    // response: even though `.fleet-actions` is filtered out as an alias, its
-    // backing index `.fleet-actions-7` should still be considered represented
-    // and therefore dropped from the indices list (regardless of the visibility
-    // filter). We check that by opting into `includeSystemIndices: true` but
-    // keeping the default `excludeIndicesRepresentedAsAlias: true`.
+  it('still dedupes backing indices when their parent alias is filtered out by the allow-list', async () => {
     esClient.indices.resolveIndex.mockResolvedValue({
       indices: [
-        indexItem('.fleet-actions-7', { aliases: ['.fleet-actions'] }),
+        indexItem('.monitoring-fleet-7', { aliases: ['.fleet-actions'] }),
         indexItem('regular-index'),
       ],
-      aliases: [aliasItem('.fleet-actions', ['.fleet-actions-7'])],
+      aliases: [aliasItem('.fleet-actions', ['.monitoring-fleet-7'])],
       data_streams: [],
     });
 
     const results = await listSearchSources({
       pattern: '*',
-      includeSystemIndices: true,
       esClient,
     });
 
+    expect(results.aliases).toEqual([]);
     expect(results.indices.map((item) => item.name)).toEqual(['regular-index']);
-    expect(results.aliases.map((item) => item.name)).toEqual(['.fleet-actions']);
   });
 
   it('truncates per-type results to max `perTypeLimit`', async () => {

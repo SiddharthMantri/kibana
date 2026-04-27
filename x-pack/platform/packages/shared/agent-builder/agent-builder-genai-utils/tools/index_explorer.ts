@@ -222,7 +222,6 @@ export const indexExplorer = async ({
     excludeIndicesRepresentedAsDatastream: true,
     excludeIndicesRepresentedAsAlias: false,
     esClient,
-    includeSystemIndices: indexPattern !== '*',
   });
 
   const indexCount = sources.indices.length;

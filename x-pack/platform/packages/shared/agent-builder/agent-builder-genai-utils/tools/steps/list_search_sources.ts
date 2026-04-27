@@ -43,25 +43,20 @@ export interface ListSourcesResponse {
  *
  * Dot-prefixed visibility policy
  * ------------------------------
- * By default, resources whose name starts with `.` are filtered out unless the name
- * matches a curated allow-list of user-facing dot-prefixed patterns (e.g. `.alerts-*`,
+ * Resources whose name starts with `.` are filtered out unless the name matches a
+ * curated allow-list of user-facing dot-prefixed patterns (e.g. `.alerts-*`,
  * `.ml-anomalies-*`, `.slo-observability.*`, `.entities.*`, `.lists`, `.items`,
  * `.siem-signals-*`, `.monitoring-*`). The allow-list lives at
  * `@kbn/agent-builder-common` ({@link isAllowedDotIndex}); see that module for the
- * canonical list and guidance on how to add patterns.
- *
- * Set `includeSystemIndices: true` to bypass the allow-list filter entirely (used by
- * internal callers that perform explicit single-resource lookups, e.g. CCS resolution).
- *
- * The filter applies uniformly to indices, aliases, and data streams by name so that
- * off-list internal resources (e.g. `.fleet-*`, `.chat-*`, `.internal.alerts-*`) do
- * not surface regardless of which result bucket they land in.
+ * canonical list and guidance on how to add patterns. The filter applies uniformly
+ * to indices, aliases, and data streams by name so that off-list internal resources
+ * (e.g. `.fleet-*`, `.chat-*`, `.internal.alerts-*`) do not surface regardless of
+ * which result bucket they land in.
  */
 export const listSearchSources = async ({
   pattern,
   perTypeLimit = 100,
   includeHidden = false,
-  includeSystemIndices = false,
   excludeIndicesRepresentedAsAlias = true,
   excludeIndicesRepresentedAsDatastream = true,
   esClient,
@@ -69,23 +64,10 @@ export const listSearchSources = async ({
   pattern: string;
   perTypeLimit?: number;
   includeHidden?: boolean;
-  /**
-   * When true, bypass the dot-prefixed allow-list and return every resource
-   * resolved by Elasticsearch (subject to the user's ES permissions). Defaults to
-   * false, which hides internal dot-prefixed resources that are not on the curated
-   * allow-list in `@kbn/agent-builder-common`.
-   */
-  includeSystemIndices?: boolean;
   excludeIndicesRepresentedAsAlias?: boolean;
   excludeIndicesRepresentedAsDatastream?: boolean;
   esClient: ElasticsearchClient;
 }): Promise<ListSourcesResponse> => {
-  // Local helper: a resource is visible either because the caller opted into the
-  // full set (`includeSystemIndices`), or because the name passes the dot-prefixed
-  // allow-list check. Centralized so the per-bucket filters stay readable.
-  const isResourceVisible = (name: string): boolean =>
-    includeSystemIndices || isAllowedDotIndex(name);
-
   try {
     const resolveRes = await esClient.indices.resolveIndex({
       name: [pattern],
@@ -95,7 +77,7 @@ export const listSearchSources = async ({
 
     // data streams — apply the allow-list visibility filter by name.
     const dataStreamSources = resolveRes.data_streams
-      .filter((dataStream) => isResourceVisible(dataStream.name))
+      .filter((dataStream) => isAllowedDotIndex(dataStream.name))
       .map<DataStreamSearchSource>((dataStream) => {
         return {
           type: EsResourceType.dataStream,
@@ -109,7 +91,7 @@ export const listSearchSources = async ({
 
     // aliases — apply the allow-list visibility filter by name.
     const aliasSources = resolveRes.aliases
-      .filter((alias) => isResourceVisible(alias.name))
+      .filter((alias) => isAllowedDotIndex(alias.name))
       .map<AliasSearchSource>((alias) => {
         return {
           type: EsResourceType.alias,
@@ -118,18 +100,12 @@ export const listSearchSources = async ({
         };
       });
 
-    // indices. We compute the "represented as alias/datastream" dedupe sets from
-    // the UNFILTERED ES response, not from the visibility-filtered aliasSources /
-    // dataStreamSources — even if a parent alias/DS is hidden by the allow-list,
-    // we still want the backing index to be recognized as such so it doesn't
-    // double-count. The name-based visibility filter below will drop any backing
-    // indices that are themselves off-list.
     const resolvedDataStreamNames = resolveRes.data_streams.map((ds) => ds.name);
     const resolvedAliasNames = resolveRes.aliases.map((alias) => alias.name);
 
     const indexSources = resolveRes.indices
       .filter((index) => {
-        if (!isResourceVisible(index.name)) {
+        if (!isAllowedDotIndex(index.name)) {
           return false;
         }
 
