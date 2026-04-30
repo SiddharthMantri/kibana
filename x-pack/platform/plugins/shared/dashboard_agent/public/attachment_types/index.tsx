@@ -22,7 +22,6 @@ import type {
 } from '@kbn/dashboard-plugin/public';
 import type { UnifiedSearchPublicPluginStart } from '@kbn/unified-search-plugin/public';
 import type { AgentBuilderPluginStart } from '@kbn/agent-builder-browser';
-import type { AgentBuilderPluginStart } from '@kbn/agent-builder-plugin/public';
 import type { DashboardCanvasAttachmentProps } from './async_services';
 
 export interface IdGenerator {

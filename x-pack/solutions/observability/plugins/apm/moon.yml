@@ -162,7 +162,6 @@ dependsOn:
   - '@kbn/agent-builder-browser'
   - '@kbn/agent-builder-common'
   - '@kbn/agent-builder-server'
-  - '@kbn/agent-builder-plugin'
   - '@kbn/presentation-util'
 tags:
   - plugin
