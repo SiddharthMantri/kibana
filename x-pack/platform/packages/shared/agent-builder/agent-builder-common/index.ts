@@ -249,3 +249,4 @@ export {
   type PluginManifestMetadata,
   type PluginDefinition,
 } from './plugins';
+export { EffortLevels, type EffortLevel } from './model_provider';
