@@ -30,7 +30,6 @@
     "@kbn/as-code-shared-transforms",
     "@kbn/data-views-plugin",
     "@kbn/test-jest-helpers",
-    "@kbn/agent-builder-plugin"
   ],
   "exclude": ["target/**/*"]
 }
