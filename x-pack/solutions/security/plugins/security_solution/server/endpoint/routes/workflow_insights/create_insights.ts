@@ -9,6 +9,7 @@ import { v4 as uuidv4 } from 'uuid';
 import pMap from 'p-map';
 import type { IKibanaResponse, RequestHandler } from '@kbn/core/server';
 import { AgentExecutionMode, ExecutionStatus } from '@kbn/agent-builder-common';
+import { ENDPOINT_WORKFLOW_INSIGHTS_SCAN_TRIGGERED_EVENT } from '../../../lib/telemetry/event_based/events';
 import type { CreateWorkflowInsightRequestBody } from '../../../../common/api/endpoint/workflow_insights';
 import { CreateWorkflowInsightRequestSchema } from '../../../../common/api/endpoint/workflow_insights/workflow_insights';
 import type { WorkflowInsightType } from '../../../../common/endpoint/types/workflow_insights';
@@ -216,6 +217,20 @@ const createInsightsRouteHandler = (
 
       // Include deduplicated (already-running) executions so the FE can always start polling
       const executions: ExecutionResult[] = [...alreadyRunning, ...createdExecutions];
+
+      try {
+        const telemetry = endpointContext.service.getTelemetryService();
+        telemetry.reportEvent(ENDPOINT_WORKFLOW_INSIGHTS_SCAN_TRIGGERED_EVENT.eventType, {
+          insightTypes,
+          endpointCount: endpointIds.length,
+          hasConnectorId: !!connectorId,
+          newExecutions: createdExecutions.length,
+          deduplicatedExecutions: alreadyRunning.length,
+          failures: failures.length,
+        });
+      } catch (e) {
+        logger.debug(`Failed to report scan_triggered telemetry: ${e.message}`);
+      }
 
       return response.ok({
         body: { executions, ...(failures.length > 0 ? { failures } : {}) },

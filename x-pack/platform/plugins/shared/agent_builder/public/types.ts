@@ -5,6 +5,7 @@
  * 2.0.
  */
 
+import type { ActionsPublicPluginSetup } from '@kbn/actions-plugin/public';
 import type { LensPublicSetup, LensPublicStart } from '@kbn/lens-plugin/public';
 import type { CloudStart } from '@kbn/cloud-plugin/public';
 import type {
@@ -38,6 +39,7 @@ export type {
 export interface ConfigSchema {}
 
 export interface AgentBuilderSetupDependencies {
+  actions: ActionsPublicPluginSetup;
   lens: LensPublicSetup;
   dataViews: DataViewsPublicPluginSetup;
   licenseManagement?: LicenseManagementUIPluginSetup;

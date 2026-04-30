@@ -13,6 +13,7 @@ export {
 } from './base/namespaces';
 export {
   ToolType,
+  ToolOrigin,
   type ToolDefinition,
   type ToolDefinitionWithSchema,
   platformCoreTools,
@@ -252,3 +253,4 @@ export {
   type PluginManifestMetadata,
   type PluginDefinition,
 } from './plugins';
+export { EffortLevels, type EffortLevel } from './model_provider';
