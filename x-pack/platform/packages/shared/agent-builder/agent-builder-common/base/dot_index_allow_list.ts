@@ -20,7 +20,7 @@
  *     future dot-prefixed resources.
  *
  * Patterns use a simplified glob syntax: `*` matches any sequence of characters
- * (including `.`), everything else is literal. See {@link isAllowedDotIndex}.
+ * (including `.`), everything else is literal. See {@link isVisibleSearchSource}.
  */
 export const DOT_INDEX_ALLOW_LIST_PATTERNS: readonly string[] = [
   '.alerts-*',
@@ -42,7 +42,7 @@ function patternToRegex(pattern: string): RegExp {
   return new RegExp(`^${escaped}$`);
 }
 
-export const isAllowedDotIndex = (name: string): boolean => {
+export const isVisibleSearchSource = (name: string): boolean => {
   if (typeof name !== 'string' || name.length === 0) {
     return false;
   }

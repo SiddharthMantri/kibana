@@ -5,9 +5,9 @@
  * 2.0.
  */
 
-import { isAllowedDotIndex, DOT_INDEX_ALLOW_LIST_PATTERNS } from './dot_index_allow_list';
+import { isVisibleSearchSource, DOT_INDEX_ALLOW_LIST_PATTERNS } from './dot_index_allow_list';
 
-describe('isAllowedDotIndex', () => {
+describe('isVisibleSearchSource', () => {
   describe('non-dot names', () => {
     it.each([
       ['my-index'],
@@ -16,7 +16,7 @@ describe('isAllowedDotIndex', () => {
       ['traces-apm-default'],
       ['foo.bar'],
     ])('allows %p (does not start with a dot)', (name) => {
-      expect(isAllowedDotIndex(name)).toBe(true);
+      expect(isVisibleSearchSource(name)).toBe(true);
     });
   });
 
@@ -49,7 +49,7 @@ describe('isAllowedDotIndex', () => {
       ['.monitoring-es-8-mb-2024.01.01'],
       ['.monitoring-kibana-8-2024.01.01'],
     ])('allows %p', (name) => {
-      expect(isAllowedDotIndex(name)).toBe(true);
+      expect(isVisibleSearchSource(name)).toBe(true);
     });
   });
 
@@ -69,35 +69,35 @@ describe('isAllowedDotIndex', () => {
       ['.apm-agent-configuration'],
       ['.transform-notifications-000002'],
     ])('rejects %p', (name) => {
-      expect(isAllowedDotIndex(name)).toBe(false);
+      expect(isVisibleSearchSource(name)).toBe(false);
     });
   });
 
   describe('cross-cluster search names', () => {
     it('allows an on-list local segment on a remote cluster', () => {
-      expect(isAllowedDotIndex('cluster_a:.alerts-security.alerts-default')).toBe(true);
+      expect(isVisibleSearchSource('cluster_a:.alerts-security.alerts-default')).toBe(true);
     });
 
     it('rejects an off-list local segment on a remote cluster', () => {
-      expect(isAllowedDotIndex('cluster_a:.kibana_8.15.0')).toBe(false);
+      expect(isVisibleSearchSource('cluster_a:.kibana_8.15.0')).toBe(false);
     });
 
     it('allows a non-dot local segment on a remote cluster', () => {
-      expect(isAllowedDotIndex('cluster_a:logs-*')).toBe(true);
+      expect(isVisibleSearchSource('cluster_a:logs-*')).toBe(true);
     });
 
     it('splits on the last `:` so nested colons do not break matching', () => {
-      expect(isAllowedDotIndex('cluster:a:.alerts-security.alerts-default')).toBe(true);
+      expect(isVisibleSearchSource('cluster:a:.alerts-security.alerts-default')).toBe(true);
     });
   });
 
   describe('malformed input', () => {
     it('rejects an empty string without throwing', () => {
-      expect(isAllowedDotIndex('')).toBe(false);
+      expect(isVisibleSearchSource('')).toBe(false);
     });
 
     it('rejects a value whose local segment is empty', () => {
-      expect(isAllowedDotIndex('cluster_a:')).toBe(false);
+      expect(isVisibleSearchSource('cluster_a:')).toBe(false);
     });
 
     // Accepts anything callable safely - we guard against non-string inputs
@@ -108,8 +108,8 @@ describe('isAllowedDotIndex', () => {
       [42 as unknown as string],
       [{} as unknown as string],
     ])('rejects non-string %p without throwing', (input) => {
-      expect(() => isAllowedDotIndex(input)).not.toThrow();
-      expect(isAllowedDotIndex(input)).toBe(false);
+      expect(() => isVisibleSearchSource(input)).not.toThrow();
+      expect(isVisibleSearchSource(input)).toBe(false);
     });
   });
 

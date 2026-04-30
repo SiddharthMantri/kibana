@@ -7,7 +7,7 @@
 
 import { take } from 'lodash';
 import type { ElasticsearchClient } from '@kbn/core/server';
-import { EsResourceType, isAllowedDotIndex } from '@kbn/agent-builder-common';
+import { EsResourceType, isVisibleSearchSource } from '@kbn/agent-builder-common';
 import { isNotFoundError } from '@kbn/es-errors';
 
 export interface DataStreamSearchSource {
@@ -40,18 +40,6 @@ export interface ListSourcesResponse {
 /**
  * List the search sources (indices, aliases and datastreams) matching a given index pattern,
  * using the `_resolve_index` API.
- *
- * Dot-prefixed visibility policy
- * ------------------------------
- * Resources whose name starts with `.` are filtered out unless the name matches a
- * curated allow-list of user-facing dot-prefixed patterns (e.g. `.alerts-*`,
- * `.ml-anomalies-*`, `.slo-observability.*`, `.entities.*`, `.lists`, `.items`,
- * `.siem-signals-*`, `.monitoring-*`). The allow-list lives at
- * `@kbn/agent-builder-common` ({@link isAllowedDotIndex}); see that module for the
- * canonical list and guidance on how to add patterns. The filter applies uniformly
- * to indices, aliases, and data streams by name so that off-list internal resources
- * (e.g. `.fleet-*`, `.chat-*`, `.internal.alerts-*`) do not surface regardless of
- * which result bucket they land in.
  */
 export const listSearchSources = async ({
   pattern,
@@ -77,7 +65,7 @@ export const listSearchSources = async ({
 
     // data streams — apply the allow-list visibility filter by name.
     const dataStreamSources = resolveRes.data_streams
-      .filter((dataStream) => isAllowedDotIndex(dataStream.name))
+      .filter((dataStream) => isVisibleSearchSource(dataStream.name))
       .map<DataStreamSearchSource>((dataStream) => {
         return {
           type: EsResourceType.dataStream,
@@ -91,7 +79,7 @@ export const listSearchSources = async ({
 
     // aliases — apply the allow-list visibility filter by name.
     const aliasSources = resolveRes.aliases
-      .filter((alias) => isAllowedDotIndex(alias.name))
+      .filter((alias) => isVisibleSearchSource(alias.name))
       .map<AliasSearchSource>((alias) => {
         return {
           type: EsResourceType.alias,
@@ -105,7 +93,7 @@ export const listSearchSources = async ({
 
     const indexSources = resolveRes.indices
       .filter((index) => {
-        if (!isAllowedDotIndex(index.name)) {
+        if (!isVisibleSearchSource(index.name)) {
           return false;
         }
 

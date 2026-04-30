@@ -11,7 +11,7 @@ export {
   protectedNamespaces as toolReservedNamespaces,
   isInProtectedNamespace,
 } from './base/namespaces';
-export { DOT_INDEX_ALLOW_LIST_PATTERNS, isAllowedDotIndex } from './base/dot_index_allow_list';
+export { DOT_INDEX_ALLOW_LIST_PATTERNS, isVisibleSearchSource } from './base/dot_index_allow_list';
 export {
   ToolType,
   ToolOrigin,
