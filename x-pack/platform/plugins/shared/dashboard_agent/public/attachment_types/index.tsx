@@ -22,11 +22,6 @@ import type {
 } from '@kbn/dashboard-plugin/public';
 import type { UnifiedSearchPublicPluginStart } from '@kbn/unified-search-plugin/public';
 import type { AgentBuilderPluginStart } from '@kbn/agent-builder-browser';
-import { DashboardCanvasAttachment } from './canvas_integration/dashboard_canvas_attachment';
-import { createDashboardAppIntegration$ } from './dashboard_integration/dashboard_app_integration';
-import { previewAttachmentInDashboard } from './dashboard_integration/preview_attachment';
-import { selectDashboardAttachmentForSync } from './dashboard_integration/select_dashboard_attachment_for_sync';
-import { handleEditInDashboard } from './handle_edit_in_dashboard';
 import type { AgentBuilderPluginStart } from '@kbn/agent-builder-plugin/public';
 import type { DashboardCanvasAttachmentProps } from './async_services';
 

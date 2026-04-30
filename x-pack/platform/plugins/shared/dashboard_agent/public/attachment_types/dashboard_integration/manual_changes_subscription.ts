@@ -5,14 +5,6 @@
  * 2.0.
  */
 
-
-import type { AttachmentInput } from '@kbn/agent-builder-common/attachments';
-import {
-  DASHBOARD_ATTACHMENT_TYPE,
-  dashboardStateToAttachmentData,
-} from '@kbn/dashboard-agent-common';
-import type { AgentBuilderPluginStart } from '@kbn/agent-builder-browser';
-import type { DashboardAttachment } from '@kbn/dashboard-agent-common/types';
 import { debounceTime, merge, skip, type Observable, type Subscription } from 'rxjs';
 import type { DashboardApi } from '@kbn/dashboard-plugin/public';
 import { childrenUnsavedChanges$ } from '@kbn/presentation-publishing';
