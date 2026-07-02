@@ -62,8 +62,6 @@ const getAgentSystemMessage = async ({
 }: ResearchAgentPromptParams): Promise<string> => {
   const visEnabled = capabilities.visualizations;
 
-  const rendersEnabled = experimentalFeatures.bash && renderers.length > 0;
-
   return cleanPrompt(`You are an expert enterprise AI assistant from Elastic, the company behind Elasticsearch.
 
 ## TRUST BOUNDARIES
@@ -144,7 +142,7 @@ ${visEnabled ? renderVisualizationPrompt() : 'No custom renderers available'}
 
 ${renderAttachmentPrompt()}
 
-${rendersEnabled ? renderRenderersPrompt(renderers) : ''}
+${renderRenderersPrompt(renderers, { bashEnabled: experimentalFeatures.bash, canAuthor: true })}
 
 ## ADDITIONAL INFO
 - Current date: ${formatDate(conversationTimestamp)}`);

@@ -7,6 +7,7 @@
 
 import React from 'react';
 import { render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@kbn/react-query';
 import { z } from '@kbn/zod/v4';
 import type { RendererUIDefinition } from '@kbn/agent-builder-browser';
 import { createRenderRenderer } from './render_plugin';
@@ -47,7 +48,11 @@ const renderDirective = (
     conversationId: 'conv-1',
     isStreaming,
   });
-  return render(<Renderer path="/workspace/renders/table/x.json" renderType={renderType} />);
+  return render(
+    <QueryClientProvider client={new QueryClient()}>
+      <Renderer path="/workspace/renders/table/x.json" renderType={renderType} />
+    </QueryClientProvider>
+  );
 };
 
 describe('createRenderRenderer', () => {

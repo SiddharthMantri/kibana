@@ -7,8 +7,10 @@
 
 import path from 'path';
 import { createBadRequestError } from '@kbn/agent-builder-common';
+import { MOUNT_POINTS } from '../execution/filesystem/mount_points';
 
-export const WORKSPACE_PREFIX = '/workspace';
+/** Derived from the filesystem mount point so read validation can't drift from the write path. */
+export const WORKSPACE_PREFIX = MOUNT_POINTS.workspace;
 
 /**
  * Normalize a caller-supplied path and assert it stays within `/workspace`.

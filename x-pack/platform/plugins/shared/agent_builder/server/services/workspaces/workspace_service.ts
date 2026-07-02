@@ -67,7 +67,7 @@ class WorkspaceServiceImpl implements WorkspaceService {
         }
 
         const snapshot = await workspaceClient.load(conversation.workspace_id);
-        const file = snapshot?.files[filePath];
+        const file = snapshot?.files?.[filePath];
         if (!file) {
           return undefined;
         }

@@ -40,8 +40,6 @@ export const getStructuredAnswerPrompt = async (
   const { attachmentTypes, versionedAttachmentPresentation } = processedConversation;
   const visEnabled = capabilities.visualizations;
 
-  const rendersEnabled = experimentalFeatures.bash && renderers.length > 0;
-
   // Generate messages from the conversation's rounds, with optional compaction summary
   // sourced from processedConversation.compactionSummary (set during compaction phase).
   const previousRoundsAsMessages = await convertPreviousRounds({
@@ -92,7 +90,7 @@ ${getConversationAttachmentsSection(versionedAttachmentPresentation)}
 
 ${visEnabled ? renderVisualizationPrompt() : 'No custom renderers available'}
 
-${rendersEnabled ? renderRenderersPrompt(renderers) : ''}
+${renderRenderersPrompt(renderers, { bashEnabled: experimentalFeatures.bash, canAuthor: false })}
 
 ## ADDITIONAL INFO
 - Current date: ${formatDate(conversationTimestamp)}

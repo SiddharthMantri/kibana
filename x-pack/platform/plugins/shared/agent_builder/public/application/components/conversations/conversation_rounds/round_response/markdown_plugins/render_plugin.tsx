@@ -6,12 +6,14 @@
  */
 
 import React from 'react';
-import useAsync from 'react-use/lib/useAsync';
+import { useQuery } from '@kbn/react-query';
 import { EuiCallOut, EuiSkeletonText } from '@elastic/eui';
 import { i18n } from '@kbn/i18n';
+import type { IHttpFetchError } from '@kbn/core-http-browser';
 import { renderFileSchema } from '@kbn/agent-builder-common';
 import { renderElement } from '@kbn/agent-builder-common/tools/custom_rendering';
 import type { RenderersService, ConversationsService } from '../../../../../../services';
+import { queryKeys } from '../../../../../query_keys';
 import { createTagParser } from './utils';
 
 /**
@@ -65,16 +67,20 @@ const ResolvedRender: React.FC<{
   renderersService: RenderersService;
   conversationsService: ConversationsService;
 }> = ({ path, renderType, conversationId, renderersService, conversationsService }) => {
-  const state = useAsync(
-    () => conversationsService.readWorkspaceFile({ conversationId, path }),
-    [conversationId, path]
-  );
+  const { isLoading, error, data } = useQuery({
+    queryKey: queryKeys.workspaceFiles.byPath(conversationId, path),
+    queryFn: () => conversationsService.readWorkspaceFile({ conversationId, path }),
+    retry: (failureCount, httpError: IHttpFetchError) =>
+      httpError?.response?.status === 404 && failureCount < 3,
+    retryDelay: 1000,
+    staleTime: Infinity,
+  });
 
-  if (state.loading) {
+  if (isLoading) {
     return <EuiSkeletonText lines={3} />;
   }
 
-  if (state.error || !state.value) {
+  if (error || !data) {
     return (
       <RenderError
         title={i18n.translate('xpack.agentBuilder.render.loadError', {
@@ -87,7 +93,7 @@ const ResolvedRender: React.FC<{
 
   let parsedJson: unknown;
   try {
-    parsedJson = JSON.parse(state.value.content);
+    parsedJson = JSON.parse(data.content);
   } catch {
     return (
       <RenderError
@@ -141,8 +147,8 @@ const ResolvedRender: React.FC<{
           values: { type },
         })}
       >
-        {payloadResult.error.issues.map((issue) => (
-          <div key={issue.path.join('.')}>{issue.message}</div>
+        {payloadResult.error.issues.map((issue, index) => (
+          <div key={`${issue.path.join('.')}-${index}`}>{issue.message}</div>
         ))}
       </RenderError>
     );

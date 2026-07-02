@@ -158,9 +158,11 @@ export interface AgentHandlerContext {
    */
   attachments: AttachmentsService;
   /**
-   * Renderer types registered in agent builder.
+   * Renderer types registered in agent builder, used to advertise available
+   * renderers to the agent in the prompt. Optional: absent when the context is
+   * constructed outside agentBuilder's runner (treated as no renderers).
    */
-  renderers: RendererTypeDefinition[];
+  renderers?: RendererTypeDefinition[];
   /**
    * Skills service to interact with skills.
    */

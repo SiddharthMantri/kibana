@@ -260,7 +260,7 @@ export const runDefaultAgentMode: RunChatAgentFn = async (
     outputSchema,
     conversationTimestamp,
     experimentalFeatures,
-    renderers,
+    renderers: renderers ?? [],
   });
 
   const agentGraph = createAgentGraph({
