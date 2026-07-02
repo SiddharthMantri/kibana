@@ -338,13 +338,9 @@ describe('runTool', () => {
       parentManager: runnerManager,
     });
 
-    expect(runnerDeps.elasticsearch.client.asScoped).toHaveBeenCalledWith(
-      expect.objectContaining({
-        headers: runnerDeps.request.headers,
-        url: expect.any(URL),
-      }),
-      { projectRouting: 'space' }
-    );
+    expect(runnerDeps.elasticsearch.client.asScoped).toHaveBeenCalledWith(runnerDeps.request, {
+      projectRouting: 'space',
+    });
   });
 });
 

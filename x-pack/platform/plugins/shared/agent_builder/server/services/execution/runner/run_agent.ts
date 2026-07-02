@@ -10,8 +10,6 @@ import type {
   ScopedRunnerRunAgentParams,
   RunAgentReturn,
 } from '@kbn/agent-builder-server';
-import { AGENT_BUILDER_EXPERIMENTAL_FEATURES_SETTING_ID } from '@kbn/management-settings-ids';
-import { addSpaceIdToPath } from '@kbn/spaces-utils';
 import { getConnectorProvider } from '@kbn/inference-common';
 import { getCurrentSpaceId } from '../../../utils/spaces';
 import { withAgentSpan } from '../../../tracing';
@@ -59,12 +57,6 @@ export const createAgentHandlerContext = async <TParams = Record<string, unknown
   } = manager.deps;
 
   const spaceId = getCurrentSpaceId({ request, spaces });
-  // CPS space resolution reads url.pathname; TM fakeRequests set the space on basePath only,
-  // so round-trip the resolved spaceId through a synthetic URL.
-  const cpsScopedRequest = {
-    headers: request.headers,
-    url: new URL(addSpaceIdToPath('/', spaceId), 'http://localhost'),
-  };
   const toolRegistry = await toolsService.getRegistry({ request });
 
   const { filesystemService, bashService } = await createFilesystemServices({
@@ -80,7 +72,7 @@ export const createAgentHandlerContext = async <TParams = Record<string, unknown
     defaultConnectorId: manager.deps.defaultConnectorId,
     logger,
     modelProvider,
-    esClient: elasticsearch.client.asScoped(cpsScopedRequest, { projectRouting: 'space' }),
+    esClient: elasticsearch.client.asScoped(request, { projectRouting: 'space' }),
     savedObjectsClient: savedObjects.getScopedClient(request),
     runner: manager.getRunner(),
     toolRegistry,

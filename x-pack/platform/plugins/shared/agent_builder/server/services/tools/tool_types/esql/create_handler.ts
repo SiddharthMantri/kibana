@@ -44,18 +44,7 @@ export const resolveToolParameters = (
 export const createHandler = (
   configuration: EsqlToolConfig
 ): ToolHandlerFn<Record<string, unknown>> => {
-  return async (params, ctx) => {
-    console.log('[CPS-DEBUG esql]', {
-      spaceId: ctx.spaceId,
-      callSource: ctx.callContext?.callSource,
-      requestUrl: (ctx.request as any)?.url?.pathname ?? (ctx.request as any)?.url?.href,
-      isFakeRequest: (ctx.request as any)?.isFakeRequest,
-      // Probe what the scoped client carries — internals, but useful here
-      esClientHasProjectRouting:
-        typeof (ctx.esClient as any)?.asCurrentUser?.transport !== 'undefined',
-    });
-
-    const { esClient } = ctx;
+  return async (params, { esClient }) => {
     const client = esClient.asCurrentUser;
 
     // Apply default values for parameters that weren't provided by the LLM
