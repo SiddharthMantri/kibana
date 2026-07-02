@@ -5,4 +5,4 @@
  * 2.0.
  */
 
-export * from './parse_markdown';
+export { parseMarkdown } from './parse_markdown';
