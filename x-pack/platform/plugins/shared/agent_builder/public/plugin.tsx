@@ -75,6 +75,7 @@ import {
 } from './sidebar';
 import { createVisualizationAttachmentDefinition } from './application/components/attachments/visualization_attachment';
 import { storageKeys } from './application/storage_keys';
+import { AGENTBUILDER_APP_ID } from '../common/features';
 
 export class AgentBuilderPlugin
   implements
@@ -154,9 +155,8 @@ export class AgentBuilderPlugin
     const { http } = core;
     const { licensing, inference } = startDependencies;
 
-    // Tell CPS that Agent Builder uses space-default project routing (read-only)
     startDependencies.cps?.cpsManager?.registerAppAccess(
-      'agentBuilder',
+      AGENTBUILDER_APP_ID,
       () => ProjectRoutingAccess.READONLY
     );
 
