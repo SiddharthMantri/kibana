@@ -465,5 +465,108 @@ describe('WorkflowTaskManager', () => {
         expect(mockTaskManager.runSoon).toHaveBeenCalledWith(task.id);
       });
     });
+
+    it('should not runSoon workflow-global-timeout idle task', async () => {
+      const globalTimeoutTaskId = getWorkflowGlobalTimeoutResumeTaskId(workflowExecutionId);
+      const mockIdleTasks = [
+        {
+          id: globalTimeoutTaskId,
+          taskType: WORKFLOW_RESUME_TASK_TYPE,
+          params: { workflowRunId: workflowExecutionId, spaceId: 'default' },
+          state: {},
+          scope: [`workflow:execution:${workflowExecutionId}`],
+          runAt: new Date('2099-01-01T00:00:00.000Z'),
+        },
+        {
+          id: 'immediate-resume-uuid',
+          taskType: WORKFLOW_RESUME_TASK_TYPE,
+          params: { workflowRunId: workflowExecutionId, spaceId: 'default' },
+          state: {},
+          scope: [`workflow:execution:${workflowExecutionId}`],
+        },
+      ];
+
+      mockTaskManager.fetch.mockResolvedValue({ docs: mockIdleTasks } as any);
+
+      await workflowTaskManager.forceRunIdleTasks(workflowExecutionId);
+
+      expect(mockTaskManager.runSoon).toHaveBeenCalledTimes(1);
+      expect(mockTaskManager.runSoon).toHaveBeenCalledWith('immediate-resume-uuid');
+      expect(mockTaskManager.runSoon).not.toHaveBeenCalledWith(globalTimeoutTaskId);
+    });
+
+    it('should schedule immediate resume when only workflow-global-timeout is idle', async () => {
+      const globalTimeoutTaskId = getWorkflowGlobalTimeoutResumeTaskId(workflowExecutionId);
+      mockTaskManager.fetch
+        .mockResolvedValueOnce({
+          docs: [
+            {
+              id: globalTimeoutTaskId,
+              taskType: WORKFLOW_RESUME_TASK_TYPE,
+              params: { workflowRunId: workflowExecutionId, spaceId: 'default' },
+              state: {},
+              scope: [`workflow:execution:${workflowExecutionId}`],
+              runAt: new Date('2099-01-01T00:00:00.000Z'),
+            },
+          ],
+        } as any)
+        .mockResolvedValueOnce({ docs: [] } as any);
+      mockTaskManager.schedule.mockResolvedValue({ id: 'new-resume-task' } as any);
+
+      await workflowTaskManager.forceRunIdleTasks(workflowExecutionId, {
+        spaceId: 'default',
+        fakeRequest,
+      });
+
+      expect(mockTaskManager.runSoon).not.toHaveBeenCalledWith(globalTimeoutTaskId);
+      expect(mockTaskManager.schedule).toHaveBeenCalledTimes(1);
+      expect(mockTaskManager.runSoon).toHaveBeenCalledWith('new-resume-task');
+    });
+  });
+
+  describe('queued workflow run tasks', () => {
+    it('scheduleDormantQueuedRunTask schedules workflow:run with queue TTL runAt and trigger request', async () => {
+      jest.useFakeTimers().setSystemTime(new Date('2025-08-05T20:00:00.000Z'));
+      const workflowExecution = createMockWorkflowExecution({
+        triggeredBy: 'alert',
+      });
+      mockTaskManager.schedule.mockResolvedValue({ id: 'workflow:exec-id:alert' } as any);
+
+      await workflowTaskManager.scheduleDormantQueuedRunTask({
+        workflowExecution,
+        request: fakeRequest,
+      });
+
+      expect(mockTaskManager.removeIfExists).toHaveBeenCalledWith(
+        'workflow:test-execution-id:alert'
+      );
+      expect(mockTaskManager.schedule).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: 'workflow:test-execution-id:alert',
+          taskType: 'workflow:run',
+          runAt: new Date('2025-08-06T20:00:00.000Z'),
+        }),
+        { request: fakeRequest }
+      );
+      jest.useRealTimers();
+    });
+
+    it('promoteQueuedRunTask calls runSoon on the dormant task id', async () => {
+      await workflowTaskManager.promoteQueuedRunTask({
+        executionId: 'exec-1',
+        triggeredBy: 'manual',
+      });
+
+      expect(mockTaskManager.runSoon).toHaveBeenCalledWith('workflow:exec-1:manual');
+    });
+
+    it('removeQueuedRunTask removes the dormant task id', async () => {
+      await workflowTaskManager.removeQueuedRunTask({
+        executionId: 'exec-1',
+        triggeredBy: 'manual',
+      });
+
+      expect(mockTaskManager.removeIfExists).toHaveBeenCalledWith('workflow:exec-1:manual');
+    });
   });
 });
