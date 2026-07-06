@@ -282,7 +282,6 @@ export {
   type PluginDefinition,
 } from './plugins';
 export type { RendererDefinition, RendererPayloadOf } from './renderers';
-export { renderFileSchema, type RenderFile } from './renderers';
 export { EffortLevels, type EffortLevel } from './model_provider';
 export {
   type OAuthClient,

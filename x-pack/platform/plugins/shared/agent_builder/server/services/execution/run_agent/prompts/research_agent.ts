@@ -142,7 +142,7 @@ ${visEnabled ? renderVisualizationPrompt() : 'No custom renderers available'}
 
 ${renderAttachmentPrompt()}
 
-${renderRenderersPrompt(renderers, { bashEnabled: experimentalFeatures.bash, canAuthor: true })}
+${renderRenderersPrompt(renderers, { bashEnabled: experimentalFeatures.bash })}
 
 ## ADDITIONAL INFO
 - Current date: ${formatDate(conversationTimestamp)}`);

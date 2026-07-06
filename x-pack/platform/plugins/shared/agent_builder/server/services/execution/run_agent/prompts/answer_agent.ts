@@ -13,7 +13,6 @@ import { formatDate } from './utils/helpers';
 import { customInstructionsBlock } from './utils/custom_instructions';
 import { formatResearcherActionHistory, formatAnswerActionHistory } from './utils/actions';
 import { renderVisualizationPrompt } from './utils/visualizations';
-import { renderRenderersPrompt } from './utils/renderers';
 import { attachmentTypeInstructions } from './utils/attachments';
 import type { PromptFactoryParams, AnswerAgentPromptRuntimeParams } from './types';
 
@@ -34,8 +33,6 @@ export const getStructuredAnswerPrompt = async (
     cycleLimit,
     resultTransformer,
     toolManager,
-    experimentalFeatures,
-    renderers,
   } = params;
   const { attachmentTypes, versionedAttachmentPresentation } = processedConversation;
   const visEnabled = capabilities.visualizations;
@@ -89,8 +86,6 @@ ${getConversationAttachmentsSection(versionedAttachmentPresentation)}
 ## CUSTOM RENDERING
 
 ${visEnabled ? renderVisualizationPrompt() : 'No custom renderers available'}
-
-${renderRenderersPrompt(renderers, { bashEnabled: experimentalFeatures.bash, canAuthor: false })}
 
 ## ADDITIONAL INFO
 - Current date: ${formatDate(conversationTimestamp)}

@@ -13,6 +13,6 @@ export {
   createWorkspaceService,
   type WorkspaceService,
   type ScopedWorkspaceClient,
-  type WorkspaceFileContent,
   type WorkspaceServiceDeps,
 } from './workspace_service';
+export type { WorkspaceFileContent } from '../../../common/workspaces';

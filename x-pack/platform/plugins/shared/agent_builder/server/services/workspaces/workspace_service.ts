@@ -9,17 +9,12 @@ import type { KibanaRequest } from '@kbn/core-http-server';
 import type { Logger } from '@kbn/logging';
 import type { ElasticsearchServiceStart } from '@kbn/core-elasticsearch-server';
 import type { SpacesPluginStart } from '@kbn/spaces-plugin/server';
+import type { WorkspaceFileContent } from '../../../common/workspaces';
 import { getCurrentSpaceId } from '../../utils/spaces';
 import type { ConversationService } from '../conversation';
 import { WorkspaceClient } from './client/workspace_client';
 import { createStorage as createWorkspaceStorage } from './client/storage';
 import { resolveWorkspaceFilePath } from './workspace_path';
-
-/** Content of a single workspace file, decoded to UTF-8. */
-export interface WorkspaceFileContent {
-  path: string;
-  content: string;
-}
 
 export interface ScopedWorkspaceClient {
   readFile(opts: {

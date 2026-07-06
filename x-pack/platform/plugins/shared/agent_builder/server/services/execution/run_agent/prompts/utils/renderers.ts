@@ -23,25 +23,19 @@ const describePayloadSchema = (renderer: RendererTypeDefinition): string => {
 };
 
 export interface RenderRenderersPromptOptions {
-  /** Whether the bash tool is enabled for this run — render files can only exist via bash. */
+  /** Whether the bash tool is enabled for this run — render files can only be authored via bash. */
   bashEnabled: boolean;
-  /**
-   * Whether the agent receiving this prompt can call bash to author render files.
-   * False for the toolless answer agent, which may only reference files already
-   * written during the round.
-   */
-  canAuthor: boolean;
 }
 
 /**
  * Exposes the registered renderers to the agent: the `<render>` directive, the
- * workspace file convention, the self-describing `{ type, data }` envelope, and
- * each type's `data` JSON schema. Returns an empty string when bash is disabled
- * or no renderers are registered, so callers can interpolate unconditionally.
+ * recommended workspace file convention, and each type's payload JSON schema.
+ * Returns an empty string when bash is disabled or no renderers are registered,
+ * so callers can interpolate unconditionally.
  */
 export const renderRenderersPrompt = (
   renderers: RendererTypeDefinition[],
-  { bashEnabled, canAuthor }: RenderRenderersPromptOptions
+  { bashEnabled }: RenderRenderersPromptOptions
 ): string => {
   if (!bashEnabled || renderers.length === 0) {
     return '';
@@ -56,27 +50,10 @@ export const renderRenderersPrompt = (
       return [
         `#### type: "${renderer.type}"`,
         ...(description ? [description] : []),
-        `\`data\` JSON schema: ${describePayloadSchema(renderer)}`,
+        `Payload JSON schema: ${describePayloadSchema(renderer)}`,
       ].join('\n');
     })
     .join('\n\n');
-
-  if (!canAuthor) {
-    return `### RENDERING OBJECTS
-You can render a rich object inline in your reply by emitting a <${tagName}> directive that points at a render file already written to the workspace during this round.
-
-**How to render**
-1. Only reference a file that was actually written — an earlier bash tool call in this round wrote a JSON file under \`${rendersDir}/\`. You cannot write or modify files yourself.
-2. Copy the path from that bash call verbatim and emit the directive on its own line (never inside a code block), always including the \`${attributes.type}\`:
-   \`<${tagName} ${attributes.path}="${rendersDir}/{type}/{id}.json" ${attributes.type}="<render type>" />\`
-
-**Rules**
-* NEVER invent, guess, or alter a path. If no render file was written during this round, do not emit a \`<${tagName}>\` directive.
-* Only use a \`${attributes.type}\` from the list below.
-
-**Available render types**
-${typeSections}`;
-  }
 
   const exampleType = renderers[0].type;
 
@@ -85,18 +62,16 @@ You can render a rich object inline in your reply by writing its data to a works
 
 **How to render**
 1. Pick a render type from the list below.
-2. Use the bash tool to write a JSON file to \`${rendersDir}/{type}/{id}.json\` — choose a short descriptive {id}, and use a NEW filename whenever you create or change a render (never overwrite an existing file, so earlier replies keep their original render).
-3. The file MUST be a self-describing envelope:
-   \`{ "type": "<render type>", "data": <object matching that type's data schema> }\`
-4. Emit the directive on its own line (never inside a code block), always including the \`${attributes.type}\`:
+2. Use the bash tool to write the payload to a workspace file. The file content is the payload itself, matching the type's schema exactly. The recommended location is \`${rendersDir}/{type}/{id}.json\` with a short descriptive {id}. Use a NEW filename whenever you create or change a render (never overwrite an existing file, so earlier replies keep their original render).
+3. Emit the directive on its own line (never inside a code block). Both attributes are REQUIRED — \`${attributes.type}\` selects the renderer:
    \`<${tagName} ${attributes.path}="${rendersDir}/{type}/{id}.json" ${attributes.type}="<render type>" />\`
 
 **Rules**
-* Only use a \`${attributes.type}\` from the list below; \`data\` must match that type's schema exactly.
+* Only use a \`${attributes.type}\` from the list below; the file content must match that type's schema exactly.
 * Always write the file with bash BEFORE emitting the directive, and copy the path verbatim.
 
 **Example**
-Write \`${rendersDir}/${exampleType}/example.json\`, then reply with:
+Write the payload to \`${rendersDir}/${exampleType}/example.json\`, then reply with:
 \`<${tagName} ${attributes.path}="${rendersDir}/${exampleType}/example.json" ${attributes.type}="${exampleType}" />\`
 
 **Available render types**

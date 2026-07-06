@@ -6,4 +6,3 @@
  */
 
 export type { RendererDefinition, RendererPayloadOf } from './renderer_definition';
-export { renderFileSchema, type RenderFile } from './render_file';

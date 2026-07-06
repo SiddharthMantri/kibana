@@ -304,7 +304,7 @@ export const createAgentHandlerContextMock = (): AgentHandlerContextMock => {
     toolRegistry: createToolRegistryMock(),
     runner: createScopedRunnerMock(),
     attachments: createAttachmentsService(),
-    renderers: [],
+    renderers: { getRegisteredRenderers: () => [], getRenderer: () => undefined },
     resultStore: createToolResultStoreMock(),
     skillsStore: createSkillsStoreMock(),
     attachmentStateManager: createAttachmentStateManagerMock(),

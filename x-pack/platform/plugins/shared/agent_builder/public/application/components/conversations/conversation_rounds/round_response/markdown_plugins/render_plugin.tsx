@@ -7,10 +7,10 @@
 
 import React from 'react';
 import { useQuery } from '@kbn/react-query';
-import { EuiCallOut, EuiSkeletonText } from '@elastic/eui';
+import { EuiCallOut, EuiErrorBoundary, EuiSkeletonText } from '@elastic/eui';
 import { i18n } from '@kbn/i18n';
 import type { IHttpFetchError } from '@kbn/core-http-browser';
-import { renderFileSchema } from '@kbn/agent-builder-common';
+import type { RendererUIDefinition } from '@kbn/agent-builder-browser';
 import { renderElement } from '@kbn/agent-builder-common/tools/custom_rendering';
 import type { RenderersService, ConversationsService } from '../../../../../../services';
 import { queryKeys } from '../../../../../query_keys';
@@ -58,11 +58,21 @@ const RenderError: React.FC<{ title: string; children?: React.ReactNode }> = ({
 );
 
 /**
+ * Invokes the plugin-owned render function during THIS component's render, so a
+ * throw happens inside the enclosing error boundary's subtree and is contained
+ * (calling it inline while building the boundary's children would escape it).
+ */
+const RendererOutput: React.FC<{
+  definition: RendererUIDefinition;
+  payload: Record<string, unknown>;
+}> = ({ definition, payload }) => <>{definition.render(payload, { isCanvas: false })}</>;
+
+/**
  * Resolves a `<render>` directive once its workspace file is available.
  */
 const ResolvedRender: React.FC<{
   path: string;
-  renderType?: string;
+  renderType: string;
   conversationId: string;
   renderersService: RenderersService;
   conversationsService: ConversationsService;
@@ -104,47 +114,25 @@ const ResolvedRender: React.FC<{
     );
   }
 
-  const fileResult = renderFileSchema.safeParse(parsedJson);
-  if (!fileResult.success) {
-    return (
-      <RenderError
-        title={i18n.translate('xpack.agentBuilder.render.invalidFile', {
-          defaultMessage: 'Render file does not match the expected format',
-        })}
-      />
-    );
-  }
-
-  const type = fileResult.data.type ?? renderType;
-  if (!type) {
-    return (
-      <RenderError
-        title={i18n.translate('xpack.agentBuilder.render.missingType', {
-          defaultMessage: 'Render is missing a type',
-        })}
-      />
-    );
-  }
-
-  const definition = renderersService.getRendererUiDefinition(type);
+  const definition = renderersService.getRendererUiDefinition(renderType);
   if (!definition) {
     return (
       <RenderError
         title={i18n.translate('xpack.agentBuilder.render.unknownType', {
           defaultMessage: 'No renderer registered for type "{type}"',
-          values: { type },
+          values: { type: renderType },
         })}
       />
     );
   }
 
-  const payloadResult = definition.payloadSchema.safeParse(fileResult.data.data);
+  const payloadResult = definition.payloadSchema.safeParse(parsedJson);
   if (!payloadResult.success) {
     return (
       <RenderError
         title={i18n.translate('xpack.agentBuilder.render.invalidPayload', {
           defaultMessage: 'Render payload is invalid for type "{type}"',
-          values: { type },
+          values: { type: renderType },
         })}
       >
         {payloadResult.error.issues.map((issue, index) => (
@@ -154,7 +142,13 @@ const ResolvedRender: React.FC<{
     );
   }
 
-  return <>{definition.render(payloadResult.data, { isCanvas: false })}</>;
+  // Renderers are plugin-owned code; contain their render failures so a
+  // throwing renderer can't take down the whole chat.
+  return (
+    <EuiErrorBoundary>
+      <RendererOutput definition={definition} payload={payloadResult.data} />
+    </EuiErrorBoundary>
+  );
 };
 
 /**
@@ -175,6 +169,16 @@ export const createRenderRenderer = ({
 
     if (isStreaming) {
       return <EuiSkeletonText lines={3} />;
+    }
+
+    if (!renderType) {
+      return (
+        <RenderError
+          title={i18n.translate('xpack.agentBuilder.render.missingType', {
+            defaultMessage: 'Render is missing a type',
+          })}
+        />
+      );
     }
 
     return (

@@ -40,8 +40,11 @@ const makeServices = ({
 
 const renderDirective = (
   services: ReturnType<typeof makeServices>,
-  { isStreaming = false, renderType = 'table' }: { isStreaming?: boolean; renderType?: string } = {}
+  opts: { isStreaming?: boolean; renderType?: string | null } = {}
 ) => {
+  const { isStreaming = false } = opts;
+  // `null` means "tag had no type attribute"; absent means the default 'table'.
+  const renderType = 'renderType' in opts ? opts.renderType ?? undefined : 'table';
   const Renderer = createRenderRenderer({
     renderersService: services.renderersService,
     conversationsService: services.conversationsService,
@@ -62,10 +65,18 @@ describe('createRenderRenderer', () => {
     expect(services.conversationsService.readWorkspaceFile).not.toHaveBeenCalled();
   });
 
-  it('validates the payload and mounts the registered renderer', async () => {
+  it('shows an error (without fetching) when the directive has no type', () => {
+    const services = makeServices({ content: '{}' });
+    renderDirective(services, { renderType: null });
+
+    expect(screen.getByText(/missing a type/)).toBeInTheDocument();
+    expect(services.conversationsService.readWorkspaceFile).not.toHaveBeenCalled();
+  });
+
+  it('validates the raw payload and mounts the renderer selected by the tag type', async () => {
     const renderImpl = jest.fn(() => <div>RENDERED</div>);
     const services = makeServices({
-      content: JSON.stringify({ type: 'table', data: { ok: true } }),
+      content: JSON.stringify({ ok: true }),
       renderer: okRenderer(renderImpl),
     });
 
@@ -73,22 +84,23 @@ describe('createRenderRenderer', () => {
 
     expect(await screen.findByText('RENDERED')).toBeInTheDocument();
     expect(renderImpl).toHaveBeenCalledWith({ ok: true }, { isCanvas: false });
+    expect(services.renderersService.getRendererUiDefinition).toHaveBeenCalledWith('table');
   });
 
   it('shows an error when the renderer type is unknown', async () => {
     const services = makeServices({
-      content: JSON.stringify({ type: 'nope', data: {} }),
+      content: JSON.stringify({ ok: true }),
       renderer: undefined,
     });
 
-    renderDirective(services);
+    renderDirective(services, { renderType: 'nope' });
 
     expect(await screen.findByText(/No renderer registered/)).toBeInTheDocument();
   });
 
   it('shows an error when the payload fails schema validation', async () => {
     const services = makeServices({
-      content: JSON.stringify({ type: 'table', data: { ok: 'not-a-boolean' } }),
+      content: JSON.stringify({ ok: 'not-a-boolean' }),
       renderer: okRenderer(() => <div>RENDERED</div>),
     });
 
@@ -113,16 +125,15 @@ describe('createRenderRenderer', () => {
     expect(await screen.findByText(/not valid JSON/)).toBeInTheDocument();
   });
 
-  it('falls back to the tag type when the file omits it', async () => {
-    const renderImpl = jest.fn(() => <div>RENDERED</div>);
+  it('contains a throwing renderer in an error boundary instead of crashing', async () => {
     const services = makeServices({
-      content: JSON.stringify({ data: { ok: true } }),
-      renderer: okRenderer(renderImpl),
+      content: JSON.stringify({ ok: true }),
+      renderer: okRenderer(() => {
+        throw new Error('renderer exploded');
+      }),
     });
 
-    renderDirective(services, { renderType: 'table' });
-
-    expect(await screen.findByText('RENDERED')).toBeInTheDocument();
-    expect(services.renderersService.getRendererUiDefinition).toHaveBeenCalledWith('table');
+    expect(() => renderDirective(services)).not.toThrow();
+    expect(await screen.findByText(/renderer exploded/)).toBeInTheDocument();
   });
 });

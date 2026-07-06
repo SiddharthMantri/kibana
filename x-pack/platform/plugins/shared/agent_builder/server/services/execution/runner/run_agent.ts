@@ -102,7 +102,7 @@ export const createAgentHandlerContext = async <TParams = Record<string, unknown
       spaceId,
       runner: manager.getRunner(),
     }),
-    renderers: renderersService.getRegisteredRenderers(),
+    renderers: renderersService,
     plugins: createPluginsService({ pluginsServiceStart, request }),
     toolManager,
     events: createAgentEventEmitter({ eventHandler: onEvent, context: manager.context }),

@@ -19,31 +19,32 @@ const tableRenderer: RendererTypeDefinition = {
 };
 
 describe('renderRenderersPrompt', () => {
-  const authorOpts = { bashEnabled: true, canAuthor: true };
-
   it('returns an empty string when bash is disabled', () => {
-    expect(renderRenderersPrompt([tableRenderer], { bashEnabled: false, canAuthor: true })).toBe(
-      ''
-    );
+    expect(renderRenderersPrompt([tableRenderer], { bashEnabled: false })).toBe('');
   });
 
   it('returns an empty string when no renderers are registered', () => {
-    expect(renderRenderersPrompt([], authorOpts)).toBe('');
+    expect(renderRenderersPrompt([], { bashEnabled: true })).toBe('');
   });
 
-  describe('authoring variant (canAuthor: true)', () => {
-    const prompt = renderRenderersPrompt([tableRenderer], authorOpts);
+  describe('with a registered renderer', () => {
+    const prompt = renderRenderersPrompt([tableRenderer], { bashEnabled: true });
 
-    it('documents the <render> directive with path and type attributes', () => {
+    it('documents the <render> directive and requires both attributes', () => {
       expect(prompt).toContain('<render');
       expect(prompt).toContain('path=');
       expect(prompt).toContain('type=');
+      expect(prompt).toContain('REQUIRED');
     });
 
-    it('documents the workspace path convention and self-describing envelope', () => {
+    it('recommends (not mandates) the workspace path convention', () => {
+      expect(prompt).toContain('recommended location');
       expect(prompt).toContain('/workspace/renders/');
-      expect(prompt).toContain('"type"');
-      expect(prompt).toContain('"data"');
+    });
+
+    it('describes the file content as the raw payload', () => {
+      expect(prompt).toContain('The file content is the payload itself');
+      expect(prompt).not.toContain('envelope');
     });
 
     it('instructs the agent to write the file with bash before emitting', () => {
@@ -51,33 +52,11 @@ describe('renderRenderersPrompt', () => {
       expect(prompt).toContain('BEFORE emitting the directive');
     });
 
-    it('advertises each registered type, its description, and its data schema', () => {
-      expect(prompt).toContain('table');
+    it('advertises each registered type, its description, and its payload schema', () => {
+      expect(prompt).toContain('#### type: "table"');
       expect(prompt).toContain('Renders a dataset as an interactive table.');
       expect(prompt).toContain('columns');
       expect(prompt).toContain('rows');
-    });
-  });
-
-  describe('reference-only variant (canAuthor: false)', () => {
-    const prompt = renderRenderersPrompt([tableRenderer], {
-      bashEnabled: true,
-      canAuthor: false,
-    });
-
-    it('never instructs the agent to write files', () => {
-      expect(prompt).not.toContain('Use the bash tool to write');
-      expect(prompt).toContain('You cannot write or modify files yourself');
-    });
-
-    it('forbids inventing paths', () => {
-      expect(prompt).toContain('NEVER invent, guess, or alter a path');
-    });
-
-    it('still documents the directive and advertises the types', () => {
-      expect(prompt).toContain('<render');
-      expect(prompt).toContain('/workspace/renders/');
-      expect(prompt).toContain('#### type: "table"');
     });
   });
 });
