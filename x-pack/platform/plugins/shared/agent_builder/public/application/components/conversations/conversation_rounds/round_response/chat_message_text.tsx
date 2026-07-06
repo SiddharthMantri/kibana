@@ -115,11 +115,12 @@ export function ChatMessageText({
   const visualizationRenderer = useMemo(
     () =>
       createVisualizationRenderer({
+        application,
         startDependencies,
         stepsFromCurrentRound,
         stepsFromPrevRounds,
       }),
-    [startDependencies, stepsFromCurrentRound, stepsFromPrevRounds]
+    [application, startDependencies, stepsFromCurrentRound, stepsFromPrevRounds]
   );
 
   const renderAttachmentRenderer = useMemo(

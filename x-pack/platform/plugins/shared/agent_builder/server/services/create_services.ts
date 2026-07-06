@@ -205,6 +205,7 @@ export class ServiceManager {
       security,
       elasticsearch,
       spaces,
+      agents,
     });
 
     const workspaces = createWorkspaceService({

@@ -73,7 +73,7 @@ export const createAgentHandlerContext = async <TParams = Record<string, unknown
     defaultConnectorId: manager.deps.defaultConnectorId,
     logger,
     modelProvider,
-    esClient: elasticsearch.client.asScoped(request),
+    esClient: elasticsearch.client.asScoped(request, { projectRouting: 'space' }),
     savedObjectsClient: savedObjects.getScopedClient(request),
     runner: manager.getRunner(),
     toolRegistry,
