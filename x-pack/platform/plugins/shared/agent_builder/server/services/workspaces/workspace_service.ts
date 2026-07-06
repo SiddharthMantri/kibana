@@ -9,7 +9,7 @@ import type { KibanaRequest } from '@kbn/core-http-server';
 import type { Logger } from '@kbn/logging';
 import type { ElasticsearchServiceStart } from '@kbn/core-elasticsearch-server';
 import type { SpacesPluginStart } from '@kbn/spaces-plugin/server';
-import type { WorkspaceFileContent } from '../../../common/workspaces';
+import type { WorkspaceFileContent } from '@kbn/agent-builder-common';
 import { getCurrentSpaceId } from '../../utils/spaces';
 import type { ConversationService } from '../conversation';
 import { WorkspaceClient } from './client/workspace_client';

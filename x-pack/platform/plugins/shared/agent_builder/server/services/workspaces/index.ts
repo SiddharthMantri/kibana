@@ -15,4 +15,4 @@ export {
   type ScopedWorkspaceClient,
   type WorkspaceServiceDeps,
 } from './workspace_service';
-export type { WorkspaceFileContent } from '../../../common/workspaces';
+export type { WorkspaceFileContent } from '@kbn/agent-builder-common';

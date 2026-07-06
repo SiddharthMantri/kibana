@@ -282,6 +282,7 @@ export {
   type PluginDefinition,
 } from './plugins';
 export type { RendererDefinition, RendererPayloadOf } from './renderers';
+export type { WorkspaceFileContent } from './workspaces';
 export { EffortLevels, type EffortLevel } from './model_provider';
 export {
   type OAuthClient,

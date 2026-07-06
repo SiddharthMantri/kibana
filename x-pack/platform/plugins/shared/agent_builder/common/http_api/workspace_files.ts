@@ -5,6 +5,6 @@
  * 2.0.
  */
 
-import type { WorkspaceFileContent } from '../workspaces';
+import type { WorkspaceFileContent } from '@kbn/agent-builder-common';
 
 export type ReadWorkspaceFileResponse = WorkspaceFileContent;
