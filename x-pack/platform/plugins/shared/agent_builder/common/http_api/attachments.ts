@@ -40,3 +40,7 @@ export interface RenameAttachmentResponse {
 export interface CheckStaleAttachmentsResponse {
   attachments: AttachmentStaleCheckResult[];
 }
+
+export interface ListAttachmentTypesResponse {
+  types: string[];
+}

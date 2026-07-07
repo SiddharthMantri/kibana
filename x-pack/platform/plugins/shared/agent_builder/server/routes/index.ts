@@ -18,6 +18,7 @@ import { registerAgentRoutes } from './agents';
 import { registerChatRoutes } from './chat';
 import { registerConversationRoutes } from './conversations';
 import { registerAttachmentRoutes } from './attachments';
+import { registerInternalAttachmentsRoutes } from './internal/attachments';
 import { registerMCPRoutes } from './mcp';
 import { registerA2ARoutes } from './a2a';
 import { registerSkillsRoutes } from './skills';
@@ -39,6 +40,7 @@ export const registerRoutes = (dependencies: RouteDependencies) => {
   registerChatRoutes(dependencies);
   registerConversationRoutes(dependencies);
   registerAttachmentRoutes(dependencies);
+  registerInternalAttachmentsRoutes(dependencies);
   registerMCPRoutes(dependencies);
   registerA2ARoutes(dependencies);
   registerSkillsRoutes(dependencies);
