@@ -177,7 +177,7 @@ class AgentRegistryImpl implements AgentRegistry {
     const visibleBuiltinAgents = opts.includeManaged
       ? builtinAgents
       : builtinAgents.filter(isVisibleAgent);
-    // Persisted agents are always editable, so they are always visible.
+
     const persistedAgentIds = await this.persistedProvider.getIds(opts);
 
     return [...visibleBuiltinAgents.map(({ id }) => id), ...persistedAgentIds];
