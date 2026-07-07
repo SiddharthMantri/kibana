@@ -139,7 +139,7 @@ export const runAgent = async ({
   // Single merge point for runtime overrides — consumed by both the agent handler
   // (prompt construction, tool selection) and tool handlers (via ToolHandlerContext).
   const effectiveConfiguration = {
-    ...agent.configuration,
+    ...agent.effective_configuration,
     ...(agentParams.configurationOverrides || {}),
   };
   manager.deps.agentConfiguration = effectiveConfiguration;

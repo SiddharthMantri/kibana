@@ -14,6 +14,8 @@ import type {
   SavedObjectsServiceStart,
 } from '@kbn/core/server';
 import { isAllowedBuiltinAgent } from '@kbn/agent-builder-server/allow_lists';
+import type { AgentTypeRegistry } from '@kbn/agent-builder-server/agents';
+import { chatAgentTypeId } from '@kbn/agent-builder-common';
 import type { SpacesPluginStart } from '@kbn/spaces-plugin/server';
 import { getCurrentSpaceId } from '../../utils/spaces';
 import type {
@@ -32,6 +34,7 @@ import {
 } from './builtin';
 import { createPersistedProviderFn } from './persisted';
 import { createAgentRegistry } from './agent_registry';
+import { createAgentTypeRegistry } from './types/registry';
 import { createClient } from './persisted/client';
 
 export interface AgentsServiceSetupDeps {
@@ -49,15 +52,19 @@ export interface AgentsServiceStartDeps {
 
 export class AgentsService {
   private builtinRegistry: BuiltinAgentRegistry;
+  private typeRegistry: AgentTypeRegistry;
 
   private setupDeps?: AgentsServiceSetupDeps;
 
   constructor() {
     this.builtinRegistry = createBuiltinAgentRegistry();
+    this.typeRegistry = createAgentTypeRegistry();
   }
 
   setup(setupDeps: AgentsServiceSetupDeps): AgentsServiceSetup {
     this.setupDeps = setupDeps;
+
+    this.typeRegistry.register({ id: chatAgentTypeId });
 
     return {
       register: (agent) => {
@@ -65,7 +72,15 @@ export class AgentsService {
           throw new Error(`Built-in agent with id "${agent.id}" is not in the list of allowed built-in agents.
              Please add it to the list of allowed built-in agents in the "@kbn/agent-builder-server/allow_lists.ts" file.`);
         }
+        if (agent.type !== undefined && !this.typeRegistry.has(agent.type)) {
+          throw new Error(
+            `Built-in agent with id "${agent.id}" references unknown agent type "${agent.type}". Agent types must be registered before agents using them.`
+          );
+        }
         this.builtinRegistry.register(agent);
+      },
+      registerType: (type) => {
+        this.typeRegistry.register(type);
       },
     };
   }
@@ -105,6 +120,8 @@ export class AgentsService {
         spaceId: space,
         uiSettings,
         savedObjects,
+        logger,
+        typeRegistry: this.typeRegistry,
         builtinProvider: await builtinProviderFn({ request, space }),
         persistedProvider: await persistedProviderFn({ request, space }),
       });

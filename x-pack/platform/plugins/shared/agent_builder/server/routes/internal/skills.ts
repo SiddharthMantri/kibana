@@ -50,7 +50,7 @@ export function registerInternalSkillsRoutes({
 
       const agentSkills = await resolveAgentSkills({
         skills: skillRegistry,
-        agentConfiguration: agent.configuration,
+        agentConfiguration: agent.effective_configuration,
       });
 
       const results = await Promise.all(agentSkills.map(internalToPublicSummary));

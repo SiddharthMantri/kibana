@@ -111,6 +111,18 @@ export const isAllowedBuiltinAgent = (agentName: string) => {
 };
 
 /**
+ * This is a manually maintained list of all agent types registered in Agent Builder.
+ * The intention is to force a code review from the Agent Builder team when any team adds a new agent type.
+ */
+export const AGENT_BUILDER_AGENT_TYPES = ['chat'] as const;
+
+export type AgentBuilderAgentType = (typeof AGENT_BUILDER_AGENT_TYPES)[number];
+
+export const isAllowedAgentType = (typeId: string) => {
+  return (AGENT_BUILDER_AGENT_TYPES as readonly string[]).includes(typeId);
+};
+
+/**
  * This is a manually maintained list of all built-in skills registered in Agent Builder.
  * The intention is to force a code review from the Agent Builder team when any team adds a new skill.
  */

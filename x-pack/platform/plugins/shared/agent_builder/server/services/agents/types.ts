@@ -6,12 +6,13 @@
  */
 
 import type { KibanaRequest } from '@kbn/core/server';
-import type { BuiltInAgentDefinition } from '@kbn/agent-builder-server/agents';
+import type { BuiltInAgentDefinition, AgentTypeDefinition } from '@kbn/agent-builder-server/agents';
 import type { AgentRegistry } from './agent_registry';
 import type { AgentsUsingSkillsResult, AgentsUsingToolsResult } from './persisted/types';
 
 export interface AgentsServiceSetup {
   register(agent: BuiltInAgentDefinition): void;
+  registerType(type: AgentTypeDefinition): void;
 }
 
 export interface ToolRefsParams {

@@ -33,6 +33,7 @@ export type {
   AgentAvailabilityResult,
   AgentAvailabilityConfig,
 } from './builtin_definition';
+export type { AgentTypeDefinition, AgentTypeRegistry } from './type_definition';
 export type {
   InternalAgentDefinition,
   InternalAgentDefinitionAvailabilityHandler,

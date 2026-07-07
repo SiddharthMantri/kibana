@@ -120,6 +120,42 @@ describe('runAgent', () => {
     );
   });
 
+  it('executes with the type-merged effective configuration, with runtime overrides on top', async () => {
+    agent = createMockedInternalAgent({
+      configuration: { tools: [], skill_ids: ['my-skill'] },
+      effective_configuration: {
+        tools: [],
+        instructions: 'base instructions',
+        skill_ids: ['base-skill', 'my-skill'],
+        connector_ids: [],
+      },
+    });
+    agentClient.get.mockResolvedValue(agent);
+
+    const params: ScopedRunnerRunAgentParams = {
+      agentId: 'test-agent',
+      agentParams: {
+        nextInput: { message: 'dolly' },
+        configurationOverrides: { instructions: 'override instructions' },
+      },
+    };
+
+    await runAgent({
+      agentExecutionParams: params,
+      parentManager: runnerManager,
+    });
+
+    expect(createAgentHandlerMock).toHaveBeenCalledWith({
+      agent,
+      effectiveConfiguration: {
+        tools: [],
+        instructions: 'override instructions',
+        skill_ids: ['base-skill', 'my-skill'],
+        connector_ids: [],
+      },
+    });
+  });
+
   it('returns the expected value', async () => {
     const params: ScopedRunnerRunAgentParams = {
       agentId: 'test-agent',

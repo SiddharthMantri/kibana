@@ -52,7 +52,7 @@ describe('runBeforeAgentWorkflows', () => {
     const registry = {
       get: jest.fn().mockResolvedValue({
         id: 'agent-1',
-        configuration: {
+        effective_configuration: {
           workflow_ids: ['wf-1'],
         },
       }),
@@ -233,7 +233,7 @@ describe('runBeforeAgentWorkflows', () => {
     });
     registry.get.mockResolvedValue({
       id: 'agent-1',
-      configuration: {
+      effective_configuration: {
         workflow_ids: ['wf-2', 'wf-3'],
       },
     });
