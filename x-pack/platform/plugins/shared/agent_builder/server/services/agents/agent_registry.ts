@@ -96,9 +96,8 @@ export const createAgentRegistry = (opts: CreateAgentRegistryOpts): AgentRegistr
 
 /**
  * Whether an agent should surface in default listings (agent management page, pickers, ...).
- * Read-only managed built-ins (a non-chat type) are hidden — those are the "managed agents" we
- * keep out of the interactive surfaces. Chat agents and editable (persisted) agents always show,
- * so the admin-editable managed agent stays visible.
+ * Read-only managed built-ins (a non-chat type)
+ * Chat agents and editable (persisted) agents always show, so the admin-editable managed agent stays visible.
  */
 const isVisibleAgent = (agent: InternalAgentDefinition): boolean => {
   return agent.type === chatAgentTypeId || !agent.readonly;
