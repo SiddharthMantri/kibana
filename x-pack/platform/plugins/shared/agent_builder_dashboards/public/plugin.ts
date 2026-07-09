@@ -14,6 +14,7 @@ import type {
   AgentBuilderDashboardsPluginPublicStartDependencies,
 } from './types';
 import { registerDashboardAttachmentUiDefinition } from './attachment_types';
+import { createDashboardRendererUiDefinition } from './renderers/dashboard_renderer';
 
 export class AgentBuilderDashboardsPlugin
   implements
@@ -51,6 +52,8 @@ export class AgentBuilderDashboardsPlugin
       data: plugins.data,
       dashboardPlugin: plugins.dashboard,
     });
+    // Register the browser half of the reference dashboard renderer for inline `<render />`.
+    plugins.agentBuilder.renderers.register(createDashboardRendererUiDefinition());
 
     return {};
   }

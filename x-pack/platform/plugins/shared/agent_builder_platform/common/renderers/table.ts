@@ -5,5 +5,11 @@
  * 2.0.
  */
 
-export { dashboardTools } from './constants';
-export { DASHBOARD_RENDERER_TYPE, dashboardRendererSchema } from './renderers/dashboard';
+import { z } from '@kbn/zod/v4';
+
+export const TABLE_RENDERER_TYPE = 'table';
+
+export const tableRendererSchema = z.object({
+  columns: z.array(z.string()),
+  rows: z.array(z.record(z.string(), z.unknown())),
+});

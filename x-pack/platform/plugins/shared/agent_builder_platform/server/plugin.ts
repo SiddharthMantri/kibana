@@ -21,6 +21,7 @@ import { createConnectorSmlType } from './sml_types/connector';
 import { createConnectorLifecycleHandler } from './connector_lifecycle/connector_lifecycle_handler';
 import { getTracingFeaturesEnabled } from './tracing/get_tracing_features_enabled';
 import { syncTracingPlatformFeatures } from './tracing/sync_tracing_platform_features';
+import { createTableRendererDefinition } from './renderers/table_renderer';
 
 export class AgentBuilderPlatformPlugin
   implements
@@ -49,6 +50,8 @@ export class AgentBuilderPlatformPlugin
       coreSetup,
       setupDeps,
     });
+    // Register the dormant framework's first simple renderer through the public server contract.
+    setupDeps.agentBuilder.renderers.register(createTableRendererDefinition());
     registerSkills(setupDeps.agentBuilder);
 
     const connectorSmlType = createConnectorSmlType({

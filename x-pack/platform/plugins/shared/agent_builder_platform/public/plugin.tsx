@@ -13,6 +13,7 @@ import type {
   PluginStartDependencies,
 } from './types';
 import { registerAttachmentUiDefinitions } from './attachment_types';
+import { createTableRendererUiDefinition } from './renderers/table_renderer';
 
 export class AgentBuilderPlatformPlugin
   implements
@@ -40,6 +41,8 @@ export class AgentBuilderPlatformPlugin
       core: coreStart,
       triggersActionsUi,
     });
+    // Register the browser half of the table renderer so `<render type="table" />` can mount.
+    agentBuilder.renderers.register(createTableRendererUiDefinition());
 
     return {};
   }

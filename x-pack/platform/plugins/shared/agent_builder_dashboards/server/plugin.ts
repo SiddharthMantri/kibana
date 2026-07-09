@@ -21,6 +21,7 @@ import type {
 import { registerSkills } from './skills';
 import { createDashboardAttachmentType } from './attachment_types';
 import { createDashboardSmlType } from './sml_types';
+import { createDashboardRendererDefinition } from './renderers/dashboard_renderer';
 
 export class AgentBuilderDashboardsPlugin
   implements
@@ -55,6 +56,8 @@ export class AgentBuilderDashboardsPlugin
         getDashboardClient,
       }) as Parameters<typeof setupDeps.agentBuilder.attachments.registerType>[0]
     );
+    // Advertise the Dashboard API-format renderer payload to agents through the public contract.
+    setupDeps.agentBuilder.renderers.register(createDashboardRendererDefinition());
     setupDeps.agentContextLayer.registerType(createDashboardSmlType({ getDashboardClient }));
     registerSkills(setupDeps.agentBuilder);
     return {};

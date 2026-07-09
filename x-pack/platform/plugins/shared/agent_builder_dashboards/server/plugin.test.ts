@@ -7,11 +7,30 @@
 
 import { coreMock } from '@kbn/core/server/mocks';
 import { AgentBuilderDashboardsPlugin } from './plugin';
-import { dashboardManagementSkill } from './skills/dashboard_management_skill';
+import { DASHBOARD_RENDERER_TYPE } from '../common/renderers/dashboard';
+
+const mockDashboardManagementSkill = { id: 'dashboard-management' };
+const mockDashboardAttachmentType = { id: 'dashboard' };
+const mockDashboardSmlType = { id: 'dashboard' };
+
+jest.mock('./attachment_types', () => ({
+  createDashboardAttachmentType: jest.fn(() => mockDashboardAttachmentType),
+}));
+
+jest.mock('./sml_types', () => ({
+  createDashboardSmlType: jest.fn(() => mockDashboardSmlType),
+}));
+
+jest.mock('./skills', () => ({
+  registerSkills: jest.fn((agentBuilder) => {
+    agentBuilder.skills.register(mockDashboardManagementSkill);
+  }),
+}));
 
 describe('AgentBuilderDashboardsPlugin', () => {
-  it('registers the dashboard attachment type, skill, and SML type', () => {
+  it('registers the dashboard attachment type, renderer, skill, and SML type', () => {
     const registerAttachmentType = jest.fn();
+    const registerRenderer = jest.fn();
     const registerSkill = jest.fn();
     const registerSmlType = jest.fn();
 
@@ -22,6 +41,7 @@ describe('AgentBuilderDashboardsPlugin', () => {
       {
         agentBuilder: {
           attachments: { registerType: registerAttachmentType },
+          renderers: { register: registerRenderer },
           skills: { register: registerSkill },
         },
         agentContextLayer: {
@@ -31,8 +51,11 @@ describe('AgentBuilderDashboardsPlugin', () => {
     );
 
     expect(registerAttachmentType).toHaveBeenCalledTimes(1);
-    expect(registerSkill).toHaveBeenCalledWith(dashboardManagementSkill);
+    expect(registerRenderer).toHaveBeenCalledWith(
+      expect.objectContaining({ type: DASHBOARD_RENDERER_TYPE })
+    );
+    expect(registerSkill).toHaveBeenCalledWith(mockDashboardManagementSkill);
     expect(registerSmlType).toHaveBeenCalledTimes(1);
-    expect(registerSmlType).toHaveBeenCalledWith(expect.objectContaining({ id: 'dashboard' }));
+    expect(registerSmlType).toHaveBeenCalledWith(mockDashboardSmlType);
   });
 });
