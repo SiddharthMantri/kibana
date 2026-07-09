@@ -156,9 +156,6 @@ class AgentRegistryImpl implements AgentRegistry {
   }
 
   async getIds(opts: AgentListOptions = {}): Promise<string[]> {
-    // `getIds` scopes agent *access* (e.g. which agents' conversations a user can see), so it
-    // always returns every accessible agent — managed agents included. Visibility filtering
-    // (hiding read-only managed built-ins) only applies to `list`, the UI display path.
     const builtinAgents = await this.getAvailableAgents(this.builtinProvider, opts);
     const persistedAgentIds = await this.persistedProvider.getIds(opts);
 
