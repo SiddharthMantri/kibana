@@ -17,6 +17,7 @@ import { isAllowedBuiltinAgent } from '@kbn/agent-builder-server/allow_lists';
 import type { AgentTypeRegistry } from '@kbn/agent-builder-server/agents';
 import { chatAgentTypeId } from '@kbn/agent-builder-common';
 import type { SpacesPluginStart } from '@kbn/spaces-plugin/server';
+import { createConfigurationResolver } from './resolve_configuration';
 import { getCurrentSpaceId } from '../../utils/spaces';
 import type {
   AgentsServiceSetup,
@@ -64,7 +65,7 @@ export class AgentsService {
   setup(setupDeps: AgentsServiceSetupDeps): AgentsServiceSetup {
     this.setupDeps = setupDeps;
 
-    this.typeRegistry.register({ id: chatAgentTypeId });
+    this.typeRegistry.register({ id: chatAgentTypeId, baseConfiguration: {} });
 
     return {
       register: (agent) => {
@@ -72,17 +73,29 @@ export class AgentsService {
           throw new Error(`Built-in agent with id "${agent.id}" is not in the list of allowed built-in agents.
              Please add it to the list of allowed built-in agents in the "@kbn/agent-builder-server/allow_lists.ts" file.`);
         }
-        if (agent.type !== undefined && !this.typeRegistry.has(agent.type)) {
-          throw new Error(
-            `Built-in agent with id "${agent.id}" references unknown agent type "${agent.type}". Agent types must be registered before agents using them.`
-          );
-        }
+        // The agent -> type reference is validated at start(): under Kibana plugin DI a
+        // dependent plugin may register an agent before another registers its type, so we
+        // can only be sure every type is registered once all setups have run.
         this.builtinRegistry.register(agent);
       },
       registerType: (type) => {
         this.typeRegistry.register(type);
       },
     };
+  }
+
+  /**
+   * Asserts every registered built-in agent references a registered agent type. Runs at start,
+   * once all plugins' setups (agent + type registrations) have completed.
+   */
+  private validateAgentTypes() {
+    for (const agent of this.builtinRegistry.list()) {
+      if (agent.type !== undefined && !this.typeRegistry.has(agent.type)) {
+        throw new Error(
+          `Built-in agent with id "${agent.id}" references unknown agent type "${agent.type}". Register the type via agents.registerType().`
+        );
+      }
+    }
   }
 
   start(startDeps: AgentsServiceStartDeps): AgentsServiceStart {
@@ -92,6 +105,13 @@ export class AgentsService {
 
     const { logger } = this.setupDeps;
     const { security, elasticsearch, spaces, toolsService, uiSettings, savedObjects } = startDeps;
+
+    this.validateAgentTypes();
+
+    const configurationResolver = createConfigurationResolver({
+      typeRegistry: this.typeRegistry,
+      logger,
+    });
 
     const builtinProviderFn = createBuiltinProviderFn({ registry: this.builtinRegistry });
     const persistedProviderFn = createPersistedProviderFn({
@@ -120,10 +140,21 @@ export class AgentsService {
         spaceId: space,
         uiSettings,
         savedObjects,
-        logger,
         typeRegistry: this.typeRegistry,
         builtinProvider: await builtinProviderFn({ request, space }),
         persistedProvider: await persistedProviderFn({ request, space }),
+      });
+    };
+
+    const resolveAgentConfiguration: AgentsServiceStart['resolveAgentConfiguration'] = ({
+      agent,
+      request,
+    }) => {
+      const spaceId = getCurrentSpaceId({ request, spaces });
+      return configurationResolver({
+        agentType: agent.type,
+        configuration: agent.configuration,
+        ctx: { request, spaceId },
       });
     };
 
@@ -177,6 +208,7 @@ export class AgentsService {
 
     return {
       getRegistry,
+      resolveAgentConfiguration,
       removeToolRefsFromAgents,
       getAgentsUsingTools,
       removePluginRefsFromAgents,

@@ -5,9 +5,8 @@
  * 2.0.
  */
 
-import type { ToolSelection } from '../tools';
-import { allToolsSelection, allToolsSelectionWildcard } from '../tools';
-import type { AgentConfiguration } from './definition';
+import type { AgentConfiguration, ToolSelection } from '@kbn/agent-builder-common';
+import { allToolsSelection, allToolsSelectionWildcard } from '@kbn/agent-builder-common';
 
 /**
  * The managed base configuration carried by an agent type. Fields set here are the

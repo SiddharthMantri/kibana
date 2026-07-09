@@ -8,7 +8,6 @@
 import type {
   AgentAccessControl,
   AgentAccessControlEntry,
-  AgentConfiguration,
   AgentDefinition,
 } from '@kbn/agent-builder-common';
 
@@ -21,24 +20,15 @@ export type AgentDefinitionWithPermissions = AgentDefinition & {
   permissions: AgentPermissions;
 };
 
-/**
- * Agent shape returned by the public agent APIs:
- * - `configuration` is the agent's own raw config
- * - `effective_configuration` is the result of merging the agent type's base configuration under it
- */
-export type PublicAgentDefinition = AgentDefinitionWithPermissions & {
-  effective_configuration: AgentConfiguration;
-};
-
-export type GetAgentResponse = PublicAgentDefinition;
+export type GetAgentResponse = AgentDefinitionWithPermissions;
 
 export interface ListAgentResponse {
-  results: PublicAgentDefinition[];
+  results: AgentDefinitionWithPermissions[];
 }
 
-export type UpdateAgentResponse = PublicAgentDefinition;
+export type UpdateAgentResponse = AgentDefinitionWithPermissions;
 
-export type CreateAgentResponse = PublicAgentDefinition;
+export type CreateAgentResponse = AgentDefinitionWithPermissions;
 
 export interface DeleteAgentResponse {
   success: boolean;

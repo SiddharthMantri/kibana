@@ -231,9 +231,9 @@ apiTest.describe(
     );
 
     apiTest(
-      'agent responses expose both configuration and effective_configuration',
+      'agent responses expose the raw configuration and default the type to chat',
       async ({ asAdmin }) => {
-        const agentId = 'effective-config-agent';
+        const agentId = 'config-shape-agent';
         const createRes = await asAdmin.post(`${API_AGENT_BUILDER}/agents`, {
           body: { ...mockAgent, id: agentId },
           responseType: 'json',
@@ -241,23 +241,18 @@ apiTest.describe(
         expect(createRes).toHaveStatusCode(200);
         createdAgentIds.push(agentId);
 
-        // chat agents merge against an empty base, so effective === configuration
         expect(createRes.body.type).toBe('chat');
-        expect(createRes.body.effective_configuration).toStrictEqual(createRes.body.configuration);
+        expect(createRes.body.configuration).toMatchObject({
+          instructions: mockAgent.configuration.instructions,
+        });
+        // the merged/effective configuration is an execution-time detail — never on the API
+        expect(createRes.body.effective_configuration).toBeUndefined();
 
         const getRes = await asAdmin.get(`${API_AGENT_BUILDER}/agents/${agentId}`, {
           responseType: 'json',
         });
         expect(getRes).toHaveStatusCode(200);
-        expect(getRes.body.effective_configuration).toStrictEqual(getRes.body.configuration);
-
-        const listRes = await asAdmin.get(`${API_AGENT_BUILDER}/agents`, {
-          responseType: 'json',
-        });
-        expect(listRes).toHaveStatusCode(200);
-        const listed = listRes.body.results.find((agent: { id: string }) => agent.id === agentId);
-        expect(listed).toBeDefined();
-        expect(listed.effective_configuration).toStrictEqual(listed.configuration);
+        expect(getRes.body.effective_configuration).toBeUndefined();
       }
     );
 

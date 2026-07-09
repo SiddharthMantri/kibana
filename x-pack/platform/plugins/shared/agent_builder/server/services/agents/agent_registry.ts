@@ -7,15 +7,11 @@
 
 import type { MaybePromise } from '@kbn/utility-types';
 import type { KibanaRequest } from '@kbn/core-http-server';
-import type { Logger } from '@kbn/logging';
 import {
   createAgentNotFoundError,
   createAgentUnavailableError,
   createBadRequestError,
   chatAgentTypeId,
-  mergeAgentConfiguration,
-  type AgentBaseConfiguration,
-  type AgentConfiguration,
   type AgentAccessControl,
 } from '@kbn/agent-builder-common';
 import { validateAgentId } from '@kbn/agent-builder-common/agents';
@@ -47,15 +43,6 @@ export type InternalAgentDefinition = AgentDefinitionWithPermissions & {
   isAvailable: InternalAgentDefinitionAvailabilityHandler;
 };
 
-/**
- * An agent as returned by the registry: the provider-level definition plus the
- * effective configuration, computed by merging the agent type's base configuration
- * under the agent's own `configuration` (which stays the raw, editable delta).
- */
-export type ResolvedAgentDefinition = InternalAgentDefinition & {
-  effective_configuration: AgentConfiguration;
-};
-
 export type InternalAgentDefinitionAvailabilityHandler = (
   ctx: AgentAvailabilityContext
 ) => MaybePromise<AgentAvailabilityResult>;
@@ -65,12 +52,15 @@ export interface AgentRegistry {
   /**
    * Fetch an agent and assert the caller has at least `opts.access` rights (default: 'read').
    * Throws `agentNotFound` if the agent doesn't exist OR the caller lacks the requested access.
+   *
+   * Returns the agent's own (raw) configuration. The agent type's base configuration is
+   * merged in later, at execution time — see `AgentsServiceStart.resolveAgentConfiguration`.
    */
-  get(agentId: string, opts?: GetAgentOptions): Promise<ResolvedAgentDefinition>;
-  list(opts?: AgentListOptions): Promise<ResolvedAgentDefinition[]>;
+  get(agentId: string, opts?: GetAgentOptions): Promise<InternalAgentDefinition>;
+  list(opts?: AgentListOptions): Promise<InternalAgentDefinition[]>;
   getIds(opts?: AgentListOptions): Promise<string[]>;
-  create(createRequest: AgentCreateRequest): Promise<ResolvedAgentDefinition>;
-  update(agentId: string, update: AgentUpdateRequest): Promise<ResolvedAgentDefinition>;
+  create(createRequest: AgentCreateRequest): Promise<InternalAgentDefinition>;
+  update(agentId: string, update: AgentUpdateRequest): Promise<InternalAgentDefinition>;
   delete(args: AgentDeleteRequest): Promise<boolean>;
   getAccessControl(agentId: string): Promise<AgentAccessControlResult>;
   updateAccessControl(
@@ -87,7 +77,6 @@ interface CreateAgentRegistryOpts {
   uiSettings: UiSettingsServiceStart;
   savedObjects: SavedObjectsServiceStart;
   typeRegistry: AgentTypeRegistry;
-  logger: Logger;
 }
 
 export const createAgentRegistry = (opts: CreateAgentRegistryOpts): AgentRegistry => {
@@ -111,8 +100,6 @@ class AgentRegistryImpl implements AgentRegistry {
   private readonly uiSettings: UiSettingsServiceStart;
   private readonly savedObjects: SavedObjectsServiceStart;
   private readonly typeRegistry: AgentTypeRegistry;
-  private readonly logger: Logger;
-  private readonly baseConfigCache = new Map<string, Promise<AgentBaseConfiguration>>();
 
   constructor({
     request,
@@ -122,7 +109,6 @@ class AgentRegistryImpl implements AgentRegistry {
     uiSettings,
     savedObjects,
     typeRegistry,
-    logger,
   }: CreateAgentRegistryOpts) {
     this.request = request;
     this.spaceId = spaceId;
@@ -131,7 +117,6 @@ class AgentRegistryImpl implements AgentRegistry {
     this.uiSettings = uiSettings;
     this.savedObjects = savedObjects;
     this.typeRegistry = typeRegistry;
-    this.logger = logger;
   }
 
   private get orderedProviders() {
@@ -147,43 +132,40 @@ class AgentRegistryImpl implements AgentRegistry {
     return false;
   }
 
-  async get(agentId: string, opts?: GetAgentOptions): Promise<ResolvedAgentDefinition> {
+  async get(agentId: string, opts?: GetAgentOptions): Promise<InternalAgentDefinition> {
     for (const provider of this.orderedProviders) {
       if (await provider.has(agentId)) {
         const agent = await provider.get(agentId, opts);
         if (!(await this.isAvailable(agent))) {
           throw createAgentUnavailableError({ agentId });
         }
-        return this.withEffectiveConfiguration(agent);
+        return agent;
       }
     }
     throw createAgentNotFoundError({ agentId });
   }
 
-  async list(opts: AgentListOptions = {}): Promise<ResolvedAgentDefinition[]> {
+  async list(opts: AgentListOptions = {}): Promise<InternalAgentDefinition[]> {
     const allAgents: InternalAgentDefinition[] = [];
 
     for (const provider of this.orderedProviders) {
       allAgents.push(...(await this.getAvailableAgents(provider, opts)));
     }
 
-    const visibleAgents = opts.includeManaged ? allAgents : allAgents.filter(isVisibleAgent);
-
-    return Promise.all(visibleAgents.map((agent) => this.withEffectiveConfiguration(agent)));
+    return opts.includeManaged ? allAgents : allAgents.filter(isVisibleAgent);
   }
 
   async getIds(opts: AgentListOptions = {}): Promise<string[]> {
+    // `getIds` scopes agent *access* (e.g. which agents' conversations a user can see), so it
+    // always returns every accessible agent — managed agents included. Visibility filtering
+    // (hiding read-only managed built-ins) only applies to `list`, the UI display path.
     const builtinAgents = await this.getAvailableAgents(this.builtinProvider, opts);
-    const visibleBuiltinAgents = opts.includeManaged
-      ? builtinAgents
-      : builtinAgents.filter(isVisibleAgent);
-
     const persistedAgentIds = await this.persistedProvider.getIds(opts);
 
-    return [...visibleBuiltinAgents.map(({ id }) => id), ...persistedAgentIds];
+    return [...builtinAgents.map(({ id }) => id), ...persistedAgentIds];
   }
 
-  async create(createRequest: AgentCreateRequest): Promise<ResolvedAgentDefinition> {
+  async create(createRequest: AgentCreateRequest): Promise<InternalAgentDefinition> {
     const { id: agentId } = createRequest;
 
     const validationError = validateAgentId({ agentId, builtIn: false });
@@ -199,18 +181,16 @@ class AgentRegistryImpl implements AgentRegistry {
       throw createBadRequestError(`Agent with id ${agentId} already exists`);
     }
 
-    const agent = await this.persistedProvider.create(createRequest);
-    return this.withEffectiveConfiguration(agent);
+    return this.persistedProvider.create(createRequest);
   }
 
-  async update(agentId: string, update: AgentUpdateRequest): Promise<ResolvedAgentDefinition> {
+  async update(agentId: string, update: AgentUpdateRequest): Promise<InternalAgentDefinition> {
     for (const provider of this.orderedProviders) {
       if (await provider.has(agentId)) {
         if (isReadonlyProvider(provider)) {
           throw createBadRequestError(`Agent ${agentId} is read-only and can't be updated`);
         } else {
-          const agent = await provider.update(agentId, update);
-          return this.withEffectiveConfiguration(agent);
+          return provider.update(agentId, update);
         }
       }
     }
@@ -259,43 +239,6 @@ class AgentRegistryImpl implements AgentRegistry {
       }
     }
     throw createAgentNotFoundError({ agentId });
-  }
-
-  private async withEffectiveConfiguration(
-    agent: InternalAgentDefinition
-  ): Promise<ResolvedAgentDefinition> {
-    const base = await this.resolveBaseConfiguration(agent.type);
-    return {
-      ...agent,
-      effective_configuration: mergeAgentConfiguration(base, agent.configuration),
-    };
-  }
-
-  private resolveBaseConfiguration(typeId: string): Promise<AgentBaseConfiguration> {
-    const cached = this.baseConfigCache.get(typeId);
-    if (cached) {
-      return cached;
-    }
-
-    const resolving = (async () => {
-      let type = this.typeRegistry.get(typeId);
-      if (!type) {
-        this.logger.warn(
-          `Agent references unknown agent type "${typeId}", falling back to the "${chatAgentTypeId}" type's base configuration`
-        );
-        type = this.typeRegistry.get(chatAgentTypeId);
-      }
-      const base = type?.baseConfiguration;
-      if (!base) {
-        return {};
-      }
-      return typeof base === 'function'
-        ? await base({ request: this.request, spaceId: this.spaceId })
-        : base;
-    })();
-
-    this.baseConfigCache.set(typeId, resolving);
-    return resolving;
   }
 
   private async isAvailable(agent: InternalAgentDefinition): Promise<boolean> {

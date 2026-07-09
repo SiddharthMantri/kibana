@@ -6,8 +6,8 @@
  */
 
 import type { MaybePromise } from '@kbn/utility-types';
-import type { AgentBaseConfiguration } from '@kbn/agent-builder-common';
 import type { AgentConfigContext } from './builtin_definition';
+import type { AgentBaseConfiguration } from './merge_configuration';
 
 /**
  * An agent type, registered in code via the agents setup contract.
@@ -34,11 +34,12 @@ export interface AgentTypeDefinition {
    */
   avatar_icon?: string;
   /**
-   * The managed base configuration. Static or a function of context, mirroring
-   * {@link BuiltInAgentDefinition}'s configuration, so a base can vary by space or
-   * feature flag without going stale. Defaults to an empty base.
+   * The managed base configuration this type contributes to its agents. Static or a
+   * function of context, mirroring {@link BuiltInAgentDefinition}'s configuration, so a
+   * base can vary by space or feature flag without going stale. Use an empty object for
+   * a type with no floor (e.g. the default `chat` type).
    */
-  baseConfiguration?:
+  baseConfiguration:
     | AgentBaseConfiguration
     | ((ctx: AgentConfigContext) => MaybePromise<AgentBaseConfiguration>);
 }

@@ -7,6 +7,7 @@
 
 import type { KibanaRequest } from '@kbn/core/server';
 import type { BuiltInAgentDefinition, AgentTypeDefinition } from '@kbn/agent-builder-server/agents';
+import type { AgentConfiguration, AgentDefinition } from '@kbn/agent-builder-common';
 import type { AgentRegistry } from './agent_registry';
 import type { AgentsUsingSkillsResult, AgentsUsingToolsResult } from './persisted/types';
 
@@ -33,6 +34,15 @@ export interface SkillRefsParams {
 
 export interface AgentsServiceStart {
   getRegistry: (opts: { request: KibanaRequest }) => Promise<AgentRegistry>;
+  /**
+   * Resolves an agent's effective configuration for execution: the agent type's base
+   * configuration merged under the agent's own (raw) configuration. This is the single,
+   * execution-time place the type base is folded in — it is never exposed on the agent API.
+   */
+  resolveAgentConfiguration: (opts: {
+    agent: Pick<AgentDefinition, 'type' | 'configuration'>;
+    request: KibanaRequest;
+  }) => Promise<AgentConfiguration>;
   removeToolRefsFromAgents: (params: ToolRefsParams) => Promise<AgentsUsingToolsResult>;
   getAgentsUsingTools: (params: ToolRefsParams) => Promise<AgentsUsingToolsResult>;
   removePluginRefsFromAgents: (params: PluginRefsParams) => Promise<AgentsUsingToolsResult>;

@@ -6,7 +6,7 @@
  */
 
 import type { MaybePromise } from '@kbn/utility-types';
-import type { AgentDefinition, AgentConfiguration } from '@kbn/agent-builder-common/agents';
+import type { AgentDefinition } from '@kbn/agent-builder-common/agents';
 import type {
   AgentCreateRequest,
   AgentUpdateRequest,
@@ -20,11 +20,6 @@ export type InternalAgentDefinitionAvailabilityHandler = (
 ) => MaybePromise<AgentAvailabilityResult>;
 
 export type InternalAgentDefinition = AgentDefinition & {
-  /**
-   * The merged result of the agent type's base configuration and this agent's own
-   * `configuration` (which stays the raw, editable delta).
-   */
-  effective_configuration: AgentConfiguration;
   isAvailable: InternalAgentDefinitionAvailabilityHandler;
 };
 

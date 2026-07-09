@@ -17,11 +17,6 @@ export {
   type AgentAnswerStepConfiguration,
 } from './definition';
 export {
-  mergeAgentConfiguration,
-  ADMIN_INSTRUCTIONS_HEADER,
-  type AgentBaseConfiguration,
-} from './merge_configuration';
-export {
   ACCESS_CONTROL_MODE_ICON,
   ACCESS_CONTROL_MODE_BADGE_COLOR,
   AgentAccessControlMode,

@@ -5,7 +5,7 @@
  * 2.0.
  */
 
-import type { AgentConfiguration } from './definition';
+import type { AgentConfiguration } from '@kbn/agent-builder-common';
 import {
   mergeAgentConfiguration,
   ADMIN_INSTRUCTIONS_HEADER,

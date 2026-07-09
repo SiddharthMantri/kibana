@@ -8,10 +8,10 @@
 import type { AgentDefinition } from '@kbn/agent-builder-common';
 import { AgentType, AgentAccessControlMode } from '@kbn/agent-builder-common';
 import type { AgentsServiceStart, AgentRegistry } from '../services/agents';
-import type { ResolvedAgentDefinition } from '../services/agents/agent_registry';
+import type { InternalAgentDefinition } from '../services/agents/agent_registry';
 
 export type MockedAgent = jest.Mocked<AgentDefinition>;
-export type MockedInternalAgent = jest.Mocked<ResolvedAgentDefinition>;
+export type MockedInternalAgent = jest.Mocked<InternalAgentDefinition>;
 export type AgentsServiceStartMock = jest.Mocked<AgentsServiceStart>;
 export type AgentRegistryMock = jest.Mocked<AgentRegistry>;
 
@@ -46,9 +46,9 @@ export const createMockedAgent = (parts: Partial<AgentDefinition> = {}): MockedA
 };
 
 export const createMockedInternalAgent = (
-  parts: Partial<ResolvedAgentDefinition> = {}
+  parts: Partial<InternalAgentDefinition> = {}
 ): MockedInternalAgent => {
-  const agent = {
+  return {
     type: AgentType.chat,
     id: 'test_agent',
     name: 'Test Agent',
@@ -66,16 +66,12 @@ export const createMockedInternalAgent = (
     isAvailable: jest.fn(async () => ({ status: 'available' as const })) as any,
     ...parts,
   };
-  // chat agents merge against an empty base, so effective === configuration by default
-  return {
-    effective_configuration: parts.effective_configuration ?? agent.configuration,
-    ...agent,
-  };
 };
 
 export const createAgentsServiceStartMock = (): AgentsServiceStartMock => {
   return {
     getRegistry: jest.fn().mockImplementation(() => createMockedAgentRegistry()),
+    resolveAgentConfiguration: jest.fn(),
     removeToolRefsFromAgents: jest.fn(),
     getAgentsUsingTools: jest.fn(),
     removePluginRefsFromAgents: jest.fn(),

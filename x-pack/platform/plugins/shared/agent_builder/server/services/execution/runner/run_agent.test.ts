@@ -40,10 +40,12 @@ describe('runAgent', () => {
     agentClient = createMockedAgentRegistry();
     agentClient.get.mockResolvedValue(agent);
 
-    const {
-      agentsService: { getRegistry },
-    } = runnerDeps;
-    getRegistry.mockResolvedValue(agentClient);
+    const { agentsService } = runnerDeps;
+    agentsService.getRegistry.mockResolvedValue(agentClient);
+    // by default the resolver returns the agent's own config (empty chat base = no-op merge)
+    agentsService.resolveAgentConfiguration.mockImplementation(
+      async ({ agent: a }) => a.configuration
+    );
 
     agentHandler = jest.fn();
     agentHandler.mockResolvedValue({
@@ -120,17 +122,15 @@ describe('runAgent', () => {
     );
   });
 
-  it('executes with the type-merged effective configuration, with runtime overrides on top', async () => {
-    agent = createMockedInternalAgent({
-      configuration: { tools: [], skill_ids: ['my-skill'] },
-      effective_configuration: {
-        tools: [],
-        instructions: 'base instructions',
-        skill_ids: ['base-skill', 'my-skill'],
-        connector_ids: [],
-      },
-    });
-    agentClient.get.mockResolvedValue(agent);
+  it('resolves the effective configuration via the service and layers runtime overrides on top', async () => {
+    // the service resolver produces the merged (type base + agent delta) configuration
+    const resolvedConfiguration = {
+      tools: [],
+      instructions: 'base instructions',
+      skill_ids: ['base-skill', 'my-skill'],
+      connector_ids: [],
+    };
+    runnerDeps.agentsService.resolveAgentConfiguration.mockResolvedValue(resolvedConfiguration);
 
     const params: ScopedRunnerRunAgentParams = {
       agentId: 'test-agent',
@@ -145,13 +145,15 @@ describe('runAgent', () => {
       parentManager: runnerManager,
     });
 
+    expect(runnerDeps.agentsService.resolveAgentConfiguration).toHaveBeenCalledWith({
+      agent,
+      request: runnerDeps.request,
+    });
     expect(createAgentHandlerMock).toHaveBeenCalledWith({
       agent,
       effectiveConfiguration: {
-        tools: [],
+        ...resolvedConfiguration,
         instructions: 'override instructions',
-        skill_ids: ['base-skill', 'my-skill'],
-        connector_ids: [],
       },
     });
   });
