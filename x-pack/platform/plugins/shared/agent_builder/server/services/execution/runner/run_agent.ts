@@ -136,9 +136,6 @@ export const runAgent = async ({
   const agentRegistry = await agentsService.getRegistry({ request });
   const agent = await agentRegistry.get(agentId, { access: 'use' });
 
-  // Resolve the effective configuration as late as possible: the agent type's base config is
-  // merged under the agent's own config here, then runtime overrides are layered on top. This is
-  // consumed by both the agent handler (prompt construction, tool selection) and tool handlers.
   const resolvedConfiguration = await agentsService.resolveAgentConfiguration({ agent, request });
   const effectiveConfiguration = {
     ...resolvedConfiguration,

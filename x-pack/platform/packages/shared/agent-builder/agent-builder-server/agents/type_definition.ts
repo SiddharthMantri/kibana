@@ -36,8 +36,7 @@ export interface AgentTypeDefinition {
   /**
    * The managed base configuration this type contributes to its agents. Static or a
    * function of context, mirroring {@link BuiltInAgentDefinition}'s configuration, so a
-   * base can vary by space or feature flag without going stale. Use an empty object for
-   * a type with no floor (e.g. the default `chat` type).
+   * base can vary by space or feature flag without going stale.
    */
   baseConfiguration:
     | AgentBaseConfiguration

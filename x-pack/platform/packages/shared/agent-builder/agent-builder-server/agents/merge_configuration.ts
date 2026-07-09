@@ -58,9 +58,6 @@ const mergeToolSelections = (base: ToolSelection[], delta: ToolSelection[]): Too
  * - tools / skill_ids / plugin_ids / workflow_ids / connector_ids: union, base-first,
  *   deduplicated. A base that sets `connector_ids: []` pins the floor to "no connectors".
  * - enable_elastic_capabilities: the delta overrides the base when set.
- *
- * Fields the base leaves unset pass through from the delta verbatim, so merging against
- * an empty base is an identity operation.
  */
 export const mergeAgentConfiguration = (
   base: AgentBaseConfiguration | undefined,

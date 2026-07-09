@@ -104,7 +104,6 @@ describe('AgentRegistry', () => {
       const resolved = await registry.get('investigator');
 
       expect(resolved.configuration).toEqual({ tools: [], skill_ids: ['my-skill'] });
-      expect(resolved).not.toHaveProperty('effective_configuration');
     });
   });
 

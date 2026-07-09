@@ -17,13 +17,6 @@ import { mergeAgentConfiguration } from '@kbn/agent-builder-server/agents';
 /**
  * Resolves an agent type's base configuration for the given context, folding it under the
  * agent's own (raw) configuration to produce the effective configuration used at execution time.
- *
- * This is deliberately an execution-time concern, not a registry read-time one: the agent type
- * stays a black box at the API boundary, and its contribution to execution is never exposed as a
- * merged blob on the agent shape.
- *
- * An agent referencing an unregistered type (e.g. its providing plugin is disabled) falls back to
- * the `chat` type's empty base so it keeps working; the fallback is warned once per unknown type id.
  */
 export const createConfigurationResolver = ({
   typeRegistry,

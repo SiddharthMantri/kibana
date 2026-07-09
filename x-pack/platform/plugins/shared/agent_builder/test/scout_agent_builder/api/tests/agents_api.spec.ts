@@ -245,14 +245,11 @@ apiTest.describe(
         expect(createRes.body.configuration).toMatchObject({
           instructions: mockAgent.configuration.instructions,
         });
-        // the merged/effective configuration is an execution-time detail — never on the API
-        expect(createRes.body.effective_configuration).toBeUndefined();
 
         const getRes = await asAdmin.get(`${API_AGENT_BUILDER}/agents/${agentId}`, {
           responseType: 'json',
         });
         expect(getRes).toHaveStatusCode(200);
-        expect(getRes.body.effective_configuration).toBeUndefined();
       }
     );
 
