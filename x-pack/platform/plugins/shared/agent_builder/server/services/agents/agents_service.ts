@@ -73,9 +73,6 @@ export class AgentsService {
           throw new Error(`Built-in agent with id "${agent.id}" is not in the list of allowed built-in agents.
              Please add it to the list of allowed built-in agents in the "@kbn/agent-builder-server/allow_lists.ts" file.`);
         }
-        // The agent -> type reference is validated at start(): under Kibana plugin DI a
-        // dependent plugin may register an agent before another registers its type, so we
-        // can only be sure every type is registered once all setups have run.
         this.builtinRegistry.register(agent);
       },
       registerType: (type) => {
@@ -84,10 +81,6 @@ export class AgentsService {
     };
   }
 
-  /**
-   * Asserts every registered built-in agent references a registered agent type. Runs at start,
-   * once all plugins' setups (agent + type registrations) have completed.
-   */
   private validateAgentTypes() {
     for (const agent of this.builtinRegistry.list()) {
       if (agent.type !== undefined && !this.typeRegistry.has(agent.type)) {
