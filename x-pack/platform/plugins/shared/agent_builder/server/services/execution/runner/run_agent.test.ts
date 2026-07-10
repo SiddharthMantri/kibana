@@ -122,13 +122,15 @@ describe('runAgent', () => {
     );
   });
 
-  it('resolves the effective configuration via the service and layers runtime overrides on top', async () => {
-    // the service resolver produces the merged (type base + agent delta) configuration
+  it('layers runtime overrides onto the agent config before resolving, so the type base survives', async () => {
+    agent = createMockedInternalAgent({
+      configuration: { tools: [], instructions: 'agent instructions', skill_ids: ['my-skill'] },
+    });
+    agentClient.get.mockResolvedValue(agent);
     const resolvedConfiguration = {
       tools: [],
-      instructions: 'base instructions',
+      instructions: 'resolved',
       skill_ids: ['base-skill', 'my-skill'],
-      connector_ids: [],
     };
     runnerDeps.agentsService.resolveAgentConfiguration.mockResolvedValue(resolvedConfiguration);
 
@@ -146,15 +148,18 @@ describe('runAgent', () => {
     });
 
     expect(runnerDeps.agentsService.resolveAgentConfiguration).toHaveBeenCalledWith({
-      agent,
+      agent: {
+        ...agent,
+        configuration: {
+          ...agent.configuration,
+          instructions: 'override instructions',
+        },
+      },
       request: runnerDeps.request,
     });
     expect(createAgentHandlerMock).toHaveBeenCalledWith({
       agent,
-      effectiveConfiguration: {
-        ...resolvedConfiguration,
-        instructions: 'override instructions',
-      },
+      effectiveConfiguration: resolvedConfiguration,
     });
   });
 
