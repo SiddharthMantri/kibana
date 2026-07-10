@@ -129,8 +129,6 @@ export {
   type RuntimeAgentConfigurationOverrides,
   type AgentCapabilities,
   type ResolvedAgentCapabilities,
-  type AgentAnswerStepConfiguration,
-  type AgentResearchStepConfiguration,
   agentIdRegexp,
   AgentExecutionMode,
   SubagentExecutionMode,
@@ -151,6 +149,7 @@ export {
   type ToolCallWithResult,
   type ConversationRound,
   type Conversation,
+  type ConversationSource,
   type ConversationWithoutRounds,
   type ToolCallStep,
   type ConversationRoundStep,
@@ -164,6 +163,7 @@ export {
   type CompactionToolCallSummary,
   type CompactionEntity,
   ConversationRoundStepType,
+  ConversationSourceType,
   isToolCallStep,
   isReasoningStep,
   isCompactionStep,
@@ -287,6 +287,7 @@ export {
   type PluginDefinition,
 } from './plugins';
 export type { RendererDefinition, RendererPayloadOf } from './renderers';
+export type { WorkspaceFileContent } from './workspaces';
 export { EffortLevels, type EffortLevel } from './model_provider';
 export {
   type OAuthClient,

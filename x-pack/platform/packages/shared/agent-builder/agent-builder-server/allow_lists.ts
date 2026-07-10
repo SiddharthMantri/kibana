@@ -104,8 +104,8 @@ export type AgentBuilderBuiltinTool = (typeof AGENT_BUILDER_BUILTIN_TOOLS)[numbe
 export const AGENT_BUILDER_BUILTIN_AGENTS = [
   `${internalNamespaces.search}.agent`,
   `${internalNamespaces.security}.agent`,
-  `${internalNamespaces.platformSignificantEvents}.discovery.investigator`,
-  `${internalNamespaces.platformSignificantEvents}.discovery.judge`,
+  `${internalNamespaces.streams}.sig-events.discovery`,
+  `${internalNamespaces.streams}.sig-events.discovery-judge`,
   `${internalNamespaces.platformSignificantEvents}.investigation`,
 ] as const;
 
@@ -158,6 +158,9 @@ export const AGENT_BUILDER_BUILTIN_SKILLS = [
   'streams-management',
   'significant-events-memory',
   'significant-events-management',
+  'significant-events-changepoint-analysis',
+  'significant-events-ki-grounding',
+  'significant-events-assessment',
   'streams-investigation-management',
   'knowledge-indicators-management',
   'ki-identification-management',
@@ -183,7 +186,11 @@ export const AGENT_BUILDER_BUILTIN_SKILLS = [
   'threat-hunting',
   'find-security-rules',
   'pci-compliance',
+  'investigate-rule',
   'siem-readiness',
+  'attack-discovery-alert-retrieval-builder',
+  'attack-discovery-generator',
+  'attack-discovery-workflow-troubleshooting',
 
   // O11Y
   'observability.rca',
@@ -198,7 +205,7 @@ export const AGENT_BUILDER_BUILTIN_SKILLS = [
   `${internalNamespaces.search}.rag-chatbot`,
   `${internalNamespaces.search}.use-case-library`,
   `${internalNamespaces.search}.elasticsearch-tutorial`,
-  'skill-authoring',
+  'skill-management',
   'connector-authoring',
 ] as const;
 
