@@ -40,7 +40,6 @@ export const registerRoutes = (dependencies: RouteDependencies) => {
   registerChatRoutes(dependencies);
   registerConversationRoutes(dependencies);
   registerAttachmentRoutes(dependencies);
-  registerInternalAttachmentsRoutes(dependencies);
   registerMCPRoutes(dependencies);
   registerA2ARoutes(dependencies);
   registerSkillsRoutes(dependencies);
@@ -48,4 +47,8 @@ export const registerRoutes = (dependencies: RouteDependencies) => {
   registerInternalExecutionRoutes(dependencies);
   registerAccessPrincipalsRoutes(dependencies);
   registerWorkspaceFileRoutes(dependencies);
+
+  if (process.env.NODE_ENV !== 'production') {
+    registerInternalAttachmentsRoutes(dependencies);
+  }
 };
