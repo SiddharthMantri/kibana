@@ -52,9 +52,6 @@ export interface AgentRegistry {
   /**
    * Fetch an agent and assert the caller has at least `opts.access` rights (default: 'read').
    * Throws `agentNotFound` if the agent doesn't exist OR the caller lacks the requested access.
-   *
-   * Returns the agent's own (raw) configuration. The agent type's base configuration is
-   * merged in later, at execution time — see `AgentsServiceStart.resolveAgentConfiguration`.
    */
   get(agentId: string, opts?: GetAgentOptions): Promise<InternalAgentDefinition>;
   list(opts?: AgentListOptions): Promise<InternalAgentDefinition[]>;
