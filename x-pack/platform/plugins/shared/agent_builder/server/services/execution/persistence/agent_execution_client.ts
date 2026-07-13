@@ -34,7 +34,6 @@ export interface ExecutionPeek {
   status: ExecutionStatus;
   error?: SerializedExecutionError;
   eventCount: number;
-  /** Last liveness timestamp reported by the executing node, if any. */
   lastHeartbeat?: string;
 }
 
