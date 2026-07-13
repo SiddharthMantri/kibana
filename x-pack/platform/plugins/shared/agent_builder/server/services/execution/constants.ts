@@ -26,5 +26,13 @@ export const FOLLOW_TERMINAL_READ_RETRY_DELAY_MS = 500;
 /** Safety timeout (ms) for followExecution polling. Prevents infinite polling if the execution never reaches a terminal status. */
 export const FOLLOW_EXECUTION_TIMEOUT_MS = 20 * 60 * 1000; // 20 minutes
 
-/** Idle timeout (ms) for followExecution polling. If no new events are received and the execution status hasn't changed for this duration, polling is aborted. */
-export const FOLLOW_EXECUTION_IDLE_TIMEOUT_MS = 5 * 60 * 1000; // 2 minutes
+/** How often (ms) the executing node writes `last_heartbeat` to the execution document while a task runs. */
+export const EXECUTION_HEARTBEAT_INTERVAL_MS = 10 * 1000; // 10 seconds
+
+/**
+ * Liveness timeout (ms) for followExecution polling. If the execution's `last_heartbeat` stops
+ * advancing (and no new events or status changes are observed) for this duration, the follower
+ * treats the executing node as dead and aborts. Kept a comfortable multiple of
+ * {@link EXECUTION_HEARTBEAT_INTERVAL_MS} so transient write delays don't cause false timeouts.
+ */
+export const FOLLOW_EXECUTION_HEARTBEAT_TIMEOUT_MS = 60 * 1000; // 60 seconds
