@@ -363,6 +363,52 @@ describe('followExecution$', () => {
     expect(result.events).toEqual([complete]);
   });
 
+  it('does not abort a still-queued (scheduled) execution within the heartbeat window', async () => {
+    const executionClient = createMockExecutionClient();
+
+    const complete = roundCompleteEvent();
+    let pollCount = 0;
+    executionClient.peek.mockImplementation(async () => {
+      pollCount++;
+      if (pollCount < 150) {
+        return peekResult(ExecutionStatus.scheduled, 0, undefined, 'hb-created');
+      }
+      return peekResult(ExecutionStatus.completed, 1, undefined, 'hb-run');
+    });
+    executionClient.readEvents.mockResolvedValue(
+      readEventsResult([complete], ExecutionStatus.completed)
+    );
+
+    const promise = collectEvents(followExecution$({ executionId: EXECUTION_ID, executionClient }));
+
+    // ~75s queued (150 polls) — past the heartbeat window, within the scheduled grace.
+    await jest.advanceTimersByTimeAsync(constants.FOLLOW_EXECUTION_HEARTBEAT_TIMEOUT_MS * 2);
+
+    const result = await promise;
+
+    expect(result.error).toBeUndefined();
+    expect(result.events).toEqual([complete]);
+  });
+
+  it('times out a scheduled execution never claimed after FOLLOW_EXECUTION_SCHEDULED_TIMEOUT_MS', async () => {
+    const executionClient = createMockExecutionClient();
+
+    // Always queued, never claimed by a worker.
+    executionClient.peek.mockResolvedValue(
+      peekResult(ExecutionStatus.scheduled, 0, undefined, 'hb-created')
+    );
+
+    const promise = collectEvents(followExecution$({ executionId: EXECUTION_ID, executionClient }));
+
+    await jest.advanceTimersByTimeAsync(constants.FOLLOW_EXECUTION_SCHEDULED_TIMEOUT_MS + 1000);
+
+    const result = await promise;
+
+    expect(result.error).toBeDefined();
+    expect(result.error!.message).toContain('timed out');
+    expect(result.error!.message).toContain('not claimed');
+  });
+
   it('stops emitting events after unsubscribe', async () => {
     const executionClient = createMockExecutionClient();
 

@@ -30,8 +30,11 @@ export const FOLLOW_EXECUTION_TIMEOUT_MS = 20 * 60 * 1000; // 20 minutes
 export const EXECUTION_HEARTBEAT_INTERVAL_MS = 10 * 1000; // 10 seconds
 
 /**
- * Liveness timeout (ms) for followExecution polling. If the execution's `last_heartbeat` stops
- * advancing (and no new events or status changes are observed) for this duration, the follower
- * treats the executing node as dead and aborts.
+ * Liveness timeout (ms) for followExecution polling, applied once the execution is `running`.
  */
 export const FOLLOW_EXECUTION_HEARTBEAT_TIMEOUT_MS = 60 * 1000; // 60 seconds
+
+/**
+ * Grace period (ms) for followExecution polling while the execution is still `scheduled`.
+ */
+export const FOLLOW_EXECUTION_SCHEDULED_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes

@@ -17,6 +17,7 @@ import { ExecutionStatus } from '@kbn/agent-builder-common';
 import type { AgentExecutionClient } from './persistence';
 import {
   FOLLOW_EXECUTION_HEARTBEAT_TIMEOUT_MS,
+  FOLLOW_EXECUTION_SCHEDULED_TIMEOUT_MS,
   FOLLOW_EXECUTION_TIMEOUT_MS,
   FOLLOW_POLL_INTERVAL_MS,
   FOLLOW_TERMINAL_READ_MAX_RETRIES,
@@ -86,6 +87,7 @@ async function* pollExecutionEvents(
   let lastEventIndex = since ?? 0;
   let lastStatus: ExecutionStatus | undefined;
   let lastHeartbeat: string | undefined;
+  let hasStartedRunning = false;
   const startTime = Date.now();
   let lastLivenessTime = startTime;
 
@@ -98,9 +100,15 @@ async function* pollExecutionEvents(
         `Execution ${executionId} timed out: no terminal status reached within ${FOLLOW_EXECUTION_TIMEOUT_MS}ms`
       );
     }
-    if (now - lastLivenessTime > FOLLOW_EXECUTION_HEARTBEAT_TIMEOUT_MS) {
+    if (hasStartedRunning) {
+      if (now - lastLivenessTime > FOLLOW_EXECUTION_HEARTBEAT_TIMEOUT_MS) {
+        throw createInternalError(
+          `Execution ${executionId} timed out: no heartbeat for ${FOLLOW_EXECUTION_HEARTBEAT_TIMEOUT_MS}ms`
+        );
+      }
+    } else if (now - lastLivenessTime > FOLLOW_EXECUTION_SCHEDULED_TIMEOUT_MS) {
       throw createInternalError(
-        `Execution ${executionId} timed out: no heartbeat for ${FOLLOW_EXECUTION_HEARTBEAT_TIMEOUT_MS}ms`
+        `Execution ${executionId} timed out: not claimed by a worker within ${FOLLOW_EXECUTION_SCHEDULED_TIMEOUT_MS}ms`
       );
     }
 
@@ -140,6 +148,10 @@ async function* pollExecutionEvents(
     if (status !== lastStatus) {
       lastLivenessTime = Date.now();
       lastStatus = status;
+    }
+
+    if (status === ExecutionStatus.running) {
+      hasStartedRunning = true;
     }
 
     // 5. Handle terminal statuses
