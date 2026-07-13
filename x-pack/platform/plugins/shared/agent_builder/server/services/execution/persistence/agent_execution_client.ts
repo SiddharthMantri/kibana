@@ -13,10 +13,6 @@ import type { AgentExecution, FindExecutionsOptions } from '@kbn/agent-builder-s
 import type { AgentExecutionProperties, AgentExecutionStorage } from './agent_execution_storage';
 import { agentExecutionIndexName, createStorage } from './agent_execution_storage';
 
-/**
- * The execution document has concurrent writers on the executing node (event batches, status,
- * and heartbeat updates), so partial updates retry a few times to absorb transient version conflicts.
- */
 const UPDATE_RETRY_ON_CONFLICT = 3;
 
 type CreateExecutionParams = Pick<
