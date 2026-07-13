@@ -13,9 +13,7 @@ import { allToolsSelection, allToolsSelectionWildcard } from '@kbn/agent-builder
  * floor for every agent of that type; fields left unset keep the agent's own value
  * (including legacy "undefined means all" semantics for skill_ids / connector_ids).
  */
-export type AgentBaseConfiguration = Partial<
-  Omit<AgentConfiguration, 'replace_default_instructions'>
->;
+export type AgentBaseConfiguration = Partial<AgentConfiguration>;
 
 /**
  * Delimiter inserted between a type's base instructions and the agent's own
@@ -54,7 +52,7 @@ const mergeToolSelections = (base: ToolSelection[], delta: ToolSelection[]): Too
  * Computes an agent's effective configuration by merging its type's base configuration
  * (the floor) with the agent's own configuration (the delta), additively:
  *
- * - instructions (top-level and per-step): concatenated base-first with a delimiter.
+ * - instructions: concatenated base-first with a delimiter.
  * - tools / skill_ids / plugin_ids / workflow_ids / connector_ids: union, base-first,
  *   deduplicated. A base that sets `connector_ids: []` pins the floor to "no connectors".
  * - enable_elastic_capabilities: the delta overrides the base when set.
@@ -89,18 +87,6 @@ export const mergeAgentConfiguration = (
   if (base.enable_elastic_capabilities !== undefined) {
     result.enable_elastic_capabilities =
       delta.enable_elastic_capabilities ?? base.enable_elastic_capabilities;
-  }
-  if (base.research?.instructions !== undefined) {
-    result.research = {
-      ...delta.research,
-      instructions: concatInstructions(base.research.instructions, delta.research?.instructions),
-    };
-  }
-  if (base.answer?.instructions !== undefined) {
-    result.answer = {
-      ...delta.answer,
-      instructions: concatInstructions(base.answer.instructions, delta.answer?.instructions),
-    };
   }
 
   return result;

@@ -15,15 +15,12 @@ import {
 describe('mergeAgentConfiguration', () => {
   const fullDelta: AgentConfiguration = {
     instructions: 'delta instructions',
-    replace_default_instructions: false,
     tools: [{ tool_ids: ['tool-a'] }],
     skill_ids: ['skill-a'],
     enable_elastic_capabilities: true,
     workflow_ids: ['workflow-a'],
     plugin_ids: ['plugin-a'],
     connector_ids: ['connector-a'],
-    research: { instructions: 'delta research' },
-    answer: { instructions: 'delta answer' },
   };
 
   describe('identity (empty base)', () => {
@@ -33,15 +30,6 @@ describe('mergeAgentConfiguration', () => {
 
     it('returns the delta unchanged when base is empty', () => {
       expect(mergeAgentConfiguration({}, fullDelta)).toEqual(fullDelta);
-    });
-
-    it('preserves deprecated fields verbatim', () => {
-      const delta: AgentConfiguration = {
-        tools: [],
-        replace_default_instructions: true,
-        research: { instructions: 'r', replace_default_instructions: true },
-      };
-      expect(mergeAgentConfiguration({}, delta)).toEqual(delta);
     });
 
     it('preserves undefined optional fields (legacy "undefined means all" semantics)', () => {
@@ -73,31 +61,6 @@ describe('mergeAgentConfiguration', () => {
         { tools: [], instructions: '' }
       );
       expect(merged.instructions).toBe('base');
-    });
-  });
-
-  describe('per-step instructions', () => {
-    it('merges research and answer steps independently', () => {
-      const base: AgentBaseConfiguration = {
-        research: { instructions: 'base research' },
-      };
-      const merged = mergeAgentConfiguration(base, {
-        tools: [],
-        research: { instructions: 'delta research' },
-        answer: { instructions: 'delta answer' },
-      });
-      expect(merged.research?.instructions).toBe(
-        `base research\n\n${ADMIN_INSTRUCTIONS_HEADER}\ndelta research`
-      );
-      expect(merged.answer?.instructions).toBe('delta answer');
-    });
-
-    it('creates the step from the base when the delta has none', () => {
-      const merged = mergeAgentConfiguration(
-        { answer: { instructions: 'base answer' } },
-        { tools: [] }
-      );
-      expect(merged.answer).toEqual({ instructions: 'base answer' });
     });
   });
 
