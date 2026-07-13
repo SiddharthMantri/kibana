@@ -32,7 +32,6 @@ export const EXECUTION_HEARTBEAT_INTERVAL_MS = 10 * 1000; // 10 seconds
 /**
  * Liveness timeout (ms) for followExecution polling. If the execution's `last_heartbeat` stops
  * advancing (and no new events or status changes are observed) for this duration, the follower
- * treats the executing node as dead and aborts. Kept a comfortable multiple of
- * {@link EXECUTION_HEARTBEAT_INTERVAL_MS} so transient write delays don't cause false timeouts.
+ * treats the executing node as dead and aborts.
  */
 export const FOLLOW_EXECUTION_HEARTBEAT_TIMEOUT_MS = 60 * 1000; // 60 seconds
