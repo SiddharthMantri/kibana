@@ -168,12 +168,6 @@ ${catalog}`,
   }
 };
 
-/**
- * Runs `fn`, passing a signal that aborts on either the caller's signal or a timeout. Rejects as soon
- * as that signal fires — regardless of whether `fn` itself honors the signal — so a slow or
- * unresponsive model call can never hang the round. Any late rejection from `fn` after the race
- * settles is swallowed to avoid unhandled-rejection warnings.
- */
 const withTimeoutAndAbort = async <T>(
   fn: (signal: AbortSignal) => Promise<T>,
   { timeoutMs, abortSignal }: { timeoutMs: number; abortSignal?: AbortSignal }
