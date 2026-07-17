@@ -19,6 +19,7 @@ import {
   ConversationRoundStatus,
   AgentExecutionMode,
   isToolCallStep,
+  isRelevantSkillsStep,
 } from '@kbn/agent-builder-common';
 import type { AgentEventEmitterFn, AgentHandlerContext } from '@kbn/agent-builder-server';
 import { HookLifecycle } from '@kbn/agent-builder-server';
@@ -38,6 +39,11 @@ import {
   estimatePerRoundTokens,
 } from './utils';
 import { registerInternalTools } from './tools/register_internal_tools';
+import {
+  selectRelevantSkills,
+  buildRecentContext,
+  type RelevantSkillSelection,
+} from './utils/relevant_skills/select_relevant_skills';
 import { resolveCapabilities } from './utils/capabilities';
 import { resolveConfiguration } from './utils/configuration';
 import { ensureValidInput } from './utils/preflight_checks';
@@ -203,6 +209,7 @@ export const runDefaultAgentMode: RunChatAgentFn = async (
     capabilities,
     abortSignal,
     backgroundExecutionService,
+    filteredSkills,
   });
 
   // Then add dynamic tools
@@ -253,6 +260,25 @@ export const runDefaultAgentMode: RunChatAgentFn = async (
   // Reassign to the (possibly compacted) conversation for prompt construction
   processedConversation = compactionResult.processedConversation;
 
+  let relevantSkillsSelection: RelevantSkillSelection | undefined;
+  if (experimentalFeatures.relevantSkills) {
+    if (pendingRound) {
+      const persisted = pendingRound.steps.find(isRelevantSkillsStep);
+      relevantSkillsSelection = persisted ? { skills: persisted.skills } : undefined;
+    } else {
+      relevantSkillsSelection = await selectRelevantSkills({
+        skills: filteredSkills,
+        context: {
+          userMessage: processedConversation.nextInput.message,
+          recentContext: buildRecentContext(processedConversation.previousRounds),
+        },
+        modelProvider,
+        logger,
+        abortSignal,
+      });
+    }
+  }
+
   const promptFactory = createPromptFactory({
     configuration: resolvedConfiguration,
     capabilities: resolvedCapabilities,
@@ -263,6 +289,7 @@ export const runDefaultAgentMode: RunChatAgentFn = async (
     outputSchema,
     conversationTimestamp,
     experimentalFeatures,
+    relevantSkills: relevantSkillsSelection,
     renderers: renderers?.getRegisteredRenderers() ?? [],
   });
 
@@ -352,6 +379,7 @@ export const runDefaultAgentMode: RunChatAgentFn = async (
       compactionResult,
       roundId,
       initialTodos,
+      relevantSkillsSelection,
       getWorkspaceId: () => context.bashService?.getWorkspaceId(),
     }),
     evictInternalEvents(),

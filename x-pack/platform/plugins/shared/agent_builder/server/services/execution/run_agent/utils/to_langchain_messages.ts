@@ -20,6 +20,7 @@ import {
   isToolCallStep,
   isBackgroundAgentCompleteStep,
   isAskUserQuestionStep,
+  isRelevantSkillsStep,
 } from '@kbn/agent-builder-common';
 import {
   createAIMessage,
@@ -31,6 +32,7 @@ import { generateXmlTree, type XmlNode } from '@kbn/agent-builder-genai-utils/to
 import type { ProcessedAttachment, ProcessedRoundInput } from '@kbn/agent-builder-server';
 import type { CompactionSummary } from '@kbn/agent-builder-common';
 import { formatSystemNotice } from '../prompts/utils/actions';
+import { formatRelevantSkillsNotice } from '../prompts/utils/skills';
 import type { ProcessedConversation, ProcessedConversationRound } from './prepare_conversation';
 import type { ToolCallResultTransformer } from './tool_summarization';
 import { serializeCompactionSummary } from './compaction_serialize';
@@ -129,6 +131,12 @@ export const roundToLangchain = async (
     for (const step of round.steps) {
       if (isBackgroundAgentCompleteStep(step)) {
         messages.push(createUserMessage(formatSystemNotice(step)));
+      } else if (isRelevantSkillsStep(step)) {
+        // Replay the round's <relevant_skills> notification so relevant skills stay visible in
+        // following rounds. Placed early in round.steps → renders right after the round's user input.
+        if (step.skills.length > 0) {
+          messages.push(createUserMessage(formatRelevantSkillsNotice(step.skills)));
+        }
       } else if (isToolCallStep(step)) {
         // Only process when we hit the first tool call of a group
         // Other tool calls in the same group are handled by createGroupedToolCallMessages

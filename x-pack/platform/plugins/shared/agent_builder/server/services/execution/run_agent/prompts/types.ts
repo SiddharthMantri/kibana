@@ -15,6 +15,7 @@ import type { ResolvedConfiguration } from '../types';
 import type { ProcessedConversation } from '../utils/prepare_conversation';
 import type { ToolCallResultTransformer } from '../utils/tool_summarization';
 import type { ResearchAgentAction, AnswerAgentAction } from '../actions';
+import type { RelevantSkillSelection } from '../utils/relevant_skills/select_relevant_skills';
 
 export interface PromptFactoryParams {
   configuration: ResolvedConfiguration;
@@ -34,6 +35,7 @@ export interface PromptFactoryParams {
   conversationTimestamp: string;
   experimentalFeatures: ExperimentalFeatures;
   renderers: RendererTypeDefinition[];
+  relevantSkills?: RelevantSkillSelection;
 }
 
 export interface ResearchAgentPromptRuntimeParams {

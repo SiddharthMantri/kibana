@@ -1069,3 +1069,90 @@ describe('groupToolCallSteps', () => {
     expect(groups[1]).toHaveLength(2);
   });
 });
+
+describe('convertPreviousRounds — relevant_skills replay', () => {
+  const conversationWith = (steps: ConversationRoundStep[]): ProcessedConversation =>
+    ({
+      nextInput: { message: 'current', attachments: [] },
+      previousRounds: [
+        {
+          id: 'round-1',
+          status: ConversationRoundStatus.completed,
+          input: { message: 'user q', attachments: [] },
+          steps,
+          response: { message: 'assistant a' },
+          started_at: new Date().toISOString(),
+          time_to_first_token: 0,
+          time_to_last_token: 0,
+          model_usage: { connector_id: 'x', llm_calls: 1, input_tokens: 1, output_tokens: 1 },
+        },
+      ],
+      attachments: [],
+      attachmentTypes: [],
+      attachmentStateManager: createAttachmentStateManager([], {
+        getTypeDefinition: (type: string) =>
+          ({
+            id: type,
+            validate: (input: unknown) => ({ valid: true, data: input }),
+            format: () => ({ getRepresentation: () => ({ type: 'text', value: '' }) }),
+          } as any),
+      }),
+    } as ProcessedConversation);
+
+  const relevantSkillsStep = (skills: Array<Record<string, unknown>>): ConversationRoundStep =>
+    ({
+      type: ConversationRoundStepType.relevantSkills,
+      source: 'implicit',
+      skills,
+    } as unknown as ConversationRoundStep);
+
+  it('replays a relevant_skills step as a <relevant_skills> user notification', async () => {
+    const result = await convertPreviousRounds({
+      conversation: conversationWith([
+        relevantSkillsStep([
+          {
+            id: 'a.b',
+            name: 'alpha',
+            path: '/skills/a/alpha/SKILL.md',
+            description: 'Alpha skill',
+            relevance_note: 'why alpha',
+          },
+        ]),
+      ]),
+    });
+
+    const notice = result
+      .filter(isHumanMessage)
+      .map((m) => m.content as string)
+      .find((c) => c.includes('<relevant_skills>'));
+    expect(notice).toBeDefined();
+    expect(notice).toContain('- alpha (/skills/a/alpha/SKILL.md): Alpha skill');
+    expect(notice).toContain('why alpha');
+  });
+
+  it('renders the notice between the round input and the assistant response', async () => {
+    const result = await convertPreviousRounds({
+      conversation: conversationWith([
+        relevantSkillsStep([
+          { id: 'a.b', name: 'alpha', path: '/p/SKILL.md', description: 'Alpha' },
+        ]),
+      ]),
+    });
+    const contents = result.map((m) => m.content as string);
+    const inputIdx = contents.findIndex((c) => c.includes('user q'));
+    const noticeIdx = contents.findIndex((c) => c.includes('<relevant_skills>'));
+    const responseIdx = contents.findIndex((c) => c.includes('assistant a'));
+    expect(inputIdx).toBeLessThan(noticeIdx);
+    expect(noticeIdx).toBeLessThan(responseIdx);
+  });
+
+  it('emits no notice for an empty relevant_skills step', async () => {
+    const result = await convertPreviousRounds({
+      conversation: conversationWith([relevantSkillsStep([])]),
+    });
+    const hasNotice = result
+      .filter(isHumanMessage)
+      .some((m) => (m.content as string).includes('<relevant_skills>'));
+    expect(hasNotice).toBe(false);
+  });
+});

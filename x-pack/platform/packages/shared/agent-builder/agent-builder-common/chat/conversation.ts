@@ -97,6 +97,7 @@ export enum ConversationRoundStepType {
   backgroundAgentComplete = 'background_agent_complete',
   updateTodos = 'update_todos',
   askUserQuestion = 'ask_user_question',
+  relevantSkills = 'relevant_skills',
 }
 
 // tool call step
@@ -270,6 +271,41 @@ export const isAskUserQuestionStep = (step: ConversationRoundStep): step is AskU
   return step.type === ConversationRoundStepType.askUserQuestion;
 };
 
+// relevant_skills step
+
+/**
+ * A single skill deemed relevant to the current request, as surfaced in the
+ * `<relevant_skills>` notification.
+ */
+export interface RelevantSkill {
+  id: string;
+  name: string;
+  path: string;
+  description: string;
+  relevance_note?: string;
+}
+
+export interface RelevantSkillsStepData {
+  skills: RelevantSkill[];
+  source: 'implicit';
+}
+
+export type RelevantSkillsStep = ConversationRoundStepMixin<
+  ConversationRoundStepType.relevantSkills,
+  RelevantSkillsStepData
+>;
+
+export const createRelevantSkillsStep = (data: RelevantSkillsStepData): RelevantSkillsStep => {
+  return {
+    type: ConversationRoundStepType.relevantSkills,
+    ...data,
+  };
+};
+
+export const isRelevantSkillsStep = (step: ConversationRoundStep): step is RelevantSkillsStep => {
+  return step.type === ConversationRoundStepType.relevantSkills;
+};
+
 /**
  * Returns the (single) todos step from a list of steps, if present.
  * A round only ever has at most one todos step, which is updated in place.
@@ -297,7 +333,8 @@ export type ConversationRoundStep =
   | CompactionStep
   | BackgroundAgentCompleteStep
   | TodosStep
-  | AskUserQuestionStep;
+  | AskUserQuestionStep
+  | RelevantSkillsStep;
 
 export enum ConversationRoundStatus {
   /** round is currently being processed */
