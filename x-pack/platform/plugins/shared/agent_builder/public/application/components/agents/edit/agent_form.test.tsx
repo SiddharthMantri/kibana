@@ -209,6 +209,6 @@ describe('AgentForm', () => {
 
     renderWithIntl(<AgentForm editingAgentId="test-agent-id" onDelete={jest.fn()} />);
 
-    expect(screen.queryByTestId('agentBuilderAgentManagedTypeBadge')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('agentBuilderAgentPreconfiguredTypeBadge')).not.toBeInTheDocument();
   });
 });
