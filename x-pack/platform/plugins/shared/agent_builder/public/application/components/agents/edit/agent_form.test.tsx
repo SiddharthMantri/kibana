@@ -191,7 +191,7 @@ describe('AgentForm', () => {
 
     renderWithIntl(<AgentForm editingAgentId="test-agent-id" onDelete={jest.fn()} />);
 
-    expect(screen.getByTestId('agentBuilderAgentManagedTypeBadge')).toBeInTheDocument();
+    expect(screen.getByTestId('agentBuilderAgentPreconfiguredTypeBadge')).toBeInTheDocument();
   });
 
   it('does not display the Managed badge for a chat-type agent', () => {
