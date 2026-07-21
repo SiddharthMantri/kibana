@@ -50,11 +50,6 @@ export const getResearchAgentPrompt = async (
     conversationTimestamp,
   });
 
-  // When context-aware skill filtering is on, inject the current round's <relevant_skills> notice as
-  // a user-role message right after the current user input (the tail of previousRoundsAsMessages) and
-  // before this round's action history. This keeps the prior-round prefix stable (prompt-cache
-  // friendly) while surfacing the selection outside the system prompt. Prior rounds' notices are
-  // replayed within their own round blocks by convertPreviousRounds.
   const relevantSkillsMessages =
     experimentalFeatures.relevantSkills && relevantSkills && relevantSkills.skills.length > 0
       ? [createUserMessage(formatRelevantSkillsNotice(relevantSkills.skills))]
