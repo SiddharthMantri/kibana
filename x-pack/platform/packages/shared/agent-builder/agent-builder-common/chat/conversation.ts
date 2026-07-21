@@ -271,8 +271,6 @@ export const isAskUserQuestionStep = (step: ConversationRoundStep): step is AskU
   return step.type === ConversationRoundStepType.askUserQuestion;
 };
 
-// relevant_skills step
-
 /**
  * A single skill deemed relevant to the current request, as surfaced in the
  * `<relevant_skills>` notification.
