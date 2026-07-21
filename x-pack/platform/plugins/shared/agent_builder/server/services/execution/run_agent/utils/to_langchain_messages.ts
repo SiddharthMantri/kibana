@@ -132,8 +132,6 @@ export const roundToLangchain = async (
       if (isBackgroundAgentCompleteStep(step)) {
         messages.push(createUserMessage(formatSystemNotice(step)));
       } else if (isRelevantSkillsStep(step)) {
-        // Replay the round's <relevant_skills> notification so relevant skills stay visible in
-        // following rounds. Placed early in round.steps → renders right after the round's user input.
         if (step.skills.length > 0) {
           messages.push(createUserMessage(formatRelevantSkillsNotice(step.skills)));
         }
