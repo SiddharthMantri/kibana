@@ -176,6 +176,20 @@ export const runDefaultAgentMode: RunChatAgentFn = async (
   });
   processedConversation.nextInput = beforeHookResult.nextInput ?? processedConversation.nextInput;
 
+  const relevantSkillsSelectionPromise: Promise<RelevantSkillSelection> | undefined =
+    experimentalFeatures.relevantSkills && !pendingRound
+      ? selectRelevantSkills({
+          skills: filteredSkills,
+          context: {
+            userMessage: processedConversation.nextInput.message,
+            recentContext: buildRecentContext(processedConversation.previousRounds),
+          },
+          modelProvider,
+          logger,
+          abortSignal,
+        })
+      : undefined;
+
   const { staticTools, dynamicTools } = await selectTools({
     conversation: processedConversation,
     previousDynamicToolIds: conversation?.state?.dynamic_tool_ids ?? [],
@@ -265,17 +279,8 @@ export const runDefaultAgentMode: RunChatAgentFn = async (
     if (pendingRound) {
       const persisted = pendingRound.steps.find(isRelevantSkillsStep);
       relevantSkillsSelection = persisted ? { skills: persisted.skills } : undefined;
-    } else {
-      relevantSkillsSelection = await selectRelevantSkills({
-        skills: filteredSkills,
-        context: {
-          userMessage: processedConversation.nextInput.message,
-          recentContext: buildRecentContext(processedConversation.previousRounds),
-        },
-        modelProvider,
-        logger,
-        abortSignal,
-      });
+    } else if (relevantSkillsSelectionPromise) {
+      relevantSkillsSelection = await relevantSkillsSelectionPromise;
     }
   }
 

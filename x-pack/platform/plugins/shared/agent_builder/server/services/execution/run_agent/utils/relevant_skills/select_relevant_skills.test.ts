@@ -8,7 +8,11 @@
 import { loggingSystemMock } from '@kbn/core-logging-server-mocks';
 import type { InternalSkillDefinition } from '@kbn/agent-builder-server/skills';
 import type { ModelProvider } from '@kbn/agent-builder-server/runner';
-import { selectRelevantSkills, buildRecentContext } from './select_relevant_skills';
+import {
+  selectRelevantSkills,
+  buildRecentContext,
+  MAX_SELECTED_SKILLS,
+} from './select_relevant_skills';
 
 const skill = (overrides: Partial<InternalSkillDefinition>): InternalSkillDefinition =>
   ({
@@ -73,7 +77,11 @@ describe('selectRelevantSkills', () => {
     });
 
     expect(result.skills.map((s) => s.id)).toEqual(['a.one', 'a.two']);
-    expect(result.skills[0]).toMatchObject({ id: 'a.one', name: 'one', description: 'A test skill' });
+    expect(result.skills[0]).toMatchObject({
+      id: 'a.one',
+      name: 'one',
+      description: 'A test skill',
+    });
     expect(result.skills[0].path).toContain('SKILL.md');
     expect(selectModel).not.toHaveBeenCalled();
   });
@@ -95,6 +103,44 @@ describe('selectRelevantSkills', () => {
     expect(result.skills.map((s) => s.id)).toEqual(['a.gamma', 'a.alpha']);
     expect(result.skills[0]).toMatchObject({ name: 'gamma', relevance_note: 'because gamma' });
     expect(result.skills[1].relevance_note).toBeUndefined();
+  });
+
+  it('caps the number of selected skills to MAX_SELECTED_SKILLS', async () => {
+    const skills = Array.from({ length: MAX_SELECTED_SKILLS + 5 }, (_, index) =>
+      skill({ id: `catalog.skill-${index}`, name: `skill-${index}`, description: `d-${index}` })
+    );
+    const invoke = jest.fn().mockResolvedValue({
+      skills: skills.map((s) => ({ id: s.id })),
+    });
+    const { modelProvider } = makeModelProvider(invoke);
+
+    const result = await selectRelevantSkills({
+      skills,
+      context: { userMessage: 'x' },
+      modelProvider,
+      logger,
+    });
+
+    expect(result.skills).toHaveLength(MAX_SELECTED_SKILLS);
+    expect(result.skills.map((s) => s.id)).toEqual(
+      skills.slice(0, MAX_SELECTED_SKILLS).map((s) => s.id)
+    );
+  });
+
+  it('deduplicates repeated ids returned by the model', async () => {
+    const invoke = jest.fn().mockResolvedValue({
+      skills: [{ id: 'a.alpha' }, { id: 'a.alpha' }, { id: 'a.beta' }],
+    });
+    const { modelProvider } = makeModelProvider(invoke);
+
+    const result = await selectRelevantSkills({
+      skills: manySkills(),
+      context: { userMessage: 'x' },
+      modelProvider,
+      logger,
+    });
+
+    expect(result.skills.map((s) => s.id)).toEqual(['a.alpha', 'a.beta']);
   });
 
   it('drops hallucinated ids not present in the input set', async () => {
@@ -130,16 +176,22 @@ describe('selectRelevantSkills', () => {
   it('falls back to an empty selection (never hangs) when the call exceeds the timeout', async () => {
     const invoke = jest.fn().mockReturnValue(new Promise(() => {})); // never resolves
     const { modelProvider } = makeModelProvider(invoke);
+    const testLogger = loggingSystemMock.createLogger();
 
     const result = await selectRelevantSkills({
       skills: manySkills(),
       context: { userMessage: 'x' },
       modelProvider,
-      logger,
+      logger: testLogger,
       timeoutMs: 20,
     });
 
     expect(result).toEqual({ skills: [] });
+    // A debug line for the timeout aids observability of fast-model latency in production
+    // (connectors that ignore the abort signal keep the request running silently).
+    expect(testLogger.debug).toHaveBeenCalledWith(expect.stringContaining('timed out after 20ms'));
+    // The catch-branch warn message carries the timeout-specific reason too.
+    expect(testLogger.warn).toHaveBeenCalledWith(expect.stringContaining('timed out after 20ms'));
   });
 });
 
@@ -165,10 +217,38 @@ describe('buildRecentContext', () => {
     expect(result).toContain('newer');
   });
 
-  it('truncates to the char budget from the end', () => {
-    const rounds = [{ input: { message: 'a'.repeat(100) }, response: { message: 'b'.repeat(100) } }];
-    const result = buildRecentContext(rounds, { maxChars: 50 });
-    expect(result.length).toBe(50);
+  it('caps each message individually with an ellipsis marker', () => {
+    const rounds = [
+      { input: { message: 'a'.repeat(100) }, response: { message: 'b'.repeat(100) } },
+    ];
+    const result = buildRecentContext(rounds, { maxChars: 200 });
+    // Each message is truncated with an ellipsis marker, so both are represented — a single
+    // tail slice would have dropped the user message entirely once the budget was exceeded.
+    expect(result).toMatch(/User: a+…/);
+    expect(result).toMatch(/Assistant: b+…/);
+    // Full 100-char message never leaks through (the per-message cap is well under 100).
+    expect(result).not.toContain('a'.repeat(100));
+    expect(result).not.toContain('b'.repeat(100));
+  });
+
+  it('preserves the older user question even when the newer assistant response is verbose', () => {
+    const rounds = [
+      { input: { message: 'older user question about X' }, response: { message: 'ok' } },
+      { input: { message: 'newer q' }, response: { message: 'z'.repeat(5_000) } },
+    ];
+    const result = buildRecentContext(rounds, { maxChars: 200, maxRounds: 3 });
+    // With a single tail slice on the joined blob this line would be cut. Per-message
+    // truncation keeps it intact.
+    expect(result).toContain('older user question about X');
+  });
+
+  it('applies the overall char budget as a backstop', () => {
+    const rounds = [
+      { input: { message: 'a'.repeat(1_000) }, response: { message: 'b'.repeat(1_000) } },
+      { input: { message: 'c'.repeat(1_000) }, response: { message: 'd'.repeat(1_000) } },
+    ];
+    const result = buildRecentContext(rounds, { maxChars: 200 });
+    expect(result.length).toBeLessThanOrEqual(200);
   });
 
   it('tolerates rounds without a response', () => {

@@ -285,7 +285,12 @@ export interface RelevantSkill {
 
 export interface RelevantSkillsStepData {
   skills: RelevantSkill[];
-  source: 'implicit';
+  /**
+   * How the selection was produced:
+   * - `implicit`: the pre-round automatic selection (fast-model call at round start).
+   * - `explicit`: an on-demand result from `search_relevant_skills` invoked by the agent.
+   */
+  source: 'implicit' | 'explicit';
 }
 
 export type RelevantSkillsStep = ConversationRoundStepMixin<

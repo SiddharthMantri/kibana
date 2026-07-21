@@ -24,6 +24,11 @@ export const SMALL_SKILL_THRESHOLD = 3;
 /** Time budget for the fast-model selection call before we fall back to no notification. */
 export const RELEVANT_SKILLS_TIMEOUT_MS = 10_000;
 
+/**
+ * Hard cap on the number of relevant skills returned.
+ */
+export const MAX_SELECTED_SKILLS = 5;
+
 /** Upper bound on the recent-context slice handed to the selector, to keep the fast call cheap. */
 const MAX_RECENT_CONTEXT_CHARS = 4_000;
 const MAX_RECENT_CONTEXT_ROUNDS = 3;
@@ -73,17 +78,50 @@ const toRelevantSkill = (
 /**
  * Builds a bounded, plain-text slice of recent conversation history to give the selector context
  * beyond the current message. Structurally typed so it accepts both raw and processed rounds.
+ *
+ * Applies a per-message char cap before joining rather than a single tail slice on the whole
+ * blob: with a tail slice, an older user question (which is what the selector most needs to see)
+ * could be dropped entirely while a verbose assistant response survived. Truncating each message
+ * individually keeps every message represented; the maxChars value acts as a final backstop.
  */
 export const buildRecentContext = (
   rounds: Array<{ input?: { message?: string }; response?: { message?: string } }>,
   { maxChars = MAX_RECENT_CONTEXT_CHARS, maxRounds = MAX_RECENT_CONTEXT_ROUNDS } = {}
 ): string => {
-  const text = rounds
-    .slice(-maxRounds)
+  const recent = rounds.slice(-maxRounds);
+  if (recent.length === 0) {
+    return '';
+  }
+
+  // Framing overhead per round: "User: " (6) + "\n" (1) + "Assistant: " (11) = 18 chars.
+  // Separator "\n\n" (2 chars) between rounds — (recent.length - 1) of those.
+  const framingChars = 18 * recent.length + 2 * (recent.length - 1);
+
+  // Each round contributes a user message + an assistant response. Divide the remaining
+  // (post-framing) budget across 2 * recent.length message slots.
+  const perMessageBudget = Math.max(1, Math.floor((maxChars - framingChars) / (recent.length * 2)));
+
+  const truncateMessage = (message: string): string => {
+    if (message.length <= perMessageBudget) {
+      return message;
+    }
+    // Keep the head so the framing/intent of the message survives; add an ellipsis marker so
+    // the model knows the message was cut.
+    return `${message.slice(0, Math.max(0, perMessageBudget - 1))}…`;
+  };
+
+  const text = recent
     .map(
-      (round) => `User: ${round.input?.message ?? ''}\nAssistant: ${round.response?.message ?? ''}`
+      (round) =>
+        `User: ${truncateMessage(round.input?.message ?? '')}\nAssistant: ${truncateMessage(
+          round.response?.message ?? ''
+        )}`
     )
     .join('\n\n');
+
+  // Final backstop: per-message truncation accounts for framing so the total should be under
+  // budget, but this guards against pathologically small maxChars (or a future format tweak).
+  // Slice from the tail so we preserve the most recent round if it ever triggers.
   return text.length > maxChars ? text.slice(text.length - maxChars) : text;
 };
 
@@ -131,6 +169,7 @@ export const selectRelevantSkills = async ({
 Rules:
 - Return skill ids EXACTLY as they appear in the catalog. Never invent ids.
 - Prefer precision: if nothing clearly applies, return an empty list.
+- Select at most ${MAX_SELECTED_SKILLS} skills, even if more seem plausible — pick the best.
 - Order the results by relevance, most relevant first.
 - For each selected skill, add a one-sentence note on why it is relevant to this request.
 
@@ -144,16 +183,21 @@ ${catalog}`,
 
         const result = await withTimeoutAndAbort(
           (signal) => structuredModel.invoke(prompt, { signal }),
-          { timeoutMs, abortSignal }
+          { timeoutMs, abortSignal, logger }
         );
 
-        // Map ids back to full skill objects, dropping any hallucinated ids.
+        // Map ids back to full skill objects, dropping any hallucinated ids and duplicates,
+        // then enforce the hard cap regardless of what the model returned.
         const byId = new Map(skills.map((skill) => [skill.id, skill]));
         const selected: RelevantSkill[] = [];
+        const seen = new Set<string>();
         for (const item of result.skills ?? []) {
+          if (seen.has(item.id)) continue;
           const skill = byId.get(item.id);
           if (skill) {
+            seen.add(item.id);
             selected.push(toRelevantSkill(skill, item.relevance_note));
+            if (selected.length >= MAX_SELECTED_SKILLS) break;
           }
         }
         return { skills: selected };
@@ -168,11 +212,27 @@ ${catalog}`,
   }
 };
 
+/**
+ * Race `fn` against a timeout and (optionally) an external abort signal. The passed-in
+ * `signal` is forwarded to `fn` so signal-aware connectors can cancel their in-flight work.
+ *
+ * We track *which* side won the race so the rejection message and the debug log can
+ * distinguish a fast-model timeout from an upstream abort. This matters in production:
+ * a timeout means the underlying model call may still be running (the connector might
+ * ignore the signal), and observing timeout frequency is the only signal the caller has
+ * that the fast-model selector has gone slow.
+ */
 const withTimeoutAndAbort = async <T>(
   fn: (signal: AbortSignal) => Promise<T>,
-  { timeoutMs, abortSignal }: { timeoutMs: number; abortSignal?: AbortSignal }
+  {
+    timeoutMs,
+    abortSignal,
+    logger,
+  }: { timeoutMs: number; abortSignal?: AbortSignal; logger?: Logger }
 ): Promise<T> => {
   const controller = new AbortController();
+  let timedOut = false;
+
   const onAbort = () => controller.abort();
   if (abortSignal) {
     if (abortSignal.aborted) {
@@ -181,17 +241,27 @@ const withTimeoutAndAbort = async <T>(
       abortSignal.addEventListener('abort', onAbort, { once: true });
     }
   }
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const timer = setTimeout(() => {
+    timedOut = true;
+    controller.abort();
+  }, timeoutMs);
 
   const aborted = new Promise<never>((_resolve, reject) => {
+    const rejectAborted = () => {
+      const reason = timedOut
+        ? `selectRelevantSkills timed out after ${timeoutMs}ms`
+        : 'selectRelevantSkills aborted';
+      // The abort signal was propagated to fn, but connectors that ignore signals will keep
+      // the request running silently — a debug line here makes fast-model latency observable.
+      if (timedOut) {
+        logger?.debug(reason);
+      }
+      reject(new Error(reason));
+    };
     if (controller.signal.aborted) {
-      reject(new Error('selectRelevantSkills aborted'));
+      rejectAborted();
     } else {
-      controller.signal.addEventListener(
-        'abort',
-        () => reject(new Error('selectRelevantSkills aborted')),
-        { once: true }
-      );
+      controller.signal.addEventListener('abort', rejectAborted, { once: true });
     }
   });
 
