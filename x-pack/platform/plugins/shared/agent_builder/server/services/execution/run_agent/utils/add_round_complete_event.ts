@@ -12,6 +12,7 @@ import type {
   RoundCompleteEvent,
   RoundInput,
   ConversationRound,
+  ConversationRoundAuthor,
   ConversationRoundStep,
   ReasoningEvent,
   ToolCallEvent,
@@ -92,6 +93,7 @@ export const addRoundCompleteEvent = ({
   pendingRound,
   userInput,
   origin,
+  author,
   startTime,
   endTime,
   getConversationState,
@@ -108,10 +110,15 @@ export const addRoundCompleteEvent = ({
   pendingRound: ConversationRound | undefined;
   userInput: RoundInput;
   /**
-   * External origin that initiated this execution. Stamped as authorship on newly created
-   * rounds; resumed rounds keep their original attribution.
+   * External origin that initiated this execution. Stamps `origin.type` on newly created
+   * rounds; resumed rounds keep their original origin.
    */
   origin?: ExecutionConversationOrigin;
+  /**
+   * Resolved author for the round input (external author, or the Kibana user for public
+   * conversations). Stamped on newly created rounds; resumed rounds keep their original author.
+   */
+  author?: ConversationRoundAuthor;
   startTime: Date;
   modelProvider: ModelProvider;
   stateManager: ConversationStateManager;
@@ -155,6 +162,7 @@ export const addRoundCompleteEvent = ({
                 events,
                 input: userInput,
                 origin,
+                author,
                 startTime,
                 endTime,
                 modelProvider,
@@ -280,6 +288,7 @@ const mergeRounds = (previous: ConversationRound, next: ConversationRound): Conv
     model_usage: mergeModelUsage(previous.model_usage, next.model_usage),
     response: next.response,
     origin: previous.origin,
+    author: previous.author,
     configuration_overrides: next.configuration_overrides ?? previous.configuration_overrides,
   };
 
@@ -322,6 +331,7 @@ const createRound = ({
   events,
   input,
   origin,
+  author,
   startTime,
   endTime = new Date(),
   modelProvider,
@@ -335,6 +345,7 @@ const createRound = ({
   events: SourceEvents[];
   input: RoundInput;
   origin?: ExecutionConversationOrigin;
+  author?: ConversationRoundAuthor;
   startTime: Date;
   endTime?: Date;
   modelProvider: ModelProvider;
@@ -451,11 +462,11 @@ const createRound = ({
     state: undefined,
     input: {
       ...input,
-      ...(origin?.author ? { origin: { author: origin.author } } : {}),
       ...(attachmentRefs.length > 0 ? { attachment_refs: attachmentRefs } : {}),
     },
     steps,
     ...(origin ? { origin: { type: origin.type } } : {}),
+    ...(author ? { author } : {}),
     trace_id: getCurrentTraceId(),
     started_at: startTime.toISOString(),
     time_to_first_token: timeToFirstToken,
