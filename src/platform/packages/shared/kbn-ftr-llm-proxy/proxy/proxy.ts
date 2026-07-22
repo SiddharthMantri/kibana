@@ -154,6 +154,7 @@ export class LlmProxy {
     name,
     when,
     responseMock,
+    delayMs,
   }: {
     name: string;
     when: RequestInterceptor['when'];
@@ -161,6 +162,7 @@ export class LlmProxy {
       | LLMMessage
       | LLmError
       | ((body: ChatCompletionStreamParams) => LLMMessage | LLmError);
+    delayMs?: number;
   }): {
     waitForIntercept: () => Promise<LlmSimulator>;
     completeAfterIntercept: () => Promise<LlmSimulator>;
@@ -215,6 +217,10 @@ export class LlmProxy {
         }
 
         const llmMessage = getInterceptorResponse(simulator.requestBody);
+
+        if (delayMs) {
+          await delay(delayMs);
+        }
 
         if (isLlmError(llmMessage)) {
           await simulator.writeError(llmMessage.statusCode ?? 400, {
@@ -274,4 +280,8 @@ function withTimeout<T>(promise: Promise<T>, timeout: number, message: string): 
       setTimeout(() => reject(new Error(message)), timeout);
     }),
   ]);
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }

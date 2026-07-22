@@ -15,7 +15,7 @@ const getToolChoiceFunctionName = (toolChoice: unknown): string | undefined => {
   return typeof maybe.function?.name === 'string' ? maybe.function.name : undefined;
 };
 
-export const mockTitleGeneration = (llmProxy: LlmProxy, title: string) => {
+export const mockTitleGeneration = (llmProxy: LlmProxy, title: string, delayMs?: number) => {
   // Title generation is implemented via structured output (a tool call named "set_title").
   // Different model adapters may shape `tool_choice` differently, so match the request via
   // either the tool choice name or the stable system prompt text.
@@ -31,11 +31,16 @@ export const mockTitleGeneration = (llmProxy: LlmProxy, title: string) => {
         );
       },
       responseMock: createToolCallMessage('set_title', { title }),
+      delayMs,
     })
     .completeAfterIntercept();
 };
 
-export const mockTitleGenerationWithError = (llmProxy: LlmProxy, error: LLmError) => {
+export const mockTitleGenerationWithError = (
+  llmProxy: LlmProxy,
+  error: LLmError,
+  delayMs?: number
+) => {
   void llmProxy
     .intercept({
       name: 'set_title',
@@ -48,6 +53,7 @@ export const mockTitleGenerationWithError = (llmProxy: LlmProxy, error: LLmError
         );
       },
       responseMock: error,
+      delayMs,
     })
     .completeAfterIntercept();
 };
@@ -57,11 +63,13 @@ export const mockAgentToolCall = ({
   llmProxy,
   toolName,
   toolArg,
+  delayMs,
 }: {
   name?: string;
   llmProxy: LlmProxy;
   toolName: string;
   toolArg: Record<string, any>;
+  delayMs?: number;
 }) => {
   void llmProxy.interceptors.userMessage({
     name,
@@ -72,6 +80,7 @@ export const mockAgentToolCall = ({
       return !systemText.includes('You are a title-generation utility');
     },
     response: createToolCallMessage(toolName, toolArg),
+    delayMs,
   });
 };
 
@@ -79,10 +88,12 @@ export const mockAgentParallelToolCalls = ({
   name = 'agent:parallel_tool_calls',
   llmProxy,
   toolCalls,
+  delayMs,
 }: {
   name?: string;
   llmProxy: LlmProxy;
   toolCalls: Array<{ name: string; args: Record<string, any> }>;
+  delayMs?: number;
 }) => {
   void llmProxy.interceptors.userMessage({
     name,
@@ -92,10 +103,15 @@ export const mockAgentParallelToolCalls = ({
       return !systemText.includes('You are a title-generation utility');
     },
     response: createMultiToolCallMessage(toolCalls),
+    delayMs,
   });
 };
 
-export const mockFinalAnswer = (llmProxy: LlmProxy, answer: string | LLmError) => {
+export const mockFinalAnswer = (
+  llmProxy: LlmProxy,
+  answer: string | LLmError,
+  delayMs?: number
+) => {
   void llmProxy
     .intercept({
       name: 'final-assistant-response',
@@ -103,6 +119,7 @@ export const mockFinalAnswer = (llmProxy: LlmProxy, answer: string | LLmError) =
         return true;
       },
       responseMock: answer,
+      delayMs,
     })
     .completeAfterIntercept();
 };
@@ -127,10 +144,12 @@ export const mockSearchToolCallWithNaturalLanguageGen = ({
   resource,
   esqlQuery = "FROM my_index WHERE name = 'John'",
   llmProxy,
+  delayMs,
 }: {
   resource: { name: string; type: 'index' | 'data_stream' };
   esqlQuery?: string;
   llmProxy: LlmProxy;
+  delayMs?: number;
 }) => {
   void llmProxy.interceptors.userMessage({
     name: 'search_tool:dispatcher',
@@ -142,18 +161,21 @@ export const mockSearchToolCallWithNaturalLanguageGen = ({
       query: 'service.name:java-backend',
       index: resource.name,
     }),
+    delayMs,
   });
 
   // search tool - nl-to-esql call
-  mockNlToEsql({ esqlQuery, llmProxy });
+  mockNlToEsql({ esqlQuery, llmProxy, delayMs });
 };
 
 export const mockNlToEsql = ({
   esqlQuery = "FROM my_index WHERE name = 'John'",
   llmProxy,
+  delayMs,
 }: {
   esqlQuery?: string;
   llmProxy: LlmProxy;
+  delayMs?: number;
 }) => {
   // generate esql - request documentation call
   void llmProxy.interceptors.toolChoice({
@@ -162,6 +184,7 @@ export const mockNlToEsql = ({
       commands: ['WHERE'],
       functions: [],
     }),
+    delayMs,
   });
 
   // generate esql - generate query call
@@ -174,5 +197,6 @@ export const mockNlToEsql = ({
       );
     },
     response: `Here's the ES|QL query:\`\`\`esql${esqlQuery}\`\`\``,
+    delayMs,
   });
 };

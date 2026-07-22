@@ -24,16 +24,18 @@ export const setupAgentDirectAnswer = async ({
   proxy,
   title = 'New discussion',
   continueConversation = false,
+  delayMs,
 }: {
   response: string;
   title?: string;
   proxy: LlmProxy;
   continueConversation?: boolean;
+  delayMs?: number;
 }) => {
   if (!continueConversation) {
-    mockTitleGeneration(proxy, title);
+    mockTitleGeneration(proxy, title, delayMs);
   }
-  mockFinalAnswer(proxy, response);
+  mockFinalAnswer(proxy, response, delayMs);
 };
 
 /**
@@ -86,6 +88,7 @@ export const setupAgentCallSearchToolWithEsqlThenAnswer = async ({
   esqlQuery = "FROM my_index WHERE name = 'John'",
   resourceName,
   resourceType,
+  delayMs,
 }: {
   response: string;
   title?: string;
@@ -93,8 +96,9 @@ export const setupAgentCallSearchToolWithEsqlThenAnswer = async ({
   resourceName: string;
   resourceType: 'index' | 'data_stream';
   proxy: LlmProxy;
+  delayMs?: number;
 }) => {
-  mockTitleGeneration(proxy, title);
+  mockTitleGeneration(proxy, title, delayMs);
 
   mockAgentToolCall({
     llmProxy: proxy,
@@ -102,15 +106,17 @@ export const setupAgentCallSearchToolWithEsqlThenAnswer = async ({
     toolArg: {
       query: 'service.name:java-backend',
     },
+    delayMs,
   });
 
   mockSearchToolCallWithNaturalLanguageGen({
     llmProxy: proxy,
     esqlQuery,
     resource: { name: resourceName, type: resourceType },
+    delayMs,
   });
 
-  mockFinalAnswer(proxy, response);
+  mockFinalAnswer(proxy, response, delayMs);
 };
 
 /**

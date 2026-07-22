@@ -20,13 +20,22 @@ type LLMResponseFnOrString =
 
 export function createInterceptors(proxy: LlmProxy) {
   return {
-    toolChoice: ({ name, response }: { name: string; response: LLMResponseFnOrString }) =>
+    toolChoice: ({
+      name,
+      response,
+      delayMs,
+    }: {
+      name: string;
+      response: LLMResponseFnOrString;
+      delayMs?: number;
+    }) =>
       proxy
         .intercept({
           name: `toolChoice: "${name}"`,
           // @ts-expect-error
           when: (body) => body.tool_choice?.function?.name === name,
           responseMock: response,
+          delayMs,
         })
         .completeAfterIntercept(),
 
@@ -34,12 +43,14 @@ export function createInterceptors(proxy: LlmProxy) {
       name,
       response,
       when,
+      delayMs,
     }: {
       name?: string;
       response: LLMResponseFnOrString;
+      delayMs?: number;
       when?: (body: ChatCompletionStreamParams) => boolean;
-    }) =>
-      proxy
+    }) => {
+      return proxy
         .intercept({
           name: name ?? `userMessage`,
           when: (body) => {
@@ -50,18 +61,21 @@ export function createInterceptors(proxy: LlmProxy) {
             return isUserMessage;
           },
           responseMock: response,
+          delayMs,
         })
-        .completeAfterIntercept(),
-
+        .completeAfterIntercept();
+    },
     toolMessage: ({
       name,
       response,
       when,
+      delayMs,
     }: {
       name?: string;
       response: LLMResponseFnOrString;
       when?: (body: ChatCompletionStreamParams) => boolean;
-    }) =>
+      delayMs?: number;
+    }) => {
       proxy
         .intercept({
           name: name ?? `toolMessage`,
@@ -73,7 +87,9 @@ export function createInterceptors(proxy: LlmProxy) {
             return isToolMessage;
           },
           responseMock: response,
+          delayMs,
         })
-        .completeAfterIntercept(),
+        .completeAfterIntercept();
+    },
   };
 }
