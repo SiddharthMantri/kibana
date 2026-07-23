@@ -212,16 +212,6 @@ ${catalog}`,
   }
 };
 
-/**
- * Race `fn` against a timeout and (optionally) an external abort signal. The passed-in
- * `signal` is forwarded to `fn` so signal-aware connectors can cancel their in-flight work.
- *
- * We track *which* side won the race so the rejection message and the debug log can
- * distinguish a fast-model timeout from an upstream abort. This matters in production:
- * a timeout means the underlying model call may still be running (the connector might
- * ignore the signal), and observing timeout frequency is the only signal the caller has
- * that the fast-model selector has gone slow.
- */
 const withTimeoutAndAbort = async <T>(
   fn: (signal: AbortSignal) => Promise<T>,
   {
@@ -246,22 +236,21 @@ const withTimeoutAndAbort = async <T>(
     controller.abort();
   }, timeoutMs);
 
+  let onControllerAbort: (() => void) | undefined;
   const aborted = new Promise<never>((_resolve, reject) => {
-    const rejectAborted = () => {
+    onControllerAbort = () => {
       const reason = timedOut
         ? `selectRelevantSkills timed out after ${timeoutMs}ms`
         : 'selectRelevantSkills aborted';
-      // The abort signal was propagated to fn, but connectors that ignore signals will keep
-      // the request running silently — a debug line here makes fast-model latency observable.
       if (timedOut) {
         logger?.debug(reason);
       }
       reject(new Error(reason));
     };
     if (controller.signal.aborted) {
-      rejectAborted();
+      onControllerAbort();
     } else {
-      controller.signal.addEventListener('abort', rejectAborted, { once: true });
+      controller.signal.addEventListener('abort', onControllerAbort);
     }
   });
 
@@ -273,5 +262,8 @@ const withTimeoutAndAbort = async <T>(
   } finally {
     clearTimeout(timer);
     abortSignal?.removeEventListener('abort', onAbort);
+    if (onControllerAbort) {
+      controller.signal.removeEventListener('abort', onControllerAbort);
+    }
   }
 };

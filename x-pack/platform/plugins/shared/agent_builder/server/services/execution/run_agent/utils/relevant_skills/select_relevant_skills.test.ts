@@ -193,6 +193,28 @@ describe('selectRelevantSkills', () => {
     // The catch-branch warn message carries the timeout-specific reason too.
     expect(testLogger.warn).toHaveBeenCalledWith(expect.stringContaining('timed out after 20ms'));
   });
+
+  it('falls back to an empty selection when the external abort signal fires', async () => {
+    const invoke = jest.fn().mockReturnValue(new Promise(() => {})); // never resolves on its own
+    const { modelProvider } = makeModelProvider(invoke);
+    const testLogger = loggingSystemMock.createLogger();
+    const controller = new AbortController();
+
+    const promise = selectRelevantSkills({
+      skills: manySkills(),
+      context: { userMessage: 'x' },
+      modelProvider,
+      logger: testLogger,
+      abortSignal: controller.signal,
+      timeoutMs: 10_000, // long, so the abort — not the timeout — settles the race
+    });
+    controller.abort();
+
+    await expect(promise).resolves.toEqual({ skills: [] });
+    // Abort (not timeout): the warn carries the abort reason, and no timeout debug line is emitted.
+    expect(testLogger.warn).toHaveBeenCalledWith(expect.stringContaining('aborted'));
+    expect(testLogger.debug).not.toHaveBeenCalledWith(expect.stringContaining('timed out'));
+  });
 });
 
 describe('buildRecentContext', () => {
