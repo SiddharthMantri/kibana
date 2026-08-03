@@ -15,6 +15,7 @@ import type {
   ConversationInternalState,
   ConversationRoundStatus,
   ConversationOrigin,
+  TimelineEvent,
 } from '@kbn/agent-builder-common/chat';
 import type { PersistentConversationRound } from './types';
 
@@ -49,6 +50,7 @@ const storageSettings = {
         },
         dynamic: false,
       }),
+      conversation_events: types.object({ dynamic: false, properties: {} }),
     },
   },
 } satisfies IndexStorageSettings;
@@ -71,6 +73,8 @@ export interface ConversationProperties {
   origin?: ConversationOrigin;
   // legacy field
   rounds?: PersistentConversationRound[];
+  /** Append-only timeline of conversation events (P2 dual-write; additive). */
+  conversation_events?: TimelineEvent[];
 }
 
 export type ConversationStorageSettings = typeof storageSettings;

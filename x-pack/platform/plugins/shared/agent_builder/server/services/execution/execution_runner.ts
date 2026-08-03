@@ -214,6 +214,7 @@ const handleConversationExecution = async ({
         title$,
         agentEvents$,
         action,
+        logger,
       })
     : EMPTY;
 
@@ -422,12 +423,14 @@ const buildPersistenceEvents = ({
   title$,
   agentEvents$,
   action,
+  logger,
 }: {
   conversation: ConversationWithOperation;
   conversationClient: ConversationClient;
   title$: Observable<string>;
   agentEvents$: Observable<ChatEvent>;
   action?: ConversationAction;
+  logger: Logger;
 }): Observable<ChatEvent> => {
   const roundCompletedEvents$ = agentEvents$.pipe(filter(isRoundCompleteEvent));
 
@@ -437,6 +440,7 @@ const buildPersistenceEvents = ({
       conversationClient,
       title$,
       roundCompletedEvents$,
+      logger,
     });
   }
 
@@ -446,6 +450,7 @@ const buildPersistenceEvents = ({
     title$,
     roundCompletedEvents$,
     action,
+    logger,
   });
 };
 

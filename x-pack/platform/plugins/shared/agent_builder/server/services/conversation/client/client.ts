@@ -16,6 +16,7 @@ import {
   isAgentUnavailableError,
   isConversationNotFoundError,
 } from '@kbn/agent-builder-common';
+import type { TimelineEvent } from '@kbn/agent-builder-common/chat';
 import type { AgentRegistry } from '../../agents/agent_registry';
 import {
   buildReadAccessFilter,
@@ -31,7 +32,7 @@ import type {
 import { createSpaceDslFilter } from '../../../utils/spaces';
 import { isVersionConflictError } from '../../../utils/is_version_conflict_error';
 import type { ConversationStorage } from './storage';
-import { createStorage } from './storage';
+import { createStorage, conversationIndexName } from './storage';
 import {
   fromEs,
   fromEsWithoutRounds,
@@ -52,6 +53,14 @@ export interface ConversationClient {
   ): Promise<Conversation>;
   list(options?: ConversationListOptions): Promise<ConversationWithoutRounds[]>;
   delete(conversationId: string): Promise<boolean>;
+  /**
+   * Atomically appends timeline events to the `conversation_events` array in the stored document
+   * using a server-side Painless script with retry-on-conflict.
+   * This prevents the lost-update concurrency bug that a full-document rewrite would introduce.
+   * Silently succeeds if the conversation document does not exist (noop — document may have been
+   * deleted between persistence and the event append, which is not fatal).
+   */
+  appendConversationEvents(conversationId: string, events: TimelineEvent[]): Promise<void>;
 }
 
 export const createClient = ({
@@ -68,27 +77,35 @@ export const createClient = ({
   agentRegistry: AgentRegistry;
 }): ConversationClient => {
   const storage = createStorage({ logger, esClient });
-  return new ConversationClientImpl({ storage, user, space, agentRegistry });
+  return new ConversationClientImpl({ storage, esClient, logger, user, space, agentRegistry });
 };
 
 class ConversationClientImpl implements ConversationClient {
   private readonly space: string;
   private readonly storage: ConversationStorage;
+  private readonly esClient: ElasticsearchClient;
+  private readonly logger: Logger;
   private readonly user: UserIdAndName;
   private readonly agentRegistry: AgentRegistry;
 
   constructor({
     storage,
+    esClient,
+    logger,
     user,
     space,
     agentRegistry,
   }: {
     storage: ConversationStorage;
+    esClient: ElasticsearchClient;
+    logger: Logger;
     user: UserIdAndName;
     space: string;
     agentRegistry: AgentRegistry;
   }) {
     this.storage = storage;
+    this.esClient = esClient;
+    this.logger = logger;
     this.user = user;
     this.space = space;
     this.agentRegistry = agentRegistry;
@@ -242,6 +259,37 @@ class ConversationClientImpl implements ConversationClient {
     } catch (err) {
       if (err?.statusCode === 404) {
         return true;
+      }
+      throw err;
+    }
+  }
+
+  async appendConversationEvents(
+    conversationId: string,
+    events: TimelineEvent[]
+  ): Promise<void> {
+    if (events.length === 0) {
+      return;
+    }
+    try {
+      await this.esClient.update({
+        index: conversationIndexName,
+        id: conversationId,
+        retry_on_conflict: 3,
+        script: {
+          lang: 'painless',
+          source:
+            'if (ctx._source.conversation_events == null) { ctx._source.conversation_events = params.events; } else { ctx._source.conversation_events.addAll(params.events); }',
+          params: { events },
+        },
+      });
+    } catch (err) {
+      if (err?.statusCode === 404) {
+        // Document deleted between persist and append — non-fatal.
+        this.logger.debug(
+          `appendConversationEvents: conversation ${conversationId} not found, skipping event append`
+        );
+        return;
       }
       throw err;
     }

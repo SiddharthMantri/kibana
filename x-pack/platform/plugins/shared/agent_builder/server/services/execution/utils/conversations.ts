@@ -8,6 +8,7 @@
 import { v4 as uuidv4 } from 'uuid';
 import type { Observable } from 'rxjs';
 import { of, forkJoin, switchMap } from 'rxjs';
+import type { Logger } from '@kbn/logging';
 import type {
   Conversation,
   ConversationAccessControl,
@@ -16,8 +17,34 @@ import type {
   ConversationAction,
 } from '@kbn/agent-builder-common';
 import { getDefaultConversationAccessControl } from '@kbn/agent-builder-common';
+import {
+  roundsToEvents,
+  TimelineEventType,
+  TimelineEventActorType,
+} from '@kbn/agent-builder-common/chat';
+import type { TimelineEvent } from '@kbn/agent-builder-common/chat';
 import type { ConversationClient } from '../../conversation';
 import { createConversationUpdatedEvent, createConversationCreatedEvent } from './events';
+
+/**
+ * Fire-and-forget: append timeline events to the conversation document.
+ * Errors are logged but do not affect the main event stream.
+ */
+const appendEventsFireAndForget = (
+  conversationClient: ConversationClient,
+  conversationId: string,
+  events: TimelineEvent[],
+  logger: Logger
+): void => {
+  if (events.length === 0) return;
+  conversationClient.appendConversationEvents(conversationId, events).catch((err: unknown) => {
+    logger.warn(
+      `Failed to append timeline events to conversation ${conversationId}: ${
+        err instanceof Error ? err.message : String(err)
+      }`
+    );
+  });
+};
 
 /**
  * Persist a new conversation and emit the corresponding event
@@ -27,11 +54,13 @@ export const createConversation$ = ({
   conversationClient,
   title$,
   roundCompletedEvents$,
+  logger,
 }: {
   conversation: Pick<Conversation, 'id' | 'agent_id' | 'access_control' | 'origin'>;
   conversationClient: ConversationClient;
   title$: Observable<string>;
   roundCompletedEvents$: Observable<RoundCompleteEvent>;
+  logger?: Logger;
 }) => {
   return forkJoin({
     title: title$,
@@ -57,6 +86,38 @@ export const createConversation$ = ({
       });
     }),
     switchMap((createdConversation) => {
+      // P1+P2: Dual-write timeline events alongside the persisted rounds.
+      if (logger) {
+        const { round } = createdConversation.rounds[createdConversation.rounds.length - 1]
+          ? { round: createdConversation.rounds[createdConversation.rounds.length - 1] }
+          : { round: undefined };
+
+        const eventsToAppend: TimelineEvent[] = [
+          // Audit event: record conversation creation
+          {
+            id: uuidv4(),
+            type: TimelineEventType.conversationCreated,
+            created_at: createdConversation.created_at,
+            actor: { type: TimelineEventActorType.system },
+            data: {
+              agent_id: createdConversation.agent_id,
+              title: createdConversation.title,
+            },
+          },
+          // Content events derived from the first round
+          ...(round
+            ? roundsToEvents([round], { agentId: createdConversation.agent_id })
+            : []),
+        ];
+
+        appendEventsFireAndForget(
+          conversationClient,
+          createdConversation.id,
+          eventsToAppend,
+          logger
+        );
+      }
+
       return of(createConversationCreatedEvent(createdConversation));
     })
   );
@@ -71,12 +132,14 @@ export const updateConversation$ = ({
   title$,
   roundCompletedEvents$,
   action,
+  logger,
 }: {
   conversation: Conversation;
   title$: Observable<string>;
   roundCompletedEvents$: Observable<RoundCompleteEvent>;
   conversationClient: ConversationClient;
   action?: ConversationAction;
+  logger?: Logger;
 }) => {
   return forkJoin({
     title: title$,
@@ -113,6 +176,23 @@ export const updateConversation$ = ({
       );
     }),
     switchMap((updatedConversation) => {
+      // P1+P2: Dual-write timeline events for the new round.
+      if (logger) {
+        const lastRound =
+          updatedConversation.rounds[updatedConversation.rounds.length - 1];
+        if (lastRound) {
+          const eventsToAppend = roundsToEvents([lastRound], {
+            agentId: updatedConversation.agent_id,
+          });
+          appendEventsFireAndForget(
+            conversationClient,
+            updatedConversation.id,
+            eventsToAppend,
+            logger
+          );
+        }
+      }
+
       return of(createConversationUpdatedEvent(updatedConversation));
     })
   );
